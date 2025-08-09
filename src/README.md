@@ -7,5 +7,3 @@ Esta carpeta contiene el código fuente principal del proyecto **Startlink Web**
 - **`models/`**: Definiciones de datos y lógica de negocio.
 - **`views/`**: Plantillas o componentes de la interfaz de usuario.
 
-## Instrucciones
-Asegúrate de seguir las convenciones de nomenclatura y estructura definidas por el equipo al agregar nuevos archivos.
