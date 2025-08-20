@@ -10,7 +10,6 @@ class AuthController {
     }
 
     public function showWelcomePage($form = null, $status = null) {
-        // Si no se pasa $form, mostrar 'welcome' por defecto
         $form_to_show = $form ?: 'welcome';
 
         if ($status === 'success' && $form === 'register') {
@@ -24,7 +23,7 @@ class AuthController {
 
     public function login() {
         header('Content-Type: application/json');
-        $response = ['success' => false, 'message' => 'Ocurrió un error desconocido.'];
+        $response = ['status' => 'error', 'message' => 'Ocurrió un error desconocido.'];
 
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
             $response['message'] = "Acceso no permitido. Este script solo acepta solicitudes POST.";
@@ -32,8 +31,12 @@ class AuthController {
             exit;
         }
 
-        $email = trim($_POST["email"] ?? '');
-        $password = trim($_POST["password"] ?? '');
+        // Leer el cuerpo JSON
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+
+        $email = trim($data['email'] ?? '');
+        $password = trim($data['password'] ?? '');
         $errors = [];
 
         if (empty($email)) $errors[] = "Por favor ingresa tu email.";
@@ -48,11 +51,16 @@ class AuthController {
                 $_SESSION["user_name"] = $user['nombre'];
                 $_SESSION["id_rol"] = $user['id_rol'];
                 $_SESSION["foto_perfil"] = $user['foto_perfil'];
-                $_SESSION["profile_completed"] = isProfileComplete($user['id']);
 
-                $response['success'] = true;
-                $response['message'] = "¡Bienvenido, " . htmlspecialchars($user['nombre']) . "!";
-                $response['redirect'] = BASE_URL . "src/dashboard.php";
+                $response = [
+                    'status' => 'success',
+                    'message' => "¡Bienvenido, " . htmlspecialchars($user['nombre']) . "!",
+                    'data' => [
+                        'user_id' => $user['id'],
+                        'user_name' => $user['nombre'],
+                        'email' => $email
+                    ]
+                ];
             } else {
                 $errors[] = $user ? "La contraseña es incorrecta." : "No se encontró ninguna cuenta con ese email.";
             }
@@ -68,7 +76,7 @@ class AuthController {
 
     public function register() {
         header('Content-Type: application/json');
-        $response = ['success' => false, 'message' => 'Ocurrió un error al registrarse.'];
+        $response = ['status' => 'error', 'message' => 'Ocurrió un error al registrarse.'];
 
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
             $response['message'] = "Acceso no permitido. Este script solo acepta solicitudes POST.";
@@ -76,9 +84,12 @@ class AuthController {
             exit;
         }
 
-        $nombre = trim($_POST["nombre"] ?? '');
-        $email = trim($_POST["email"] ?? '');
-        $password = trim($_POST["password"] ?? '');
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+
+        $nombre = trim($data['nombre'] ?? '');
+        $email = trim($data['email'] ?? '');
+        $password = trim($data['password'] ?? '');
         $errors = [];
 
         if (empty($nombre)) $errors[] = "Por favor ingresa tu nombre.";
@@ -102,8 +113,11 @@ class AuthController {
                     $stmt->bindParam(':contrasena_hash', $password_hash, PDO::PARAM_STR);
                     $stmt->execute();
 
-                    $response['success'] = true;
-                    $response['message'] = "Registro exitoso. Ahora puedes iniciar sesión.";
+                    $response = [
+                        'status' => 'success',
+                        'message' => "Registro exitoso. Ahora puedes iniciar sesión.",
+                        'data' => ['email' => $email]
+                    ];
                 }
             } catch (PDOException $e) {
                 error_log('Error en el registro: ' . $e->getMessage());
@@ -117,5 +131,42 @@ class AuthController {
 
         echo json_encode($response);
         exit;
+    }
+
+    public function getUserById($id) {
+        try {
+            $user = $this->userModel->getUserById($id);
+            if ($user) {
+                return [
+                    'status' => 'success',
+                    'data' => $user
+                ];
+            } else {
+                return [
+                    'status' => 'error',
+                    'message' => 'Usuario no encontrado'
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Error al consultar el usuario: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function getAllUsers() {
+        try {
+            $users = $this->userModel->getAllUsers();
+            return [
+                'status' => 'success',
+                'data' => $users
+            ];
+        } catch (Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Error al consultar los usuarios: ' . $e->getMessage()
+            ];
+        }
     }
 }
