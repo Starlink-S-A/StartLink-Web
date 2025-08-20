@@ -1,0 +1,248 @@
+/* estilos.css */
+
+/* --- Estilos Generales y Resets --- */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    /* overflow: hidden;  Comentado: solo si el contenido es fijo y no quieres scroll */
+}
+
+body {
+    background-color: #f8f9fa; /* Fondo claro general, usado en dashboard y perfil */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centra verticalmente el contenido principal */
+    align-items: center; /* Centra horizontalmente el contenido principal */
+}
+
+/* --- Estilos para Video de Fondo (principalmente bienvenida.php) --- */
+.video-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -2; /* Más bajo que el overlay */
+}
+
+.video-layer {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Asegura que el video cubra todo el espacio */
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0; /* Por defecto oculto, excepto el activo */
+    transition: opacity 1.5s ease-in-out; /* Transición para el crossfade */
+    z-index: 0;
+}
+
+.video-layer.active-video {
+    opacity: 1;
+    z-index: 1; /* El video activo está por encima del inactivo */
+}
+
+.video-layer.next-video {
+    z-index: 0; /* Asegura que el siguiente video esté detrás del actual */
+}
+
+/* Overlay sobre el video para mejorar la legibilidad del texto */
+.video-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Oscurece el video */
+    z-index: 2; /* Por encima del video, por debajo del contenido principal */
+    pointer-events: none; /* Ignora eventos del puntero, permite clics a través del overlay */
+}
+
+/* --- Estilos para Contenido Principal (bienvenida.php) --- */
+.main-content {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Contenedores de secciones (bienvenida, login, registro) */
+.section-container {
+    max-width: 500px;
+    width: 100%;
+    text-align: center; /* Centra el texto dentro del contenedor */
+    color: white; /* Color de texto para el contenido de estas secciones */
+    background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente para los formularios */
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    /* Transiciones para opacity y transform, display será manejado por JS */
+    opacity: 0; 
+    transform: translateY(20px); 
+    transition: opacity 0.5s, transform 0.5s;
+    display: none;
+    pointer-events: none;
+    position: relative;
+    width: 100%;
+}
+
+.section-container.active {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: relative;
+}
+
+/* Las clases .hidden y .visible no son necesarias para controlar 'display' con este JS */
+/* Dejamos aquí solo si quieres usarlas para otros fines, pero sin 'display' */
+/* .section-container.hidden { } */
+/* .section-container.visible { } */
+
+.form-container {
+    width: 100%; /* Ocupa todo el ancho disponible en su contenedor */
+}
+
+.form-control {
+    background-color: rgba(255, 255, 255, 0.1); /* Fondo transparente para inputs */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Borde claro */
+    color: white; /* Texto blanco */
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7); /* Placeholder más visible */
+}
+
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.2); /* Ligeramente más oscuro al enfocar */
+    border-color: #007bff; /* Borde azul de Bootstrap al enfocar */
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25); /* Sombra azul de Bootstrap */
+}
+
+.form-label {
+    color: #f8f9fa; /* Color claro para las etiquetas */
+}
+
+.btn-link {
+    color: #007bff; /* Color de enlace azul */
+}
+
+.btn-link:hover {
+    color: #0056b3; /* Color de enlace azul oscuro al pasar el ratón */
+    text-decoration: underline;
+}
+
+/* Contenedor de mensajes de alerta (usado por form-logic.js) */
+#alertMessageContainer {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 15px;
+    z-index: 1000; /* Asegura que la alerta esté por encima de todo */
+    width: 80%;
+    max-width: 500px;
+}
+
+/* --- Estilos para la Configuración de Perfil (configurar_perfil.php) --- */
+.profile-setup-container {
+    background-color: #ffffff; /* Fondo blanco para el contenedor */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombra suave */
+    max-width: 700px;
+    width: 100%;
+    margin: 20px auto; /* Centra el contenedor y le da margen */
+    text-align: left; /* Generalmente los formularios están alineados a la izquierda */
+}
+
+.profile-setup-container .progress-bar-container {
+    margin-bottom: 20px;
+}
+
+.profile-setup-container .form-group label,
+.profile-setup-container .form-label { /* Añadido form-label por Bootstrap 5 */
+    font-weight: bold;
+    color: #343a40; /* Color de texto oscuro para etiquetas en fondo blanco */
+}
+
+/* Asegurar que los inputs en profile-setup-container no tengan el fondo transparente */
+.profile-setup-container .form-control,
+.profile-setup-container .form-select { /* Añadido form-select por Bootstrap 5 */
+    background-color: #fff; /* Fondo blanco para inputs */
+    border: 1px solid #ced4da; /* Borde estándar de Bootstrap */
+    color: #495057; /* Color de texto estándar */
+}
+
+.profile-setup-container .form-control::placeholder {
+    color: #6c757d; /* Color de placeholder estándar */
+}
+
+.profile-setup-container .form-control:focus,
+.profile-setup-container .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.profile-setup-container .d-flex { /* Usar d-flex en lugar de btn-group-nav si es solo para navs */
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+/* --- Estilos para el Dashboard (dashboard.php) --- */
+.navbar-brand {
+    font-weight: bold;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #007bff; /* Color primario de Bootstrap */
+    color: white;
+    font-weight: bold;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Clases de utilidad para centrar texto en dashboard */
+.text-center {
+    text-align: center !important; /* Añadido !important si hay conflictos */
+}
+
+body, .main-content, .section-container {
+    user-select: text !important;
+    pointer-events: auto !important;
+}
+
+.content-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
