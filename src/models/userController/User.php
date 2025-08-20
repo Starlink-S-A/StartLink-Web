@@ -27,4 +27,36 @@ class User {
             throw new Exception("Error al intentar iniciar sesión: " . $e->getMessage());
         }
     }
+
+    public function getUserById($id) {
+        try {
+            $sql = "SELECT id, nombre, email, id_rol, foto_perfil 
+                    FROM usuario 
+                    WHERE id = :id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() === 1) {
+                return $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            return null;
+        } catch (PDOException $e) {
+            error_log("Error en getUserById: " . $e->getMessage());
+            throw new Exception("Error al consultar el usuario: " . $e->getMessage());
+        }
+    }
+
+    public function getAllUsers() {
+        try {
+            $sql = "SELECT id, nombre, email, id_rol, foto_perfil 
+                    FROM usuario";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en getAllUsers: " . $e->getMessage());
+            throw new Exception("Error al consultar los usuarios: " . $e->getMessage());
+        }
+    }
 }
