@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 void sectionToShow.offsetWidth; // eslint-disable-line no-unused-expressions
                 sectionToShow.style.opacity = '1';
                 sectionToShow.style.transform = 'translateY(0)';
-
             }, transitionDuration);
         } else if (!currentActiveSection) {
             // Si no hay ninguna sección visible (primera carga), simplemente mostrar la deseada
@@ -104,13 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`${BASE_URL}src/index.php?action=login`,{
+                const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
                 });
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
                     changeSection(loginFormSection); // Redirigir al login
@@ -124,43 +124,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-// Manejador del formulario de Login - Versión corregida
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(loginForm);
-        try {
-            const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            // Verificar si la respuesta es JSON válido
-            const text = await response.text();
-            let result;
+    // Manejador del formulario de Login - Versión corregida
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(loginForm);
             try {
-                result = JSON.parse(text);
-            } catch (e) {
-                console.error('La respuesta no es JSON válido:', text);
-                throw new Error('Respuesta del servidor no válida');
-            }
+                const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // Verificar si la respuesta es JSON válido
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error('La respuesta no es JSON válido:', text);
+                    throw new Error('Respuesta del servidor no válida');
+                }
 
-            if (result.success) {
-                displayMessage(result.message, 'success');
-                loginForm.reset();
-                window.location.href = result.redirect || `${BASE_URL}src/dashboard.php`;
-            } else {
-                displayMessage(result.message, 'danger');
+                if (result.status === 'success') {
+                    displayMessage(result.message, 'success');
+                    loginForm.reset();
+                    window.location.href = result.data.redirect || `${BASE_URL}src/dashboard.php`;
+                } else {
+                    displayMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error en el inicio de sesión:', error);
+                displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
             }
-        } catch (error) {
-            console.error('Error en el inicio de sesión:', error);
-            displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
-        }
-    });
-}
+        });
+    }
 
     // Manejadores de eventos para botones y enlaces
     if (showLoginFormBtn) {
@@ -192,20 +192,18 @@ if (loginForm) {
     }
 
     // Confirmación para eliminar experiencias
-function setupExperienceDeleteButtons() {
-    document.querySelectorAll('.delete-experience').forEach(button => {
-        button.addEventListener('click', function(e) {
-            if (!confirm('¿Estás seguro de eliminar esta experiencia laboral?')) {
-                e.preventDefault();
-            }
+    function setupExperienceDeleteButtons() {
+        document.querySelectorAll('.delete-experience').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!confirm('¿Estás seguro de eliminar esta experiencia laboral?')) {
+                    e.preventDefault();
+                }
+            });
         });
-    });
-}
+    }
 
-// Ejecutar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    setupExperienceDeleteButtons();
-    
-    // Otro código JavaScript que ya tengas...
-});
+    // Ejecutar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        setupExperienceDeleteButtons();
+    });
 });

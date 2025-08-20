@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/configuracionInicial.php';
+require_once __DIR__ . '/../../config/configuraciónInicial.php';
 require_once __DIR__ . '/../../models/userController/User.php';
 
 class AuthController {
@@ -10,6 +10,7 @@ class AuthController {
     }
 
     public function showWelcomePage($form = null, $status = null) {
+        // Si no se pasa $form, mostrar 'welcome' por defecto
         $form_to_show = $form ?: 'welcome';
 
         if ($status === 'success' && $form === 'register') {
@@ -51,6 +52,10 @@ class AuthController {
                 $_SESSION["user_name"] = $user['nombre'];
                 $_SESSION["id_rol"] = $user['id_rol'];
                 $_SESSION["foto_perfil"] = $user['foto_perfil'];
+                // Mantengo profile_completed si está definida (debes verificar su existencia)
+                if (function_exists('isProfileComplete')) {
+                    $_SESSION["profile_completed"] = isProfileComplete($user['id']);
+                }
 
                 $response = [
                     'status' => 'success',
