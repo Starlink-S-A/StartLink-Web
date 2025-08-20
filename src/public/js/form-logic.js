@@ -1,5 +1,6 @@
+// js/form-logic.js
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos clave
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
     const showLoginLink = document.getElementById('showLoginLink');
@@ -13,9 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const messageContainer = document.getElementById('alertMessageContainer');
 
-    const transitionDuration = 600;
+    const transitionDuration = 600; // Duración de la transición en ms, debe coincidir con el CSS
 
-    // 🔁 Función para mostrar mensajes
+    // Función para mostrar un mensaje (compatible con Bootstrap 5)
     const displayMessage = (message, type) => {
         if (!messageContainer) return;
         messageContainer.innerHTML = `
@@ -26,11 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // 🔄 Transición entre secciones
+    // Función principal para cambiar de sección con animación
     const changeSection = (sectionToShow) => {
         const sections = [welcomeSection, loginFormSection, registerFormSection];
         let currentActiveSection = null;
 
+        // Encontrar la sección actualmente visible
         for (const section of sections) {
             if (section && section.style.display === 'block') {
                 currentActiveSection = section;
@@ -39,45 +41,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (currentActiveSection && currentActiveSection !== sectionToShow) {
+            // Animar la sección saliente
             currentActiveSection.style.opacity = '0';
             currentActiveSection.style.transform = 'translateY(20px)';
 
             setTimeout(() => {
-                currentActiveSection.style.display = 'none';
+                currentActiveSection.style.display = 'none'; // Ocultar después de la transición
+                
+                // Mostrar y animar la nueva sección
                 sectionToShow.style.display = 'block';
-                void sectionToShow.offsetWidth;
+                // Forzar reflow para que la transición ocurra
+                void sectionToShow.offsetWidth; // eslint-disable-line no-unused-expressions
                 sectionToShow.style.opacity = '1';
                 sectionToShow.style.transform = 'translateY(0)';
             }, transitionDuration);
         } else if (!currentActiveSection) {
+            // Si no hay ninguna sección visible (primera carga), simplemente mostrar la deseada
             sectionToShow.style.display = 'block';
             sectionToShow.style.opacity = '1';
             sectionToShow.style.transform = 'translateY(0)';
         }
     };
 
-    // 🧭 Mostrar sección inicial
-    const formToShowOnLoad = typeof FORM_TO_SHOW !== 'undefined' ? FORM_TO_SHOW : 'welcome';
-    let initialSection = welcomeSection;
-    if (formToShowOnLoad === 'login') initialSection = loginFormSection;
-    if (formToShowOnLoad === 'register') initialSection = registerFormSection;
+    // Lógica para mostrar la sección correcta al cargar la página
+    const formToShowOnLoad = "<?php echo $form_to_show_on_load; ?>";
+    let initialSection;
+    if (formToShowOnLoad === 'login') {
+        initialSection = loginFormSection;
+    } else if (formToShowOnLoad === 'register') {
+        initialSection = registerFormSection;
+    } else {
+        initialSection = welcomeSection;
+    }
 
-    [welcomeSection, loginFormSection, registerFormSection].forEach(section => {
-        if (section) section.style.display = 'none';
-    });
+    // Ocultar todas las secciones al inicio para que JS las muestre limpiamente
+    if (welcomeSection) welcomeSection.style.display = 'none';
+    if (loginFormSection) loginFormSection.style.display = 'none';
+    if (registerFormSection) registerFormSection.style.display = 'none';
 
+    // Mostrar la sección inicial sin transición si es la primera carga
     if (initialSection) {
         initialSection.style.display = 'block';
         initialSection.style.opacity = '1';
         initialSection.style.transform = 'translateY(0)';
     }
 
-    // 🧹 Limpiar URL
+    // Limpiar URL de parámetros si existen, para una experiencia más limpia
     if (window.location.search) {
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // 📝 Registro
+    // Manejador del formulario de Registro
     if (registrationForm) {
         registrationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -96,16 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
-                    changeSection(loginFormSection);
+                    changeSection(loginFormSection); // Redirigir al login
                 } else {
                     displayMessage(result.message, 'danger');
-                    if (result.redirect === 'login') {
-                        changeSection(loginFormSection); // ← Redirige al login si el correo ya existe
-                    }
-}
+                }
             } catch (error) {
                 console.error('Error en el registro:', error);
                 displayMessage('Hubo un problema al intentar registrarte. Inténtalo de nuevo.', 'danger');
@@ -113,43 +124,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🔐 Login
+    // Manejador del formulario de Login - Versión corregida
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(loginForm);
-
             try {
                 const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
                     method: 'POST',
                     body: formData,
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
-
+                
+                // Verificar si la respuesta es JSON válido
                 const text = await response.text();
                 let result;
                 try {
                     result = JSON.parse(text);
                 } catch (e) {
-                    console.error('Respuesta no válida:', text);
+                    console.error('La respuesta no es JSON válido:', text);
                     throw new Error('Respuesta del servidor no válida');
                 }
 
-                if (result.success) {
+                if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     loginForm.reset();
-                    window.location.href = result.redirect || `${BASE_URL}src/dashboard.php`;
+                    window.location.href = result.data.redirect || `${BASE_URL}src/dashboard.php`;
                 } else {
                     displayMessage(result.message, 'danger');
                 }
             } catch (error) {
-                console.error('Error en el login:', error);
+                console.error('Error en el inicio de sesión:', error);
                 displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
             }
         });
     }
 
-    // 🎯 Eventos de navegación
+    // Manejadores de eventos para botones y enlaces
     if (showLoginFormBtn) {
         showLoginFormBtn.addEventListener('click', () => {
             changeSection(loginFormSection);
@@ -173,7 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🗑️ Confirmación para eliminar experiencias
+    // Advertencias si faltan elementos HTML importantes
+    if (!showLoginFormBtn || !welcomeSection || !loginFormSection || !registerFormSection || !showRegisterLink || !showLoginLink || !messageContainer) {
+        console.warn("Advertencia: Algunos elementos HTML necesarios no se encontraron en bienvenida.php. Las funcionalidades de cambio de formulario o mensajes podrían no operar correctamente.");
+    }
+
+    // Confirmación para eliminar experiencias
     function setupExperienceDeleteButtons() {
         document.querySelectorAll('.delete-experience').forEach(button => {
             button.addEventListener('click', function(e) {
@@ -184,10 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    setupExperienceDeleteButtons();
-
-    // 🛑 Advertencias si faltan elementos
-    if (!showLoginFormBtn || !welcomeSection || !loginFormSection || !registerFormSection || !showRegisterLink || !showLoginLink || !messageContainer) {
-        console.warn("Advertencia: Algunos elementos HTML necesarios no se encontraron. Las funcionalidades podrían no operar correctamente.");
-    }
+    // Ejecutar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        setupExperienceDeleteButtons();
+    });
 });

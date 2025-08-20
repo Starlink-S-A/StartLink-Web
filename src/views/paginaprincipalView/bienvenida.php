@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config/configuracionInicial.php';
+require_once __DIR__ . '/../../config/configuraciónInicial.php';
 // Si $form_to_show no está definido, mostrar welcome
 if (!isset($form_to_show)) $form_to_show = 'welcome';
 ?>
@@ -12,8 +12,8 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
     <script>
+        // Hacer disponible BASE_URL en JavaScript
         const BASE_URL = '<?php echo BASE_URL; ?>';
-        const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
     </script>
 </head>
 <body>
