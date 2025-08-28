@@ -1,6 +1,7 @@
-<?php // views/bienvenida.php
-// La lógica PHP ahora es manejada por el controlador y la variable se pasa aquí.
-// El código a continuación permanece en su mayoría igual, pero sin el bloque de lógica inicial.
+<?php
+require_once __DIR__ . '/../../config/configuracionInicial.php';
+// Si $form_to_show no está definido, mostrar welcome
+if (!isset($form_to_show)) $form_to_show = 'welcome';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -9,36 +10,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TalentLink - ¡Encuentra tu próximo empleo!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles/estilos.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
+    <!-- ✅ MOVER LAS CONSTANTES AL FINAL DEL BODY PARA EVITAR DUPLICADOS -->
 </head>
 <body>
     <div class="video-background">
         <video id="video1" class="video-layer active-video" autoplay loop muted playsinline>
-            <source src="video/Fondo.mp4" type="video/mp4">
+            <source src="<?php echo BASE_URL; ?>assets/media/Fondo.mp4" type="video/mp4">
             Tu navegador no soporta la etiqueta de video.
         </video>
         <video id="video2" class="video-layer" loop muted playsinline>
-            <source src="video/Fondo1.mp4" type="video/mp4">
+            <source src="<?php echo BASE_URL; ?>assets/media/Fondo1.mp4" type="video/mp4">
             Tu navegador no soporta la etiqueta de video.
         </video>
+        <div class="video-overlay"></div>
     </div>
-    <div class="video-overlay"></div>
 
     <div class="main-content">
-        <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3" style="z-index: 1000; width: 80%; max-width: 500px;">
+        <!-- Contenedor para mensajes -->
+        <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
+             style="z-index: 1000; width: 80%; max-width: 500px;">
         </div>
 
-        <div id="welcomeSection" class="section-container">
+        <!-- Bienvenida -->
+        <div id="welcomeSection" class="section-container" 
+             style="display: <?php echo $form_to_show === 'welcome' ? 'block' : 'none'; ?>;">
             <h1>¡Bienvenido a TalentLink!</h1>
             <p class="lead">Conecta con tu futuro laboral ideal.</p>
             <button id="showLoginFormBtn" class="btn btn-primary btn-lg mt-3">Comenzar</button>
         </div>
 
-        <div id="loginFormSection" class="section-container" style="display:none;">
+        <!-- Login -->
+        <div id="loginFormSection" class="section-container"
+             style="display: <?php echo $form_to_show === 'login' ? 'block' : 'none'; ?>;">
             <h2>Iniciar Sesión</h2>
-            <form id="loginForm" class="form-container mt-4" action="<?= BASE_URL ?>?controller=auth&action=login" method="POST">
+            <form id="loginForm" class="form-container mt-4"
+                  action="<?php echo BASE_URL; ?>src/index.php?action=login" method="POST">
                 <div class="mb-3">
-                    <label for="loginEmail" class="form-label">Correo Electrónico</label>
+                    <label for="loginEmail" class="form-label">Correo electrónico</label>
                     <input type="email" class="form-control" id="loginEmail" name="email" required>
                 </div>
                 <div class="mb-3">
@@ -52,7 +61,9 @@
             </form>
         </div>
 
-        <div id="registerFormSection" class="section-container" style="display:none;">
+        <!-- Registro -->
+        <div id="registerFormSection" class="section-container"
+             style="display: <?php echo $form_to_show === 'register' ? 'block' : 'none'; ?>;">
             <h2>Crear una Cuenta</h2>
             <form id="registrationForm" class="form-container mt-4">
                 <div class="mb-3">
@@ -60,7 +71,7 @@
                     <input type="text" class="form-control" id="registerName" name="nombre" required>
                 </div>
                 <div class="mb-3">
-                    <label for="registerEmail" class="form-label">Correo Electrónico</label>
+                    <label for="registerEmail" class="form-label">Correo electrónico</label>
                     <input type="email" class="form-control" id="registerEmail" name="email" required>
                 </div>
                 <div class="mb-3">
@@ -68,8 +79,8 @@
                     <input type="password" class="form-control" id="registerPassword" name="password" required>
                 </div>
                 <div class="mb-3">
-                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
-                    <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                    <label for="registerConfirmPassword" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="registerConfirmPassword" name="confirm_password" required>
                 </div>
                 <button type="submit" class="btn btn-success btn-lg btn-block mt-4">Registrarse</button>
                 <p class="mt-3 text-center">
@@ -79,37 +90,16 @@
         </div>
     </div>
 
+    <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/video-crossfade.js"></script>
-    <script src="js/form-logic.js"></script>
-
+    <script src="<?php echo BASE_URL; ?>src/public/js/video-crossfade.js"></script>
+    
+    <!-- ✅ CONSTANTES GLOBALES - SOLO UNA VEZ AL FINAL -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Esta variable viene del controlador (index.php)
-            const formToShowOnLoad = "<?php echo $form_to_show_on_load; ?>";
-            const welcomeSection = document.getElementById('welcomeSection');
-            const loginFormSection = document.getElementById('loginFormSection');
-            const registerFormSection = document.getElementById('registerFormSection');
-
-            // Limpia los parámetros de la URL para evitar que se refresque la página
-            if (window.location.search) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-
-            // Oculta todas las secciones inicialmente
-            welcomeSection.style.display = 'none';
-            loginFormSection.style.display = 'none';
-            registerFormSection.style.display = 'none';
-
-            // Muestra la sección correcta basándose en la variable del controlador
-            if (formToShowOnLoad === 'login') {
-                loginFormSection.style.display = 'block';
-            } else if (formToShowOnLoad === 'register') {
-                registerFormSection.style.display = 'block';
-            } else {
-                welcomeSection.style.display = 'block';
-            }
-        });
+        const BASE_URL = '<?php echo BASE_URL; ?>';
+        const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
     </script>
+    
+    <script src="<?php echo BASE_URL; ?>src/public/js/form-logic.js"></script>
 </body>
 </html>

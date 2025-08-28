@@ -28,16 +28,13 @@ error_reporting(E_ALL);
 
 // Definir la URL base de tu aplicación
 if (!defined('BASE_URL')) {
-    // Ajustado para reflejar la raíz del proyecto Proyecto-StartLink/StartLink-Web/
-    define('BASE_URL', 'http://localhost/Proyecto-StartLink/StartLink-Web/');
+    define('BASE_URL', 'http://localhost/StartLink-Web/');
 }
 
 // Definir la ruta raíz física del proyecto
 if (!defined('ROOT_PATH')) {
-    // Ajustado para que apunte a la carpeta 'StartLink-Web' dentro de Proyecto-StartLink
-    define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/Proyecto-StartLink/StartLink-Web/');
-    // Si necesitas una ruta manual, podrías usar algo como:
-    // define('ROOT_PATH', 'C:/ruta/a/Proyecto-StartLink/StartLink-Web/');
+    define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/prueba_registro_inicio_de_sesión/StartLink-Web/');
+    // Alternativa manual si falla: define('ROOT_PATH', 'C:/xampp/htdocs/prueba_registro_inicio_de_sesión/StartLink-Web/');
 }
 
 // Configuración de la base de datos (PDO)
@@ -45,8 +42,7 @@ if (!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
 }
 if (!defined('DB_NAME')) {
-    // Asegúrate de que este sea el nombre correcto de tu base de datos
-    define('DB_NAME', 'hrms_db'); // Cambia a 'talentlink' si es el nombre real
+    define('DB_NAME', 'hrms_db'); // Cambia si es necesario
 }
 if (!defined('DB_USER')) {
     define('DB_USER', 'root');

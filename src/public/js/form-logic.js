@@ -1,6 +1,8 @@
 // js/form-logic.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM cargado - Iniciando form-logic.js'); // DEBUG
+    
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
     const showLoginLink = document.getElementById('showLoginLink');
@@ -14,11 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const messageContainer = document.getElementById('alertMessageContainer');
 
-    const transitionDuration = 600; // Duración de la transición en ms, debe coincidir con el CSS
+    const transitionDuration = 600;
 
-    // Función para mostrar un mensaje (compatible con Bootstrap 5)
+    // Función para mostrar mensajes
     const displayMessage = (message, type) => {
-        if (!messageContainer) return;
+        if (!messageContainer) {
+            console.error('No se encontró el contenedor de mensajes');
+            return;
+        }
         messageContainer.innerHTML = `
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${message}
@@ -27,12 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // Función principal para cambiar de sección con animación
+    // Cambiar sección con animación
     const changeSection = (sectionToShow) => {
         const sections = [welcomeSection, loginFormSection, registerFormSection];
         let currentActiveSection = null;
 
-        // Encontrar la sección actualmente visible
         for (const section of sections) {
             if (section && section.style.display === 'block') {
                 currentActiveSection = section;
@@ -41,90 +45,179 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (currentActiveSection && currentActiveSection !== sectionToShow) {
-            // Animar la sección saliente
             currentActiveSection.style.opacity = '0';
             currentActiveSection.style.transform = 'translateY(20px)';
 
             setTimeout(() => {
-                currentActiveSection.style.display = 'none'; // Ocultar después de la transición
-                
-                // Mostrar y animar la nueva sección
+                currentActiveSection.style.display = 'none';
                 sectionToShow.style.display = 'block';
-                // Forzar reflow para que la transición ocurra
-                void sectionToShow.offsetWidth; // eslint-disable-line no-unused-expressions
+                void sectionToShow.offsetWidth; 
                 sectionToShow.style.opacity = '1';
                 sectionToShow.style.transform = 'translateY(0)';
             }, transitionDuration);
         } else if (!currentActiveSection) {
-            // Si no hay ninguna sección visible (primera carga), simplemente mostrar la deseada
             sectionToShow.style.display = 'block';
             sectionToShow.style.opacity = '1';
             sectionToShow.style.transform = 'translateY(0)';
         }
     };
 
-    // Lógica para mostrar la sección correcta al cargar la página
-    const formToShowOnLoad = "<?php echo $form_to_show_on_load; ?>";
+    // ✅ VERIFICACIÓN DE ELEMENTOS CON DEBUG
+    console.log('Elementos encontrados:', {
+        showLoginFormBtn: !!showLoginFormBtn,
+        showRegisterLink: !!showRegisterLink,
+        showLoginLink: !!showLoginLink,
+        welcomeSection: !!welcomeSection,
+        loginFormSection: !!loginFormSection,
+        registerFormSection: !!registerFormSection,
+        loginForm: !!loginForm,
+        registrationForm: !!registrationForm,
+        messageContainer: !!messageContainer
+    });
+
+    // Sección inicial
     let initialSection;
-    if (formToShowOnLoad === 'login') {
+    if (typeof FORM_TO_SHOW !== "undefined" && FORM_TO_SHOW === 'login') {
         initialSection = loginFormSection;
-    } else if (formToShowOnLoad === 'register') {
+    } else if (typeof FORM_TO_SHOW !== "undefined" && FORM_TO_SHOW === 'register') {
         initialSection = registerFormSection;
     } else {
         initialSection = welcomeSection;
     }
 
-    // Ocultar todas las secciones al inicio para que JS las muestre limpiamente
+    // Ocultar todas las secciones primero
     if (welcomeSection) welcomeSection.style.display = 'none';
     if (loginFormSection) loginFormSection.style.display = 'none';
     if (registerFormSection) registerFormSection.style.display = 'none';
 
-    // Mostrar la sección inicial sin transición si es la primera carga
+    // Mostrar la sección inicial
     if (initialSection) {
         initialSection.style.display = 'block';
-        initialSection.style.opacity = '1';
-        initialSection.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            initialSection.style.opacity = '1';
+            initialSection.style.transform = 'translateY(0)';
+        }, 50);
     }
 
-    // Limpiar URL de parámetros si existen, para una experiencia más limpia
-    if (window.location.search) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    // -------- Registro --------
+// -------- Registro --------
+if (registrationForm) {
+    console.log('Formulario de registro encontrado');
+    
+    registrationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('Submit del formulario de registro');
 
-    // Manejador del formulario de Registro
-    if (registrationForm) {
-        registrationForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(registrationForm);
+        // ✅ BUSCAR CON EL ID CORRECTO (posiblemente diferente)
+        const nombreInput = document.getElementById('registerName');
+        const emailInput = document.getElementById('registerEmail');
+        const passwordInput = document.getElementById('registerPassword');
+        
+        // ✅ PRUEBA DIFERENTES VARIACIONES DEL ID
+        let confirmPasswordInput = document.getElementById('registerConfirmPassword');
+        
+        // Si no se encuentra, prueba alternativas comunes
+        if (!confirmPasswordInput) {
+            confirmPasswordInput = document.getElementById('confirmPassword');
+            console.log('Probando confirmPassword:', !!confirmPasswordInput);
+        }
+        if (!confirmPasswordInput) {
+            confirmPasswordInput = document.getElementById('password_confirmation');
+            console.log('Probando password_confirmation:', !!confirmPasswordInput);
+        }
+        if (!confirmPasswordInput) {
+            confirmPasswordInput = document.querySelector('[name="confirm_password"]');
+            console.log('Probando por name attribute:', !!confirmPasswordInput);
+        }
 
-            if (formData.get('password') !== formData.get('confirm_password')) {
-                displayMessage('Las contraseñas no coinciden.', 'danger');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
-                });
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    displayMessage(result.message, 'success');
-                    registrationForm.reset();
-                    changeSection(loginFormSection); // Redirigir al login
-                } else {
-                    displayMessage(result.message, 'danger');
-                }
-            } catch (error) {
-                console.error('Error en el registro:', error);
-                displayMessage('Hubo un problema al intentar registrarte. Inténtalo de nuevo.', 'danger');
-            }
+        console.log('Campos encontrados (por ID global):', {
+            nombre: !!nombreInput,
+            email: !!emailInput,
+            password: !!passwordInput,
+            confirmPassword: !!confirmPasswordInput
         });
-    }
 
-    // Manejador del formulario de Login - Versión corregida
+        if (!nombreInput || !emailInput || !passwordInput || !confirmPasswordInput) {
+            console.error("❌ Campos no encontrados:", {
+                nombre: nombreInput,
+                email: emailInput,
+                password: passwordInput,
+                confirmPassword: confirmPasswordInput
+            });
+            
+            // Mostrar todos los IDs disponibles para diagnóstico
+            const allInputs = document.querySelectorAll('input');
+            console.log('Todos los inputs en la página:');
+            allInputs.forEach(input => {
+                console.log('ID:', input.id, 'Name:', input.name, 'Type:', input.type);
+            });
+            
+            displayMessage("Error interno: faltan campos en el formulario.", "danger");
+            return;
+        }
+
+        const nombre = nombreInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+
+        console.log('Valores:', { nombre, email, password, confirmPassword });
+
+        // Validaciones básicas
+        if (!nombre) {
+            displayMessage("Debes ingresar tu nombre.", "danger");
+            return;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            displayMessage("Debes ingresar un email válido.", "danger");
+            return;
+        }
+        if (!password) {
+            displayMessage("Debes ingresar una contraseña.", "danger");
+            return;
+        }
+        if (password !== confirmPassword) {
+            displayMessage("Las contraseñas no coinciden.", "danger");
+            return;
+        }
+
+        try {
+            console.log('Enviando datos al servidor...');
+            const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    nombre: nombre,
+                    email: email,
+                    password: password,
+                    confirm_password: confirmPassword
+                })
+            });
+
+            console.log('Respuesta recibida:', response.status);
+            const result = await response.json();
+            console.log('Resultado:', result);
+
+            if (result.status === 'success') {
+                displayMessage(result.message, 'success');
+                registrationForm.reset();
+                setTimeout(() => {
+                    changeSection(loginFormSection);
+                }, 1500);
+            } else {
+                displayMessage(result.message, 'danger');
+            }
+        } catch (err) {
+            console.error("Error en registro:", err);
+            displayMessage("Error al conectar con el servidor.", "danger");
+        }
+    });
+}
+
+    // -------- Login --------
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -133,25 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
-                
-                // Verificar si la respuesta es JSON válido
+
                 const text = await response.text();
                 let result;
                 try {
                     result = JSON.parse(text);
                 } catch (e) {
-                    console.error('La respuesta no es JSON válido:', text);
+                    console.error('Respuesta inválida:', text);
                     throw new Error('Respuesta del servidor no válida');
                 }
 
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     loginForm.reset();
-                    window.location.href = result.data.redirect || `${BASE_URL}src/dashboard.php`;
+                    window.location.href = (result.data && result.data.redirect) 
+                        ? result.data.redirect 
+                        : `${BASE_URL}src/dashboard.php`;
                 } else {
                     displayMessage(result.message, 'danger');
                 }
@@ -162,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Manejadores de eventos para botones y enlaces
+    // -------- Botones de navegación --------
     if (showLoginFormBtn) {
         showLoginFormBtn.addEventListener('click', () => {
             changeSection(loginFormSection);
@@ -186,24 +278,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Advertencias si faltan elementos HTML importantes
-    if (!showLoginFormBtn || !welcomeSection || !loginFormSection || !registerFormSection || !showRegisterLink || !showLoginLink || !messageContainer) {
-        console.warn("Advertencia: Algunos elementos HTML necesarios no se encontraron en bienvenida.php. Las funcionalidades de cambio de formulario o mensajes podrían no operar correctamente.");
+    // Verificación final
+    const elements = {
+        showLoginFormBtn, showRegisterLink, showLoginLink,
+        welcomeSection, loginFormSection, registerFormSection,
+        loginForm, registrationForm, messageContainer
+    };
+    
+    const missingElements = Object.entries(elements)
+        .filter(([key, value]) => !value)
+        .map(([key]) => key);
+    
+    if (missingElements.length > 0) {
+        console.warn("Advertencia: faltan elementos HTML:", missingElements);
     }
-
-    // Confirmación para eliminar experiencias
-    function setupExperienceDeleteButtons() {
-        document.querySelectorAll('.delete-experience').forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (!confirm('¿Estás seguro de eliminar esta experiencia laboral?')) {
-                    e.preventDefault();
-                }
-            });
-        });
-    }
-
-    // Ejecutar cuando el DOM esté listo
-    document.addEventListener('DOMContentLoaded', function() {
-        setupExperienceDeleteButtons();
-    });
 });
