@@ -48,7 +48,7 @@ if (!defined('DB_USER')) {
     define('DB_USER', 'root');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', '');
+    define('DB_PASS', '1022114520');
 }
 
 /**
