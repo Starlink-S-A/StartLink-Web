@@ -11,11 +11,13 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
     <title>TalentLink - ¡Encuentra tu próximo empleo!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
+    <!-- Scripts de reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
         const BASE_URL = '<?php echo BASE_URL; ?>';
+        const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
     </script>
-    <!-- Agregar script de reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ"></script>
 </head>
 <body>
     <div class="video-background">
@@ -41,7 +43,7 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
 
         <div id="loginFormSection" class="section-container" style="display: <?php echo $form_to_show === 'login' ? 'block' : 'none'; ?>;">
             <h2>Iniciar Sesión</h2>
-            <form id="loginForm" class="form-container mt-4" action="<?php echo BASE_URL; ?>index.php?action=login" method="POST">
+            <form id="loginForm" class="form-container mt-4">
                 <div class="mb-3">
                     <label for="loginEmail" class="form-label">Correo electrónico</label>
                     <input type="email" class="form-control" id="loginEmail" name="email" required>
@@ -50,7 +52,7 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                     <label for="loginPassword" class="form-label">Contraseña</label>
                     <input type="password" class="form-control" id="loginPassword" name="password" required>
                 </div>
-                <!-- Campo oculto para el token de reCAPTCHA -->
+                <!-- Campo oculto para el token de reCAPTCHA v3 -->
                 <input type="hidden" id="recaptchaToken" name="recaptcha_token">
                 <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">Ingresar</button>
                 <p class="mt-3 text-center">
@@ -78,6 +80,10 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                     <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
                     <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
                 </div>
+
+                <!-- reCAPTCHA v2 para registro -->
+                <div class="g-recaptcha mb-3" data-sitekey="6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2"></div>
+
                 <button type="submit" class="btn btn-success btn-lg btn-block mt-4">Registrarse</button>
                 <p class="mt-3 text-center">
                     ¿Ya tienes cuenta? <a href="#" id="showLoginLink" class="btn-link">Inicia sesión</a>

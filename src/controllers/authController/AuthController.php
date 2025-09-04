@@ -171,67 +171,99 @@ class AuthController {
         exit;
     }
 
-    public function register() {
-        header('Content-Type: application/json');
-        $response = ['status' => 'error', 'message' => 'Ocurrió un error al registrarse.'];
+public function register() {
+    header('Content-Type: application/json');
+    $response = ['status' => 'error', 'message' => 'Ocurrió un error al registrarse.'];
 
-        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            $response['message'] = "Acceso no permitido. Este script solo acepta solicitudes POST.";
-            echo json_encode($response);
-            exit;
-        }
-
-        $input = file_get_contents('php://input');
-        $data = json_decode($input, true);
-
-        $nombre = trim($data['nombre'] ?? '');
-        $email = trim($data['email'] ?? '');
-        $password = trim($data['password'] ?? '');
-        $confirm_password = trim($data['confirm_password'] ?? '');
-        $errors = [];
-
-        if (empty($nombre)) $errors[] = "Por favor ingresa tu nombre.";
-        if (empty($email)) $errors[] = "Por favor ingresa tu email.";
-        if (empty($password)) $errors[] = "Por favor ingresa tu contraseña.";
-        if ($password !== $confirm_password) $errors[] = "Las contraseñas no coinciden.";
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "El email no es válido.";
-
-        if (empty($errors)) {
-            try {
-                $pdo = getDbConnection();
-                $stmt = $pdo->prepare("SELECT id FROM usuario WHERE email = :email");
-                $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                $stmt->execute();
-                if ($stmt->rowCount() > 0) {
-                    $errors[] = "El email ya está registrado.";
-                } else {
-                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("INSERT INTO usuario (nombre, email, contrasena_hash, id_rol, fecha_registro) VALUES (:nombre, :email, :contrasena_hash, 2, NOW())");
-                    $stmt->bindParam(':nombre', $nombre, PDO::PARAM_STR);
-                    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                    $stmt->bindParam(':contrasena_hash', $password_hash, PDO::PARAM_STR);
-                    $stmt->execute();
-
-                    $response = [
-                        'status' => 'success',
-                        'message' => "Registro exitoso. Ahora puedes iniciar sesión.",
-                        'data' => ['email' => $email]
-                    ];
-                }
-            } catch (PDOException $e) {
-                $errorMessage = $e->getMessage();
-                error_log('Error en el registro: ' . $errorMessage);
-                $response['message'] = "Error al registrar el usuario: " . $errorMessage;
-            }
-        }
-
-        if (!empty($errors)) {
-            $response['message'] = implode(" ", $errors);
-        }
-
+    if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+        $response['message'] = "Acceso no permitido. Solo solicitudes POST.";
         echo json_encode($response);
         exit;
     }
+
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    $nombre = trim($data['nombre'] ?? '');
+    $email = trim($data['email'] ?? '');
+    $password = trim($data['password'] ?? '');
+    $confirm_password = trim($data['confirm_password'] ?? '');
+    $recaptchaToken = trim($data['recaptcha_token'] ?? '');
+    $errors = [];
+
+    // Validaciones básicas
+    if (!$nombre) $errors[] = "Por favor ingresa tu nombre.";
+    if (!$email) $errors[] = "Por favor ingresa tu email.";
+    if (!$password) $errors[] = "Por favor ingresa tu contraseña.";
+    if ($password !== $confirm_password) $errors[] = "Las contraseñas no coinciden.";
+    if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "El email no es válido.";
+
+    // Validación reCAPTCHA
+    if (!$recaptchaToken) {
+        $errors[] = "Falta la validación de seguridad (reCAPTCHA).";
+    } else {
+        $secretKey = "6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH"; 
+        $verifyURL = "https://www.google.com/recaptcha/api/siteverify?" . http_build_query([
+            'secret' => $secretKey,
+            'response' => $recaptchaToken
+        ]);
+
+        $verifyResponse = @file_get_contents($verifyURL);
+        $captchaResult = json_decode($verifyResponse, true);
+
+        error_log('Token reCAPTCHA recibido: ' . $recaptchaToken);
+        error_log('Resultado verificación reCAPTCHA: ' . json_encode($captchaResult));
+
+        if (empty($captchaResult['success'])) {
+            $errors[] = "No se pudo verificar el reCAPTCHA. Inténtalo de nuevo.";
+        }
+    }
+
+    if (empty($errors)) {
+        try {
+            $pdo = getDbConnection();
+
+            // Verificar email rápido
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuario WHERE email = :email");
+            $stmt->execute([':email' => $email]);
+
+            if ($stmt->fetchColumn() > 0) {
+                $errors[] = "El email ya está registrado.";
+            } else {
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare("
+                    INSERT INTO usuario (nombre, email, contrasena_hash, id_rol, fecha_registro)
+                    VALUES (:nombre, :email, :contrasena_hash, 2, NOW())
+                ");
+                $stmt->execute([
+                    ':nombre' => $nombre,
+                    ':email' => $email,
+                    ':contrasena_hash' => $password_hash
+                ]);
+
+                $response = [
+                    'status' => 'success',
+                    'message' => "Registro exitoso. Ahora puedes iniciar sesión.",
+                    'data' => ['email' => $email]
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log('Error en el registro: ' . $e->getMessage());
+            $errors[] = "Error al registrar el usuario.";
+        }
+    }
+
+    if (!empty($errors)) {
+        $response['message'] = implode(" ", $errors);
+    }
+
+    echo json_encode($response);
+    exit;
+}
+
+
+
+
 
     public function getUserById($id) {
         try {

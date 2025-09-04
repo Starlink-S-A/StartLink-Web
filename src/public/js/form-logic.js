@@ -1,5 +1,3 @@
-// src/public/js/form-logic.js
-
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM cargado - Iniciando form-logic.js');
     
@@ -162,9 +160,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Validar reCAPTCHA
+            if (typeof grecaptcha === 'undefined') {
+                displayMessage("Error: reCAPTCHA no cargado.", "danger");
+                return;
+            }
+
+            const captchaResponse = grecaptcha.getResponse();
+            if (!captchaResponse) {
+                displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+                return;
+            }
+
+            // Mostrar mensaje de proceso
+            displayMessage("Registrando, por favor espera...", "info");
+
             try {
                 console.log('Enviando datos al servidor...');
-                const response = await fetch(`${BASE_URL}index.php?action=register`, {
+                const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -174,7 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         nombre: nombre,
                         email: email,
                         password: password,
-                        confirm_password: confirmPassword
+                        confirm_password: confirmPassword,
+                        recaptcha_token: captchaResponse
                     })
                 });
 
@@ -185,15 +199,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
+                    grecaptcha.reset();
                     setTimeout(() => {
                         changeSection(loginFormSection);
                     }, 1500);
                 } else {
                     displayMessage(result.message, 'danger');
+                    grecaptcha.reset();
                 }
             } catch (err) {
                 console.error("Error en registro:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
+                grecaptcha.reset();
             }
         });
     }
