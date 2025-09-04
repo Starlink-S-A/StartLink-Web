@@ -1,7 +1,5 @@
-// js/form-logic.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM cargado - Iniciando form-logic.js'); // DEBUG
+    console.log('DOM cargado - Iniciando form-logic.js');
     
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
@@ -62,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ✅ VERIFICACIÓN DE ELEMENTOS CON DEBUG
+    // VERIFICACIÓN DE ELEMENTOS CON DEBUG
     console.log('Elementos encontrados:', {
         showLoginFormBtn: !!showLoginFormBtn,
         showRegisterLink: !!showRegisterLink,
@@ -100,96 +98,163 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------- Registro --------
-// -------- Registro --------
-if (registrationForm) {
-    registrationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    if (registrationForm) {
+        console.log('Formulario de registro encontrado');
+        
+        registrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Submit del formulario de registro');
 
-        const nombre = document.getElementById('registerName').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const password = document.getElementById('registerPassword').value.trim();
-        const confirmPassword = document.querySelector('[name="confirm_password"]').value.trim();
+            const nombreInput = document.getElementById('registerName');
+            const emailInput = document.getElementById('registerEmail');
+            const passwordInput = document.getElementById('registerPassword');
+            let confirmPasswordInput = document.getElementById('confirmPassword');
 
-        // Validaciones básicas
-        if (!nombre || !email || !password || !confirmPassword) {
-            displayMessage("Por favor llena todos los campos.", "danger");
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            displayMessage("Las contraseñas no coinciden.", "danger");
-            return;
-        }
-
-        // Validar reCAPTCHA
-        if (typeof grecaptcha === 'undefined') {
-            displayMessage("Error: reCAPTCHA no cargado.", "danger");
-            return;
-        }
-
-        const captchaResponse = grecaptcha.getResponse();
-        if (!captchaResponse) {
-            displayMessage("Por favor confirma el reCAPTCHA.", "danger");
-            return;
-        }
-
-        // Mostrar mensaje de proceso
-        displayMessage("Registrando, por favor espera...", "info");
-
-        try {
-            const res = await fetch(`${BASE_URL}src/index.php?action=register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    nombre,
-                    email,
-                    password,
-                    confirm_password: confirmPassword,
-                    recaptcha_token: captchaResponse
-                })
+            console.log('Campos encontrados (por ID global):', {
+                nombre: !!nombreInput,
+                email: !!emailInput,
+                password: !!passwordInput,
+                confirmPassword: !!confirmPasswordInput
             });
 
-            const result = await res.json();
-            console.log('Respuesta del servidor:', result);
+            if (!nombreInput || !emailInput || !passwordInput || !confirmPasswordInput) {
+                console.error("❌ Campos no encontrados:", {
+                    nombre: nombreInput,
+                    email: emailInput,
+                    password: passwordInput,
+                    confirmPassword: confirmPasswordInput
+                });
+                
+                const allInputs = document.querySelectorAll('input');
+                console.log('Todos los inputs en la página:');
+                allInputs.forEach(input => {
+                    console.log('ID:', input.id, 'Name:', input.name, 'Type:', input.type);
+                });
+                
+                displayMessage("Error interno: faltan campos en el formulario.", "danger");
+                return;
+            }
 
-            if (result.status === 'success') {
-                displayMessage(result.message, 'success');
-                registrationForm.reset();
-                grecaptcha.reset();
-                setTimeout(() => changeSection(loginFormSection), 1500);
-            } else {
-                displayMessage(result.message || "Error en el registro.", 'danger');
+            const nombre = nombreInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+
+            console.log('Valores:', { nombre, email, password, confirmPassword });
+
+            // Validaciones básicas
+            if (!nombre) {
+                displayMessage("Debes ingresar tu nombre.", "danger");
+                return;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                displayMessage("Debes ingresar un email válido.", "danger");
+                return;
+            }
+            if (!password) {
+                displayMessage("Debes ingresar una contraseña.", "danger");
+                return;
+            }
+            if (password !== confirmPassword) {
+                displayMessage("Las contraseñas no coinciden.", "danger");
+                return;
+            }
+
+            // Validar reCAPTCHA
+            if (typeof grecaptcha === 'undefined') {
+                displayMessage("Error: reCAPTCHA no cargado.", "danger");
+                return;
+            }
+
+            const captchaResponse = grecaptcha.getResponse();
+            if (!captchaResponse) {
+                displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+                return;
+            }
+
+            // Mostrar mensaje de proceso
+            displayMessage("Registrando, por favor espera...", "info");
+
+            try {
+                console.log('Enviando datos al servidor...');
+                const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: nombre,
+                        email: email,
+                        password: password,
+                        confirm_password: confirmPassword,
+                        recaptcha_token: captchaResponse
+                    })
+                });
+
+                console.log('Respuesta recibida:', response.status);
+                const result = await response.json();
+                console.log('Resultado:', result);
+
+                if (result.status === 'success') {
+                    displayMessage(result.message, 'success');
+                    registrationForm.reset();
+                    grecaptcha.reset();
+                    setTimeout(() => {
+                        changeSection(loginFormSection);
+                    }, 1500);
+                } else {
+                    displayMessage(result.message, 'danger');
+                    grecaptcha.reset();
+                }
+            } catch (err) {
+                console.error("Error en registro:", err);
+                displayMessage("Error al conectar con el servidor.", "danger");
                 grecaptcha.reset();
             }
-        } catch (err) {
-            console.error("Error en registro:", err);
-            displayMessage("Error al conectar con el servidor.", "danger");
-            grecaptcha.reset();
-        }
-    });
-}
-
-
-
-
-
+        });
+    }
 
     // -------- Login --------
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(loginForm);
+            
+            // Obtener token de reCAPTCHA
+            let recaptchaToken;
             try {
-                const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
+                recaptchaToken = await grecaptcha.execute('6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ', {action: 'login'});
+                console.log('Token reCAPTCHA generado:', recaptchaToken);
+            } catch (error) {
+                console.error('Error al obtener token de reCAPTCHA:', error);
+                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
                     method: 'POST',
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        recaptcha_token: recaptchaToken
+                    })
                 });
 
                 const text = await response.text();
+                console.log('Respuesta del servidor (texto):', text);
+                
                 let result;
                 try {
                     result = JSON.parse(text);
+                    console.log('Respuesta del servidor (JSON):', result);
                 } catch (e) {
                     console.error('Respuesta inválida:', text);
                     throw new Error('Respuesta del servidor no válida');
@@ -198,9 +263,12 @@ if (registrationForm) {
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     loginForm.reset();
+                    localStorage.setItem('token', result.token);
+                    
+                    // Redirect to dashboard
                     window.location.href = (result.data && result.data.redirect) 
                         ? result.data.redirect 
-                        : `${BASE_URL}src/dashboard.php`;
+                        : `${BASE_URL}src/views/dashboardView/dashboard.php`;
                 } else {
                     displayMessage(result.message, 'danger');
                 }

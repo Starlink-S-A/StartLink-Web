@@ -10,7 +10,6 @@ use Firebase\JWT\Key;
 
 class AuthController {
     private $userModel;
-    const JWT_SECRET_KEY = 'tu_clave_secreta_super_segura_aqui';
 
     public function __construct() {
         $this->userModel = new User();
@@ -36,20 +35,22 @@ class AuthController {
             exit;
         }
 
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-        $email = '';
-        $password = '';
-        $errors = [];
+        // Obtener datos de entrada
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        
+        $email = trim($data['email'] ?? '');
+        $password = trim($data['password'] ?? '');
+        $recaptchaToken = $data['recaptcha_token'] ?? '';
 
-        if (strpos($contentType, 'application/json') !== false) {
-            $input = file_get_contents('php://input');
-            $data = json_decode($input, true);
-            $email = trim($data['email'] ?? '');
-            $password = trim($data['password'] ?? '');
-        } else {
-            $email = trim($_POST['email'] ?? '');
-            $password = trim($_POST['password'] ?? '');
+        // Validar reCAPTCHA
+        if (!$this->validateRecaptcha($recaptchaToken)) {
+            $response['message'] = "Error de verificación de seguridad. Por favor, inténtalo de nuevo.";
+            echo json_encode($response);
+            exit;
         }
+
+        $errors = [];
 
         if (empty($email)) $errors[] = "Por favor ingresa tu email.";
         if (empty($password)) $errors[] = "Por favor ingresa tu contraseña.";
@@ -58,6 +59,19 @@ class AuthController {
             $user = $this->userModel->getUserByEmail($email);
 
             if ($user && password_verify($password, $user['contrasena_hash'])) {
+                
+                // ✅ ESTABLECER VARIABLES DE SESIÓN - CORRECCIÓN CRÍTICA
+                $_SESSION["user_id"] = $user['id'];
+                $_SESSION["user_name"] = $user['nombre'];
+                $_SESSION["loggedin"] = true;
+                $_SESSION["id_rol"] = $user['id_rol'];
+                $_SESSION["email"] = $user['email'] ?? null;
+                $_SESSION["id_empresa"] = $user['id_empresa'] ?? null;
+                $_SESSION["id_rol_empresa"] = $user['id_rol_empresa'] ?? null;
+
+                // Guardar cambios de sesión inmediatamente
+                session_write_close();
+
                 $issuedAt = new DateTimeImmutable();
                 $expireAt = $issuedAt->modify('+60 minutes')->getTimestamp();
                 $serverName = 'http://localhost';
@@ -73,14 +87,14 @@ class AuthController {
                     'rol' => $user['id_rol']
                 ];
 
-                $token = JWT::encode($data, self::JWT_SECRET_KEY, 'HS256');
+                $token = JWT::encode($data, JWT_SECRET_KEY, 'HS256');
 
                 $response = [
                     'status' => 'success',
                     'message' => "¡Bienvenido, " . htmlspecialchars($user['nombre']) . "!",
                     'token' => $token,
                     'data' => [
-                        'redirect' => BASE_URL . 'src/dashboard.php'
+                        'redirect' => BASE_URL . 'src/views/dashboardView/dashboard.php'
                     ]
                 ];
             } else {
@@ -96,6 +110,46 @@ class AuthController {
         exit;
     }
 
+    /**
+     * Validar token de reCAPTCHA v3
+     */
+    private function validateRecaptcha($token) {
+        if (empty($token)) {
+            error_log('Token reCAPTCHA vacío');
+            return false;
+        }
+        
+        $url = 'https://www.google.com/recaptcha/api/siteverify';
+        $data = [
+            'secret' => RECAPTCHA_SECRET_KEY,
+            'response' => $token
+        ];
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        
+        if ($result === FALSE) {
+            error_log('Error al conectar con el servicio reCAPTCHA: ' . curl_error($ch));
+            curl_close($ch);
+            return false;
+        }
+        
+        curl_close($ch);
+        $response = json_decode($result, true);
+        error_log('Respuesta de reCAPTCHA: ' . print_r($response, true));
+        
+        $isValid = $response['success'] && $response['score'] >= 0.5;
+        
+        if (!$isValid) {
+            error_log('Validación reCAPTCHA fallida: ' . print_r($response, true));
+        }
+        
+        return $isValid;
+    }
+
     public function validateToken() {
         header('Content-Type: application/json');
         $response = ['status' => 'error', 'message' => 'Token no proporcionado o inválido.'];
@@ -103,7 +157,7 @@ class AuthController {
         if (isset($headers['Authorization'])) {
             $token = str_replace('Bearer ', '', $headers['Authorization']);
             try {
-                $decoded = JWT::decode($token, new Key(self::JWT_SECRET_KEY, 'HS256'));
+                $decoded = JWT::decode($token, new Key(JWT_SECRET_KEY, 'HS256'));
                 $response = [
                     'status' => 'success',
                     'message' => 'Token válido.',
@@ -233,3 +287,4 @@ public function register() {
         }
     }
 }
+?>

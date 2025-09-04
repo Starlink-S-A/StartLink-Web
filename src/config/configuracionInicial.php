@@ -31,9 +31,23 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', 'http://localhost/StartLink-Web/');
 }
 
+// Configuración de Google reCAPTCHA
+if (!defined('RECAPTCHA_SITE_KEY')) {
+    define('RECAPTCHA_SITE_KEY', '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ'); // la clave pública para el frontend
+}
+
+if (!defined('RECAPTCHA_SECRET_KEY')) {
+    define('RECAPTCHA_SECRET_KEY', '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH'); // la clave privada para el backend
+}
+
+if (!defined('JWT_SECRET_KEY')) {
+    define('JWT_SECRET_KEY', '123456789'); 
+    // ⚠️ cámbiala por algo largo y único, al menos 32 caracteres
+}
+
 // Definir la ruta raíz física del proyecto
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/prueba_registro_inicio_de_sesión/StartLink-Web/');
+    define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/StartLink-Web/');
     // Alternativa manual si falla: define('ROOT_PATH', 'C:/xampp/htdocs/prueba_registro_inicio_de_sesión/StartLink-Web/');
 }
 
