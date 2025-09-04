@@ -102,120 +102,77 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------- Registro --------
 // -------- Registro --------
 if (registrationForm) {
-    console.log('Formulario de registro encontrado');
-    
     registrationForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('Submit del formulario de registro');
 
-        // ✅ BUSCAR CON EL ID CORRECTO (posiblemente diferente)
-        const nombreInput = document.getElementById('registerName');
-        const emailInput = document.getElementById('registerEmail');
-        const passwordInput = document.getElementById('registerPassword');
-        
-        // ✅ PRUEBA DIFERENTES VARIACIONES DEL ID
-        let confirmPasswordInput = document.getElementById('registerConfirmPassword');
-        
-        // Si no se encuentra, prueba alternativas comunes
-        if (!confirmPasswordInput) {
-            confirmPasswordInput = document.getElementById('confirmPassword');
-            console.log('Probando confirmPassword:', !!confirmPasswordInput);
-        }
-        if (!confirmPasswordInput) {
-            confirmPasswordInput = document.getElementById('password_confirmation');
-            console.log('Probando password_confirmation:', !!confirmPasswordInput);
-        }
-        if (!confirmPasswordInput) {
-            confirmPasswordInput = document.querySelector('[name="confirm_password"]');
-            console.log('Probando por name attribute:', !!confirmPasswordInput);
-        }
-
-        console.log('Campos encontrados (por ID global):', {
-            nombre: !!nombreInput,
-            email: !!emailInput,
-            password: !!passwordInput,
-            confirmPassword: !!confirmPasswordInput
-        });
-
-        if (!nombreInput || !emailInput || !passwordInput || !confirmPasswordInput) {
-            console.error("❌ Campos no encontrados:", {
-                nombre: nombreInput,
-                email: emailInput,
-                password: passwordInput,
-                confirmPassword: confirmPasswordInput
-            });
-            
-            // Mostrar todos los IDs disponibles para diagnóstico
-            const allInputs = document.querySelectorAll('input');
-            console.log('Todos los inputs en la página:');
-            allInputs.forEach(input => {
-                console.log('ID:', input.id, 'Name:', input.name, 'Type:', input.type);
-            });
-            
-            displayMessage("Error interno: faltan campos en el formulario.", "danger");
-            return;
-        }
-
-        const nombre = nombreInput.value.trim();
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        const confirmPassword = confirmPasswordInput.value.trim();
-
-        console.log('Valores:', { nombre, email, password, confirmPassword });
+        const nombre = document.getElementById('registerName').value.trim();
+        const email = document.getElementById('registerEmail').value.trim();
+        const password = document.getElementById('registerPassword').value.trim();
+        const confirmPassword = document.querySelector('[name="confirm_password"]').value.trim();
 
         // Validaciones básicas
-        if (!nombre) {
-            displayMessage("Debes ingresar tu nombre.", "danger");
+        if (!nombre || !email || !password || !confirmPassword) {
+            displayMessage("Por favor llena todos los campos.", "danger");
             return;
         }
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            displayMessage("Debes ingresar un email válido.", "danger");
-            return;
-        }
-        if (!password) {
-            displayMessage("Debes ingresar una contraseña.", "danger");
-            return;
-        }
+
         if (password !== confirmPassword) {
             displayMessage("Las contraseñas no coinciden.", "danger");
             return;
         }
 
+        // Validar reCAPTCHA
+        if (typeof grecaptcha === 'undefined') {
+            displayMessage("Error: reCAPTCHA no cargado.", "danger");
+            return;
+        }
+
+        const captchaResponse = grecaptcha.getResponse();
+        if (!captchaResponse) {
+            displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+            return;
+        }
+
+        // Mostrar mensaje de proceso
+        displayMessage("Registrando, por favor espera...", "info");
+
         try {
-            console.log('Enviando datos al servidor...');
-            const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
+            const res = await fetch(`${BASE_URL}src/index.php?action=register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
-                    nombre: nombre,
-                    email: email,
-                    password: password,
-                    confirm_password: confirmPassword
+                    nombre,
+                    email,
+                    password,
+                    confirm_password: confirmPassword,
+                    recaptcha_token: captchaResponse
                 })
             });
 
-            console.log('Respuesta recibida:', response.status);
-            const result = await response.json();
-            console.log('Resultado:', result);
+            const result = await res.json();
+            console.log('Respuesta del servidor:', result);
 
             if (result.status === 'success') {
                 displayMessage(result.message, 'success');
                 registrationForm.reset();
-                setTimeout(() => {
-                    changeSection(loginFormSection);
-                }, 1500);
+                grecaptcha.reset();
+                setTimeout(() => changeSection(loginFormSection), 1500);
             } else {
-                displayMessage(result.message, 'danger');
+                displayMessage(result.message || "Error en el registro.", 'danger');
+                grecaptcha.reset();
             }
         } catch (err) {
             console.error("Error en registro:", err);
             displayMessage("Error al conectar con el servidor.", "danger");
+            grecaptcha.reset();
         }
     });
 }
+
+
+
+
+
 
     // -------- Login --------
     if (loginForm) {
