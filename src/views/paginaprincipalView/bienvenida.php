@@ -14,6 +14,8 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
     <script>
         const BASE_URL = '<?php echo BASE_URL; ?>';
     </script>
+    <!-- Agregar script de reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ"></script>
 </head>
 <body>
     <div class="video-background">
@@ -39,7 +41,7 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
 
         <div id="loginFormSection" class="section-container" style="display: <?php echo $form_to_show === 'login' ? 'block' : 'none'; ?>;">
             <h2>Iniciar Sesión</h2>
-            <form id="loginForm" class="form-container mt-4" action="<?php echo BASE_URL; ?>src/index.php?action=login" method="POST">
+            <form id="loginForm" class="form-container mt-4" action="<?php echo BASE_URL; ?>index.php?action=login" method="POST">
                 <div class="mb-3">
                     <label for="loginEmail" class="form-label">Correo electrónico</label>
                     <input type="email" class="form-control" id="loginEmail" name="email" required>
@@ -48,6 +50,8 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                     <label for="loginPassword" class="form-label">Contraseña</label>
                     <input type="password" class="form-control" id="loginPassword" name="password" required>
                 </div>
+                <!-- Campo oculto para el token de reCAPTCHA -->
+                <input type="hidden" id="recaptchaToken" name="recaptcha_token">
                 <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">Ingresar</button>
                 <p class="mt-3 text-center">
                     ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="btn-link">Regístrate aquí</a>

@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/config/configuracionInicial.php';
+require_once __DIR__ . '/../../config/configuracionInicial.php';
 
 if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
     header("Location: " . BASE_URL . "bienvenida.php");
