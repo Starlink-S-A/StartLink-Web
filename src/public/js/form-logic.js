@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
+                const response = await fetch(`${BASE_URL}src/index.php?action=login`, { // Changed to use BASE_URL
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Redirect to dashboard
                     window.location.href = (result.data && result.data.redirect) 
                         ? result.data.redirect 
-                        : `${BASE_URL}src/views/dashboardView/dashboard.php`;
+                        : `${BASE_URL}dashboard`; // Changed to MVC route
                 } else {
                     displayMessage(result.message, 'danger');
                 }
