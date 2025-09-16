@@ -8,7 +8,7 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TalentLink - ¡Encuentra tu próximo empleo!</title>
+    <title>StartLink - ¡Encuentra tu próximo empleo!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
     <!-- Scripts de reCAPTCHA -->
@@ -40,7 +40,7 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
 
         <!-- Bienvenida -->
         <div id="welcomeSection" class="section-container" style="display: <?php echo $form_to_show === 'welcome' ? 'block' : 'none'; ?>;">
-            <h1>¡Bienvenido a TalentLink!</h1>
+            <h1>¡Bienvenido a StartLink!</h1>
             <p class="lead">Conecta con tu futuro laboral ideal.</p>
             <button id="showLoginFormBtn" class="btn btn-primary btn-lg mt-3">Comenzar</button>
         </div>
