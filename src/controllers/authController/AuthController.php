@@ -1,6 +1,4 @@
 <?php
-// src/controllers/authController/AuthController.php
-
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/userController/User.php';
 require_once __DIR__ . '/../../../vendor/autoload.php';
@@ -15,6 +13,7 @@ class AuthController {
         $this->userModel = new User();
     }
 
+    // Página de bienvenida
     public function showWelcomePage($form = null, $status = null) {
         $form_to_show = $form ?: 'welcome';
         if ($status === 'success' && $form === 'register') {
@@ -25,17 +24,19 @@ class AuthController {
         require_once __DIR__ . '/../../views/paginaprincipalView/bienvenida.php';
     }
 
+    // ---------------------------
+    // 🔹 LOGIN (con JWT y reCAPTCHA)
+    // ---------------------------
     public function login() {
         header('Content-Type: application/json');
         $response = ['status' => 'error', 'message' => 'Ocurrió un error desconocido.'];
 
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            $response['message'] = "Acceso no permitido. Este script solo acepta solicitudes POST.";
+            $response['message'] = "Acceso no permitido. Solo POST.";
             echo json_encode($response);
             exit;
         }
 
-        // Obtener datos de entrada
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
         
@@ -45,13 +46,12 @@ class AuthController {
 
         // Validar reCAPTCHA
         if (!$this->validateRecaptcha($recaptchaToken)) {
-            $response['message'] = "Error de verificación de seguridad. Por favor, inténtalo de nuevo.";
+            $response['message'] = "Error de seguridad. Intenta de nuevo.";
             echo json_encode($response);
             exit;
         }
 
         $errors = [];
-
         if (empty($email)) $errors[] = "Por favor ingresa tu email.";
         if (empty($password)) $errors[] = "Por favor ingresa tu contraseña.";
 
@@ -59,35 +59,29 @@ class AuthController {
             $user = $this->userModel->getUserByEmail($email);
 
             if ($user && password_verify($password, $user['contrasena_hash'])) {
-                
-                // ✅ ESTABLECER VARIABLES DE SESIÓN - CORRECCIÓN CRÍTICA
+                // Sesión PHP
                 $_SESSION["user_id"] = $user['id'];
                 $_SESSION["user_name"] = $user['nombre'];
                 $_SESSION["loggedin"] = true;
                 $_SESSION["id_rol"] = $user['id_rol'];
-                $_SESSION["email"] = $user['email'] ?? null;
-                $_SESSION["id_empresa"] = $user['id_empresa'] ?? null;
-                $_SESSION["id_rol_empresa"] = $user['id_rol_empresa'] ?? null;
 
-                // Guardar cambios de sesión inmediatamente
-                session_write_close();
-
+                // Generar token JWT
                 $issuedAt = new DateTimeImmutable();
                 $expireAt = $issuedAt->modify('+60 minutes')->getTimestamp();
-                $serverName = 'http://localhost';
+                $serverName = BASE_URL;
 
-                $data = [
+                $payload = [
                     'iat'  => $issuedAt->getTimestamp(),
                     'iss'  => $serverName,
                     'nbf'  => $issuedAt->getTimestamp(),
                     'exp'  => $expireAt,
                     'uid'  => $user['id'],
                     'name' => $user['nombre'],
-                    'email' => $user['email'] ?? null,
-                    'rol' => $user['id_rol']
+                    'email'=> $user['email'],
+                    'rol'  => $user['id_rol']
                 ];
 
-                $token = JWT::encode($data, JWT_SECRET_KEY, 'HS256');
+                $token = JWT::encode($payload, JWT_SECRET_KEY, 'HS256');
 
                 $response = [
                     'status' => 'success',
@@ -98,7 +92,7 @@ class AuthController {
                     ]
                 ];
             } else {
-                $errors[] = $user ? "La contraseña es incorrecta." : "No se encontró ninguna cuenta con ese email.";
+                $errors[] = $user ? "La contraseña es incorrecta." : "No existe una cuenta con ese correo.";
             }
         }
 
@@ -110,50 +104,14 @@ class AuthController {
         exit;
     }
 
-    /**
-     * Validar token de reCAPTCHA v3
-     */
-    private function validateRecaptcha($token) {
-        if (empty($token)) {
-            error_log('Token reCAPTCHA vacío');
-            return false;
-        }
-        
-        $url = 'https://www.google.com/recaptcha/api/siteverify';
-        $data = [
-            'secret' => RECAPTCHA_SECRET_KEY,
-            'response' => $token
-        ];
-        
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $result = curl_exec($ch);
-        
-        if ($result === FALSE) {
-            error_log('Error al conectar con el servicio reCAPTCHA: ' . curl_error($ch));
-            curl_close($ch);
-            return false;
-        }
-        
-        curl_close($ch);
-        $response = json_decode($result, true);
-        error_log('Respuesta de reCAPTCHA: ' . print_r($response, true));
-        
-        $isValid = $response['success'] && $response['score'] >= 0.5;
-        
-        if (!$isValid) {
-            error_log('Validación reCAPTCHA fallida: ' . print_r($response, true));
-        }
-        
-        return $isValid;
-    }
-
+    // ---------------------------
+    // 🔹 Validar token
+    // ---------------------------
     public function validateToken() {
         header('Content-Type: application/json');
         $response = ['status' => 'error', 'message' => 'Token no proporcionado o inválido.'];
         $headers = getallheaders();
+
         if (isset($headers['Authorization'])) {
             $token = str_replace('Bearer ', '', $headers['Authorization']);
             try {
@@ -167,11 +125,15 @@ class AuthController {
                 $response['message'] = 'Token inválido: ' . $e->getMessage();
             }
         }
+
         echo json_encode($response);
         exit;
     }
 
-public function register() {
+    // ---------------------------
+    // 🔹 Registro
+    // ---------------------------
+   public function register() {
     header('Content-Type: application/json');
     $response = ['status' => 'error', 'message' => 'Ocurrió un error al registrarse.'];
 
@@ -261,30 +223,159 @@ public function register() {
     exit;
 }
 
+    // ---------------------------
+    // 🔹 Recuperar contraseña
+    // ---------------------------
+    public function forgotPassword() {
+    header('Content-Type: application/json');
+    $response = ['status' => 'error', 'message' => 'Ocurrió un error.'];
 
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+    $email = trim($data['email'] ?? '');
 
-
-
-    public function getUserById($id) {
-        try {
-            $user = $this->userModel->getUserById($id);
-            if ($user) {
-                return ['status' => 'success', 'data' => $user];
-            } else {
-                return ['status' => 'error', 'message' => 'Usuario no encontrado'];
-            }
-        } catch (Exception $e) {
-            return ['status' => 'error', 'message' => 'Error al consultar el usuario: ' . $e->getMessage()];
-        }
+    if (!$email) {
+        echo json_encode(['status' => 'error', 'message' => 'Debes ingresar tu correo.']);
+        exit;
     }
 
-    public function getAllUsers() {
-        try {
-            $users = $this->userModel->getAllUsers();
-            return ['status' => 'success', 'data' => $users];
-        } catch (Exception $e) {
-            return ['status' => 'error', 'message' => 'Error al consultar los usuarios: ' . $e->getMessage()];
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("SELECT id, nombre FROM usuario WHERE email = :email LIMIT 1");
+        $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            echo json_encode(['status' => 'error', 'message' => 'Correo no registrado.']);
+            exit;
         }
+
+        // Generar código de verificación (6 dígitos)
+        $resetCode = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expire = date("Y-m-d H:i:s", strtotime("+15 minutes"));
+
+        // Guardar en la base de datos
+        $update = $pdo->prepare("UPDATE usuario 
+                                 SET reset_code = :code, reset_code_expire = :expire 
+                                 WHERE id = :id");
+        $update->execute([
+            ':code' => $resetCode,
+            ':expire' => $expire,
+            ':id' => $user['id']
+        ]);
+
+        // 📧 Enviar correo con PHPMailer
+        require_once ROOT_PATH . "vendor/autoload.php";
+        $mail = new PHPMailer\PHPMailer\PHPMailer();
+
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'jguaza999@gmail.com';      
+        $mail->Password = 'vitq cwse yphr ssce';     
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+
+        // Remitente y destinatario
+        $mail->setFrom('jguaza999@gmail.com', 'TalentLink');
+        $mail->addAddress($email, $user['nombre']);
+
+        // Contenido
+        $mail->isHTML(true);
+        $mail->Subject = 'Recuperar contraseña - TalentLink';
+        $mail->Body    = "
+            <p>Hola <b>" . htmlspecialchars($user['nombre']) . "</b>,</p>
+            <p>Tu código de recuperación es: <b>$resetCode</b></p>
+            <p>Este código expira en 15 minutos.</p>
+        ";
+
+        if ($mail->send()) {
+            echo json_encode(['status' => 'success', 'message' => 'Se envió un código de recuperación a tu correo.']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo]);
+        }
+
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Error interno: ' . $e->getMessage()]);
+        exit;
+    }
+    }
+
+    // ---------------------------
+    // 🔹 Resetear contraseña
+    // ---------------------------
+    public function resetPassword() {
+        header('Content-Type: application/json');
+        $response = ['status' => 'error', 'message' => 'Error al resetear.'];
+
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+
+        $token = trim($data['token'] ?? '');
+        $newPassword = trim($data['new_password'] ?? '');
+
+        if (!$token || !$newPassword) {
+            $response['message'] = "Datos incompletos.";
+            echo json_encode($response);
+            exit;
+        }
+
+        try {
+            $pdo = getDbConnection();
+            $stmt = $pdo->prepare("SELECT id, reset_expire FROM usuario WHERE reset_code = :code LIMIT 1");
+            $stmt->execute([':code' => $token]);
+            $user = $stmt->fetch();
+
+            if (!$user) {
+                $response['message'] = "El código no es válido.";
+                echo json_encode($response);
+                exit;
+            }
+
+            if (strtotime($user['reset_expire']) < time()) {
+                $response['message'] = "El código ha expirado.";
+                echo json_encode($response);
+                exit;
+            }
+
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $update = $pdo->prepare("UPDATE usuario 
+                                    SET contrasena_hash = :password, reset_code = NULL, reset_expire = NULL 
+                                    WHERE id = :id");
+            $update->execute([
+                ':password' => $passwordHash,
+                ':id' => $user['id']
+            ]);
+
+            $response = [
+                'status' => 'success',
+                'message' => "Contraseña actualizada."
+            ];
+        } catch (Exception $e) {
+            error_log("Error resetPassword: " . $e->getMessage());
+        }
+
+        echo json_encode($response);
+        exit;
+    }
+
+    // ---------------------------
+    // 🔹 Verificación reCAPTCHA
+    // ---------------------------
+    private function validateRecaptcha($token) {
+        if (empty($token)) return false;
+
+        $url = 'https://www.google.com/recaptcha/api/siteverify';
+        $data = ['secret' => RECAPTCHA_SECRET_KEY, 'response' => $token];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        $response = json_decode($result, true);
+        return $response['success'] ?? false;
     }
 }
-?>
