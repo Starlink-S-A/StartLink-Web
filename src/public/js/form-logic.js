@@ -1,23 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos clave
+    console.log('DOM cargado - Iniciando form-logic.js');
+    
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
     const showLoginLink = document.getElementById('showLoginLink');
+    const showForgotPasswordLink = document.getElementById('showForgotPasswordLink');
 
     const welcomeSection = document.getElementById('welcomeSection');
     const loginFormSection = document.getElementById('loginFormSection');
     const registerFormSection = document.getElementById('registerFormSection');
+    const forgotPasswordSection = document.getElementById('forgotPasswordSection');
 
     const loginForm = document.getElementById('loginForm');
     const registrationForm = document.getElementById('registrationForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
 
     const messageContainer = document.getElementById('alertMessageContainer');
-
     const transitionDuration = 600;
 
-    // 🔁 Función para mostrar mensajes
+    // -------- Función para mostrar mensajes --------
     const displayMessage = (message, type) => {
-        if (!messageContainer) return;
+        if (!messageContainer) {
+            console.error('No se encontró el contenedor de mensajes');
+            return;
+        }
         messageContainer.innerHTML = `
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${message}
@@ -26,9 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // 🔄 Transición entre secciones
+    // -------- Animar cambio de secciones --------
     const changeSection = (sectionToShow) => {
-        const sections = [welcomeSection, loginFormSection, registerFormSection];
+        const sections = [
+            welcomeSection, loginFormSection,
+            registerFormSection, forgotPasswordSection
+        ];
         let currentActiveSection = null;
 
         for (const section of sections) {
@@ -56,100 +66,240 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 🧭 Mostrar sección inicial
-    const formToShowOnLoad = typeof FORM_TO_SHOW !== 'undefined' ? FORM_TO_SHOW : 'welcome';
-    let initialSection = welcomeSection;
-    if (formToShowOnLoad === 'login') initialSection = loginFormSection;
-    if (formToShowOnLoad === 'register') initialSection = registerFormSection;
+    // -------- Sección inicial --------
+    let initialSection;
+    if (typeof FORM_TO_SHOW !== "undefined" && FORM_TO_SHOW === 'login') {
+        initialSection = loginFormSection;
+    } else if (typeof FORM_TO_SHOW !== "undefined" && FORM_TO_SHOW === 'register') {
+        initialSection = registerFormSection;
+    } else {
+        initialSection = welcomeSection;
+    }
 
-    [welcomeSection, loginFormSection, registerFormSection].forEach(section => {
-        if (section) section.style.display = 'none';
-    });
+    if (welcomeSection) welcomeSection.style.display = 'none';
+    if (loginFormSection) loginFormSection.style.display = 'none';
+    if (registerFormSection) registerFormSection.style.display = 'none';
+    if (forgotPasswordSection) forgotPasswordSection.style.display = 'none';
 
     if (initialSection) {
         initialSection.style.display = 'block';
-        initialSection.style.opacity = '1';
-        initialSection.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            initialSection.style.opacity = '1';
+            initialSection.style.transform = 'translateY(0)';
+        }, 50);
     }
 
-    // 🧹 Limpiar URL
-    if (window.location.search) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    // 📝 Registro
-    if (registrationForm) {
+    // -------- Registro --------
+     if (registrationForm) {
+        console.log('Formulario de registro encontrado');
+        
         registrationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(registrationForm);
+            console.log('Submit del formulario de registro');
 
-            if (formData.get('password') !== formData.get('confirm_password')) {
-                displayMessage('Las contraseñas no coinciden.', 'danger');
+            const nombreInput = document.getElementById('registerName');
+            const emailInput = document.getElementById('registerEmail');
+            const passwordInput = document.getElementById('registerPassword');
+            let confirmPasswordInput = document.getElementById('confirmPassword');
+
+            console.log('Campos encontrados (por ID global):', {
+                nombre: !!nombreInput,
+                email: !!emailInput,
+                password: !!passwordInput,
+                confirmPassword: !!confirmPasswordInput
+            });
+
+            if (!nombreInput || !emailInput || !passwordInput || !confirmPasswordInput) {
+                console.error("❌ Campos no encontrados:", {
+                    nombre: nombreInput,
+                    email: emailInput,
+                    password: passwordInput,
+                    confirmPassword: confirmPasswordInput
+                });
+                
+                const allInputs = document.querySelectorAll('input');
+                console.log('Todos los inputs en la página:');
+                allInputs.forEach(input => {
+                    console.log('ID:', input.id, 'Name:', input.name, 'Type:', input.type);
+                });
+                
+                displayMessage("Error interno: faltan campos en el formulario.", "danger");
                 return;
             }
 
+            const nombre = nombreInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+
+            console.log('Valores:', { nombre, email, password, confirmPassword });
+
+            // Validaciones básicas
+            if (!nombre) {
+                displayMessage("Debes ingresar tu nombre.", "danger");
+                return;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                displayMessage("Debes ingresar un email válido.", "danger");
+                return;
+            }
+            if (!password) {
+                displayMessage("Debes ingresar una contraseña.", "danger");
+                return;
+            }
+            if (password !== confirmPassword) {
+                displayMessage("Las contraseñas no coinciden.", "danger");
+                return;
+            }
+
+            // Validar reCAPTCHA
+            if (typeof grecaptcha === 'undefined') {
+                displayMessage("Error: reCAPTCHA no cargado.", "danger");
+                return;
+            }
+
+            const captchaResponse = grecaptcha.getResponse();
+            if (!captchaResponse) {
+                displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+                return;
+            }
+
+            // Mostrar mensaje de proceso
+            displayMessage("Registrando, por favor espera...", "info");
+
             try {
+                console.log('Enviando datos al servidor...');
                 const response = await fetch(`${BASE_URL}src/index.php?action=register`, {
                     method: 'POST',
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: nombre,
+                        email: email,
+                        password: password,
+                        confirm_password: confirmPassword,
+                        recaptcha_token: captchaResponse
+                    })
                 });
-                const result = await response.json();
 
-                if (result.success) {
+                console.log('Respuesta recibida:', response.status);
+                const result = await response.json();
+                console.log('Resultado:', result);
+
+                if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
-                    changeSection(loginFormSection);
+                    grecaptcha.reset();
+                    setTimeout(() => {
+                        changeSection(loginFormSection);
+                    }, 1500);
                 } else {
                     displayMessage(result.message, 'danger');
-                    if (result.redirect === 'login') {
-                        changeSection(loginFormSection); // ← Redirige al login si el correo ya existe
-                    }
-}
-            } catch (error) {
-                console.error('Error en el registro:', error);
-                displayMessage('Hubo un problema al intentar registrarte. Inténtalo de nuevo.', 'danger');
+                    grecaptcha.reset();
+                }
+            } catch (err) {
+                console.error("Error en registro:", err);
+                displayMessage("Error al conectar con el servidor.", "danger");
+                grecaptcha.reset();
             }
         });
     }
 
-    // 🔐 Login
-    if (loginForm) {
+    // -------- Login --------
+   if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(loginForm);
+            
+            // Obtener token de reCAPTCHA
+            let recaptchaToken;
+            try {
+                recaptchaToken = await grecaptcha.execute('6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ', {action: 'login'});
+                console.log('Token reCAPTCHA generado:', recaptchaToken);
+            } catch (error) {
+                console.error('Error al obtener token de reCAPTCHA:', error);
+                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch(`${BASE_URL}src/index.php?action=login`, {
+                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
                     method: 'POST',
-                    body: formData,
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        recaptcha_token: recaptchaToken
+                    })
                 });
 
                 const text = await response.text();
+                console.log('Respuesta del servidor (texto):', text);
+                
                 let result;
                 try {
                     result = JSON.parse(text);
+                    console.log('Respuesta del servidor (JSON):', result);
                 } catch (e) {
-                    console.error('Respuesta no válida:', text);
+                    console.error('Respuesta inválida:', text);
                     throw new Error('Respuesta del servidor no válida');
                 }
 
-                if (result.success) {
+                if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     loginForm.reset();
-                    window.location.href = result.redirect || `${BASE_URL}src/dashboard.php`;
+                    localStorage.setItem('token', result.token);
+                    
+                    // Redirect to dashboard
+                    window.location.href = (result.data && result.data.redirect) 
+                        ? result.data.redirect 
+                        : `${BASE_URL}src/views/dashboardView/dashboard.php`;
                 } else {
                     displayMessage(result.message, 'danger');
                 }
             } catch (error) {
-                console.error('Error en el login:', error);
+                console.error('Error en el inicio de sesión:', error);
                 displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
             }
         });
     }
 
-    // 🎯 Eventos de navegación
+    // -------- Forgot Password --------
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) {
+                displayMessage("Debes ingresar tu correo.", "danger");
+                return;
+            }
+            displayMessage("Procesando solicitud...", "info");
+            try {
+                const response = await fetch(`${BASE_URL}src/index.php?action=forgotPassword`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                displayMessage(result.message, result.status === 'success' ? 'success' : 'danger');
+                if (result.status === 'success') forgotPasswordForm.reset();
+            } catch (err) {
+                console.error(err);
+                displayMessage("Error al conectar con el servidor.", "danger");
+            }
+        });
+    }
+
+   
+
+    // -------- Botones navegación --------
     if (showLoginFormBtn) {
         showLoginFormBtn.addEventListener('click', () => {
             changeSection(loginFormSection);
@@ -173,21 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🗑️ Confirmación para eliminar experiencias
-    function setupExperienceDeleteButtons() {
-        document.querySelectorAll('.delete-experience').forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (!confirm('¿Estás seguro de eliminar esta experiencia laboral?')) {
-                    e.preventDefault();
-                }
-            });
+    if (showForgotPasswordLink) {
+        showForgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            changeSection(forgotPasswordSection);
+            if (messageContainer) messageContainer.innerHTML = '';
         });
-    }
-
-    setupExperienceDeleteButtons();
-
-    // 🛑 Advertencias si faltan elementos
-    if (!showLoginFormBtn || !welcomeSection || !loginFormSection || !registerFormSection || !showRegisterLink || !showLoginLink || !messageContainer) {
-        console.warn("Advertencia: Algunos elementos HTML necesarios no se encontraron. Las funcionalidades podrían no operar correctamente.");
     }
 });
