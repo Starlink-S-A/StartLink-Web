@@ -388,6 +388,40 @@ class UserController {
                     }
                     break;
 
+                case 'change_password':
+                    $newPassword = trim($_POST['new_password'] ?? '');
+                    $confirmPassword = trim($_POST['confirm_password'] ?? '');
+
+                    if (empty($newPassword) || empty($confirmPassword)) {
+                        $errors[] = 'Los campos de contraseña son obligatorios.';
+                    }
+                    if ($newPassword !== $confirmPassword) {
+                        $errors[] = 'Las contraseñas no coinciden.';
+                    }
+                    if (strlen($newPassword) < 8) {
+                        $errors[] = 'La contraseña debe tener al menos 8 caracteres.';
+                    }
+
+                    if (empty($errors)) {
+                        try {
+                            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                            $stmt = $pdo->prepare("UPDATE USUARIO SET contrasena_hash = :contrasena_hash WHERE id = :id_usuario");
+                            $stmt->execute([
+                                ':contrasena_hash' => $passwordHash,
+                                ':id_usuario' => $userId
+                            ]);
+
+                            $_SESSION['message'] = 'Contraseña actualizada correctamente.';
+                            $_SESSION['message_type'] = 'success';
+                            header("Location: " . BASE_URL . "configurar_perfil?step=personal");
+                            exit();
+                        } catch (PDOException $e) {
+                            error_log('Error al cambiar contraseña: ' . $e->getMessage());
+                            $errors[] = 'Error al cambiar la contraseña: ' . $e->getMessage();
+                        }
+                    }
+                    break;
+
                 case 'add_experience':
                     $cargo = trim($_POST['cargo'] ?? '');
                     $empresa = trim($_POST['empresa'] ?? '');
@@ -624,6 +658,10 @@ class UserController {
             if (!empty($errors)) {
                 $message = implode(' ', $errors);
                 $message_type = 'danger';
+                $_SESSION['message'] = $message;
+                $_SESSION['message_type'] = $message_type;
+                header("Location: " . BASE_URL . "configurar_perfil?step=" . $currentStep);
+                exit();
             }
         }
 

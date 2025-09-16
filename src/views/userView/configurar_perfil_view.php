@@ -109,7 +109,35 @@
                         <input type="text" class="form-control" id="pais" name="pais" value="<?= isset($_POST['pais']) ? htmlspecialchars($_POST['pais']) : htmlspecialchars($perfilData['pais'] ?? '') ?>" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Guardar Información Personal</button>
+                    <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Cambiar Contraseña</button>
                 </form>
+            </div>
+
+            <!-- Modal para Cambiar Contraseña -->
+            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="changePasswordLabel">Cambiar Contraseña</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="changePasswordForm" action="<?= BASE_URL ?>configurar_perfil?step=personal" method="post">
+                                <input type="hidden" name="form_type" value="change_password">
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                    <small class="form-text text-muted">Debe tener al menos 8 caracteres.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         <?php elseif ($currentStep == 'experience'): ?>
             <!-- Formulario Experiencia Laboral -->
@@ -291,37 +319,6 @@
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-<script>
-    // Hacer que el clic en la imagen de perfil active el input de archivo
-    document.querySelector('.profile-picture-container').addEventListener('click', function() {
-        document.getElementById('foto_perfil').click();
-    });
-
-    // Actualizar la imagen de vista previa cuando se selecciona un nuevo archivo
-    document.getElementById('foto_perfil').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.querySelector('.profile-picture').src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Evitar clics múltiples en botones de eliminar habilidad
-    document.querySelectorAll('.skill-delete-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            if (this.classList.contains('disabled')) {
-                e.preventDefault();
-                return false;
-            }
-            this.classList.add('disabled');
-            this.style.cursor = 'not-allowed';
-            this.style.opacity = '0.6';
-            return true;
-        });
-    });
-</script>
+<script src="<?= BASE_URL ?>src/public/js/configurar_perfil.js"></script>
 </body>
 </html>
