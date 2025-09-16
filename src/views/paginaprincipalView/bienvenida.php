@@ -31,16 +31,21 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
         </video>
         <div class="video-overlay"></div>
     </div>
+
     <div class="main-content">
-        <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3" style="z-index: 1000; width: 80%; max-width: 500px;">
+        <!-- Contenedor para mensajes -->
+        <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
+             style="z-index: 1000; width: 80%; max-width: 500px;">
         </div>
 
+        <!-- Bienvenida -->
         <div id="welcomeSection" class="section-container" style="display: <?php echo $form_to_show === 'welcome' ? 'block' : 'none'; ?>;">
             <h1>¡Bienvenido a TalentLink!</h1>
             <p class="lead">Conecta con tu futuro laboral ideal.</p>
             <button id="showLoginFormBtn" class="btn btn-primary btn-lg mt-3">Comenzar</button>
         </div>
 
+        <!-- Login -->
         <div id="loginFormSection" class="section-container" style="display: <?php echo $form_to_show === 'login' ? 'block' : 'none'; ?>;">
             <h2>Iniciar Sesión</h2>
             <form id="loginForm" class="form-container mt-4">
@@ -54,13 +59,19 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                 </div>
                 <!-- Campo oculto para el token de reCAPTCHA v3 -->
                 <input type="hidden" id="recaptchaToken" name="recaptcha_token">
+
                 <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">Ingresar</button>
+
                 <p class="mt-3 text-center">
                     ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="btn-link">Regístrate aquí</a>
+                </p>
+                <p class="mt-2 text-center">
+                    <a href="#" id="showForgotPasswordLink" class="btn-link">¿Olvidaste tu contraseña?</a>
                 </p>
             </form>
         </div>
 
+        <!-- Registro -->
         <div id="registerFormSection" class="section-container" style="display: <?php echo $form_to_show === 'register' ? 'block' : 'none'; ?>;">
             <h2>Crear una Cuenta</h2>
             <form id="registrationForm" class="form-container mt-4">
@@ -90,37 +101,52 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                 </p>
             </form>
         </div>
-    </div>
+
+        <!-- Recuperar contraseña -->
+        <div id="forgotPasswordSection" class="section-container" style="display: none; opacity: 0; transform: translateY(20px);">
+            <h3 class="mb-3">Recuperar contraseña</h3>
+            <form id="forgotPasswordForm">
+                <div class="mb-3">
+                    <label for="forgotEmail" class="form-label">Correo electrónico</label>
+                    <input type="email" class="form-control" id="forgotEmail" name="forgotEmail" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Enviar enlace de recuperación</button>
+            </form>
+            <div class="mt-3 text-center">
+                <a href="#" id="backToLoginLink" class="btn-link">Volver al login</a>
+            </div>
+        </div>
+    </div> <!-- /.main-content -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo BASE_URL; ?>src/public/js/video-crossfade.js"></script>
     <script src="<?php echo BASE_URL; ?>src/public/js/form-logic.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Esta variable viene del controlador (index.php)
-            const formToShowOnLoad = "<?php echo $form_to_show; ?>";
-            const welcomeSection = document.getElementById('welcomeSection');
-            const loginFormSection = document.getElementById('loginFormSection');
-            const registerFormSection = document.getElementById('registerFormSection');
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginSection = document.getElementById("loginFormSection");
+            const forgotSection = document.getElementById("forgotPasswordSection");
+            const showForgotPasswordLink = document.getElementById("showForgotPasswordLink");
+            const backToLoginLink = document.getElementById("backToLoginLink");
 
-            // Limpia los parámetros de la URL para evitar que se refresque la página
-            if (window.location.search) {
-                window.history.replaceState({}, document.title, window.location.pathname);
+            if (showForgotPasswordLink) {
+                showForgotPasswordLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    loginSection.style.display = "none";
+                    forgotSection.style.display = "block";
+                    forgotSection.style.opacity = "1";
+                    forgotSection.style.transform = "translateY(0)";
+                });
             }
 
-            // Oculta todas las secciones inicialmente
-            welcomeSection.style.display = 'none';
-            loginFormSection.style.display = 'none';
-            registerFormSection.style.display = 'none';
-
-            // Muestra la sección correcta basándose en la variable del controlador
-            if (formToShowOnLoad === 'login') {
-                loginFormSection.style.display = 'block';
-            } else if (formToShowOnLoad === 'register') {
-                registerFormSection.style.display = 'block';
-            } else {
-                welcomeSection.style.display = 'block';
+            if (backToLoginLink) {
+                backToLoginLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    forgotSection.style.display = "none";
+                    loginSection.style.display = "block";
+                    loginSection.style.opacity = "1";
+                    loginSection.style.transform = "translateY(0)";
+                });
             }
         });
     </script>

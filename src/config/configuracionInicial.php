@@ -1,5 +1,11 @@
 <?php
-// configuraciónInicial.php
+// ===========================================
+// 📌 src/config/configuracionInicial.php
+// ===========================================
+
+// -------------------------------
+// 🔹 Funciones auxiliares de sesión
+// -------------------------------
 if (!function_exists('setTempSessionData')) {
     function setTempSessionData($key, $data) {
         $_SESSION['temp_data'][$key] = $data;
@@ -16,67 +22,65 @@ if (!function_exists('getTempSessionData')) {
     }
 }
 
-// Iniciar sesión si no está iniciada
+// -------------------------------
+// 🔹 Iniciar sesión
+// -------------------------------
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Configuración de errores para depuración (¡QUITAR O DESHABILITAR EN PRODUCCIÓN!)
+// -------------------------------
+// 🔹 Configuración de errores (solo desarrollo)
+// -------------------------------
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Definir la URL base de tu aplicación
+// -------------------------------
+// 🔹 Rutas y constantes globales
+// -------------------------------
 if (!defined('BASE_URL')) {
     define('BASE_URL', 'http://localhost/StartLink-Web/');
 }
 
-// Configuración de Google reCAPTCHA
-if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ'); // la clave pública para el frontend
-}
-
-if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH'); // la clave privada para el backend
-}
-
-if (!defined('JWT_SECRET_KEY')) {
-    define('JWT_SECRET_KEY', '123456789'); 
-    // ⚠️ cámbiala por algo largo y único, al menos 32 caracteres
-}
-
-// Definir la ruta raíz física del proyecto
 if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/StartLink-Web/');
-    // Alternativa manual si falla: define('ROOT_PATH', 'C:/xampp/htdocs/prueba_registro_inicio_de_sesión/StartLink-Web/');
 }
 
-// Configuración de la base de datos (PDO)
-if (!defined('DB_HOST')) {
-    define('DB_HOST', 'localhost');
+// -------------------------------
+// 🔹 Configuración de reCAPTCHA
+// -------------------------------
+if (!defined('RECAPTCHA_SITE_KEY')) {
+    define('RECAPTCHA_SITE_KEY', '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ'); 
 }
-if (!defined('DB_NAME')) {
-    define('DB_NAME', 'hrms_db'); // Cambia si es necesario
+if (!defined('RECAPTCHA_SECRET_KEY')) {
+    define('RECAPTCHA_SECRET_KEY', '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH'); 
 }
-if (!defined('DB_USER')) {
-    define('DB_USER', 'root');
+
+// -------------------------------
+// 🔹 Configuración de JWT
+// -------------------------------
+if (!defined('JWT_SECRET_KEY')) {
+    define('JWT_SECRET_KEY', '123456789'); // cámbiala por una más segura
 }
-if (!defined('DB_PASS')) {
-    define('DB_PASS', 'caragors1');
-}
+
+// -------------------------------
+// 🔹 Configuración de Base de Datos
+// -------------------------------
+if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
+if (!defined('DB_NAME')) define('DB_NAME', 'hrms_db');
+if (!defined('DB_USER')) define('DB_USER', 'root');
+if (!defined('DB_PASS')) define('DB_PASS', '2525Guaza');
+if (!defined('DB_PORT')) define('DB_PORT', '3307');
 
 /**
- * Función para obtener una conexión PDO a la base de datos.
- * Utiliza un patrón Singleton para evitar múltiples conexiones.
- * @return PDO La conexión PDO.
- * @throws PDOException Si la conexión a la base de datos falla.
+ * 📌 Conexión PDO Singleton
  */
 if (!function_exists('getDbConnection')) {
     function getDbConnection() {
         static $pdo = null;
-
         if ($pdo === null) {
-            $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -85,69 +89,67 @@ if (!function_exists('getDbConnection')) {
             try {
                 $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $e) {
-                error_log('Error de conexión a la base de datos: ' . $e->getMessage());
-                die('Error de conexión a la base de datos. Por favor, inténtalo más tarde. (Detalles en el log del servidor)');
+                error_log('❌ Error de conexión: ' . $e->getMessage());
+                die(json_encode([
+                    "Error" => "No se pudo conectar a la base de datos",
+                    "Detalles" => $e->getMessage()
+                ]));
             }
         }
         return $pdo;
     }
 }
 
-/**
- * Función para verificar si el perfil del usuario está completo.
- * @param int $userId El ID del usuario.
- * @return bool True si el perfil está completo, false en caso contrario.
- */
+// -------------------------------
+// 🔹 Verificar si perfil de usuario está completo
+// -------------------------------
 if (!function_exists('isProfileComplete')) {
     function isProfileComplete($userId) {
         $pdo = getDbConnection();
         try {
             $stmt = $pdo->prepare("
                 SELECT COUNT(*)
-                FROM USUARIO
+                FROM usuario
                 WHERE id = :id_usuario
-                    AND nombre IS NOT NULL AND nombre != ''
-                    AND email IS NOT NULL AND email != ''
-                    AND genero IS NOT NULL
-                    AND pais IS NOT NULL AND pais != ''
-                    AND ciudad IS NOT NULL AND ciudad != ''
-                    AND ruta_hdv IS NOT NULL AND ruta_hdv != ''
+                  AND nombre IS NOT NULL AND nombre != ''
+                  AND email IS NOT NULL AND email != ''
+                  AND genero IS NOT NULL
+                  AND pais IS NOT NULL AND pais != ''
+                  AND ciudad IS NOT NULL AND ciudad != ''
+                  AND ruta_hdv IS NOT NULL AND ruta_hdv != ''
             ");
             $stmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
             $stmt->execute();
             $perfilCompleto = $stmt->fetchColumn() > 0;
 
-            if (!$perfilCompleto) {
-                return false;
-            }
+            if (!$perfilCompleto) return false;
 
-            $stmtEstudios = $pdo->prepare("
-                SELECT COUNT(*) FROM ESTUDIO WHERE id_usuario = :id_usuario
-            ");
-            $stmtEstudios->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
-            $stmtEstudios->execute();
-            $tieneEstudios = $stmtEstudios->fetchColumn() > 0;
+            $stmtEstudios = $pdo->prepare("SELECT COUNT(*) FROM estudio WHERE id_usuario = :id_usuario");
+            $stmtEstudios->execute([':id_usuario' => $userId]);
+            if ($stmtEstudios->fetchColumn() == 0) return false;
 
-            if (!$tieneEstudios) {
-                return false;
-            }
-
-            $stmtExperiencia = $pdo->prepare("
-                SELECT COUNT(*) FROM EXPERIENCIA_LABORAL WHERE id_usuario = :id_usuario
-            ");
-            $stmtExperiencia->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
-            $stmtExperiencia->execute();
-            $tieneExperiencia = $stmtExperiencia->fetchColumn() > 0;
-
-            if (!$tieneExperiencia) {
-                return false;
-            }
+            $stmtExperiencia = $pdo->prepare("SELECT COUNT(*) FROM experiencia_laboral WHERE id_usuario = :id_usuario");
+            $stmtExperiencia->execute([':id_usuario' => $userId]);
+            if ($stmtExperiencia->fetchColumn() == 0) return false;
 
             return true;
         } catch (PDOException $e) {
-            error_log('Error al verificar perfil completo para usuario ' . $userId . ': ' . $e->getMessage());
+            error_log("❌ Error perfil usuario ($userId): " . $e->getMessage());
             return false;
         }
     }
 }
+
+// -------------------------------
+// 🔹 Configuración PHPMailer
+// -------------------------------
+require_once ROOT_PATH . "vendor/autoload.php";
+
+if (!defined('SMTP_HOST')) define('SMTP_HOST', 'smtp.gmail.com');
+if (!defined('SMTP_PORT')) define('SMTP_PORT', 587);
+if (!defined('SMTP_USER')) define('SMTP_USER', 'tu_correo@gmail.com'); // 👉 cámbialo
+if (!defined('SMTP_PASS')) define('SMTP_PASS', 'clave_app_google');   // 👉 cámbialo
+if (!defined('SMTP_FROM')) define('SMTP_FROM', 'tu_correo@gmail.com');
+if (!defined('SMTP_NAME')) define('SMTP_NAME', 'TalentLink');
+
 ?>
