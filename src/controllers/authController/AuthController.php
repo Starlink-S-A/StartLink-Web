@@ -227,6 +227,16 @@ public function register() {
     if ($password !== $confirm_password) $errors[] = "Las contraseñas no coinciden.";
     if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "El email no es válido.";
 
+    // Validación del nombre
+    if ($nombre) {
+        if (strlen($nombre) > 100) {
+            $errors[] = "El nombre no puede superar los 100 caracteres.";
+        }
+        if (!preg_match('/^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s]+$/u', $nombre)) {
+            $errors[] = "El nombre solo puede contener letras y espacios.";
+        }
+    }
+
     // Validación de contraseña segura
     if ($password) {
         if (strlen($password) < 8) {
