@@ -3,6 +3,21 @@
 
 // Lógica ya manejada en DashboardController o UserController; variables pasadas globalmente
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+// --- Cálculo de $isAdmin para controlar visibilidad del menú ---
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+
+require_once ROOT_PATH . 'src/models/rolModel/rolModel.php';
+
+// Cachea en sesión el ID de rol "admin" para no consultar DB en cada render
+$adminRoleId = $_SESSION['ADMIN_ROLE_ID'] ?? null;
+if ($adminRoleId === null) {
+    $adminRoleId = (new RolModel())->getAdminRoleId();
+    $_SESSION['ADMIN_ROLE_ID'] = $adminRoleId;
+}
+
+$userRole = $_SESSION['id_rol'] ?? null;
+$isAdmin  = $userRole && ((int)$userRole === (int)$adminRoleId);
 ?>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -12,6 +27,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Menú izquierdo -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">Dashboard</a>
@@ -27,8 +43,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 </li>
                 <?php endif; ?>
             </ul>
+
+            <!-- Menú derecho -->
             <ul class="navbar-nav">
-                <!-- Dropdown de Notificaciones (estático, sin AJAX) -->
+                <!-- Dropdown de Notificaciones -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-bell"></i>
@@ -61,6 +79,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <li><a class="dropdown-item text-center" href="<?= BASE_URL ?>notificaciones.php">Ver todas</a></li>
                     </ul>
                 </li>
+
                 <!-- Dropdown de Perfil Usuario -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="userProfileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -73,6 +92,15 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                 <i class="fas fa-user me-2"></i>Configurar Perfil
                             </a>
                         </li>
+
+                        <?php if (!empty($isAdmin) && $isAdmin): ?>
+                        <li>
+                            <a class="dropdown-item" href="<?= BASE_URL ?>src/index.php?action=gestionar_usuarios">
+                                <i class="fas fa-users-cog me-2"></i>Gestionar usuarios
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
                         <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
                         <li>
                             <a class="dropdown-item" href="<?= BASE_URL ?>mi_empresa.php">
@@ -80,6 +108,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                             </a>
                         </li>
                         <?php endif; ?>
+
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item" href="<?= BASE_URL ?>logout">

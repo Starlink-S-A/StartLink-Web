@@ -12,7 +12,7 @@ class User {
 
     public function getUserByEmail($email) {
         try {
-            $stmt = $this->pdo->prepare("SELECT id, nombre, email, contrasena_hash, id_rol FROM usuario WHERE email = :email");
+            $stmt = $this->pdo->prepare("SELECT id, nombre, email, contrasena_hash, id_rol, estado FROM usuario WHERE email = :email");
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->execute();
             
@@ -25,7 +25,7 @@ class User {
 
     public function getUserById($id) {
         try {
-            $stmt = $this->pdo->prepare("SELECT id, nombre, email, id_rol, fecha_registro FROM usuario WHERE id = :id");
+            $stmt = $this->pdo->prepare("SELECT id, nombre, email, id_rol, fecha_registro, estado FROM usuario WHERE id = :id");
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
             

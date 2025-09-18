@@ -73,7 +73,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
 <div class="container mt-4">
     <?php if ($showProfileIncompleteBanner): ?>
         <div class="alert alert-warning text-center">
-            ¡Tu perfil está incompleto! <a href="<?= BASE_URL ?>configurar_perfil.php" class="alert-link">Configúralo ahora</a>.
+            ¡Tu perfil está incompleto! <a href="<?= BASE_URL ?>configurar_perfil" class="alert-link">Configúralo ahora</a>.
         </div>
     <?php endif; ?>
 

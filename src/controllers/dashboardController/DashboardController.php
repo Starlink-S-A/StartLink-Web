@@ -1,8 +1,8 @@
 <?php
-// src/controllers/DashboardController.php
-
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/userModel/User.php'; // Asumiendo que existe
+require_once __DIR__ . '/../authController/SessionController.php';
+SessionController::enforceActive();
 
 class DashboardController {
     private $userModel;

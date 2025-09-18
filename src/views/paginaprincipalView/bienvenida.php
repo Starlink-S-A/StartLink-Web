@@ -19,6 +19,20 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
         const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
     </script>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    <?php if (!empty($_SESSION['pending_logout'])): ?>
+        Swal.fire({
+            title: 'Sesión finalizada',
+            text: 'Tu cuenta fue bloqueada. Serás redirigido al inicio.',
+            icon: 'warning',
+            confirmButtonText: 'Entendido'
+        });
+        <?php unset($_SESSION['pending_logout']); ?>
+    <?php endif; ?>
+});
+</script>
 <body>
     <div class="video-background">
         <video id="video1" class="video-layer active-video" autoplay loop muted playsinline>

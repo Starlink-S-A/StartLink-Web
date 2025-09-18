@@ -1,8 +1,8 @@
 <?php
-// src/controllers/UserController.php
-
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/userModel/User.php';
+require_once __DIR__ . '/../authController/SessionController.php';
+SessionController::enforceActive();
 
 class UserController {
     private $userModel;
@@ -12,6 +12,8 @@ class UserController {
     }
 
     public function configureProfile() {
+        $idParam = $_GET['id'] ?? null;
+        $userId = $idParam ? (int)$idParam : $_SESSION['user_id'];
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -26,7 +28,6 @@ class UserController {
         unset($_SESSION['message']);
         unset($_SESSION['message_type']);
 
-        $userId = $_SESSION['user_id'];
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['id_rol'] ?? null;
 
@@ -251,6 +252,7 @@ class UserController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors = [];
             $formType = $_POST['form_type'] ?? '';
+            $userId = isset($_POST['id_usuario']) ? (int)$_POST['id_usuario'] : $_SESSION['user_id'];
 
             switch ($formType) {
                 case 'personal_info':
@@ -327,7 +329,10 @@ class UserController {
                                     if (!empty($perfilData['foto_perfil']) && $perfilData['foto_perfil'] != 'default.jpg' && file_exists(ROOT_PATH . '/' . $perfilData['foto_perfil'])) {
                                         unlink(ROOT_PATH . '/' . $perfilData['foto_perfil']);
                                     }
-                                    $_SESSION['foto_perfil'] = $fotoPerfilPath;
+                                    // *** SOLO si el usuario editado es el mismo logueado, refrescamos su sesión visual ***
+                                    if ((int)$userId === (int)($_SESSION['user_id'] ?? 0)) {
+                                        $_SESSION['foto_perfil'] = $fotoPerfilPath;
+                                    }
                                 } else {
                                     $errors[] = 'Error al mover la foto de perfil. Verifica permisos de escritura.';
                                 }
@@ -370,8 +375,11 @@ class UserController {
                                 ':id_usuario' => $userId
                             ]);
 
-                            $_SESSION['user_name'] = $nombre;
-                            $_SESSION['user_email'] = $email;
+                            // *** SOLO si el usuario editado es el mismo logueado, refrescamos su sesión visual ***
+                            if ((int)$userId === (int)($_SESSION['user_id'] ?? 0)) {
+                                $_SESSION['user_name'] = $nombre;
+                                $_SESSION['user_email'] = $email;
+                            }
 
                             $_SESSION['message'] = 'Información personal actualizada correctamente.';
                             $_SESSION['message_type'] = 'success';

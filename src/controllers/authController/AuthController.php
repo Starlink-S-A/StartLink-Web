@@ -38,7 +38,7 @@ class AuthController {
         // Obtener datos de entrada
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
-        
+
         $email = trim($data['email'] ?? '');
         $password = trim($data['password'] ?? '');
         $recaptchaToken = $data['recaptcha_token'] ?? '';
@@ -51,7 +51,7 @@ class AuthController {
         }
 
         $errors = [];
-
+        
         if (empty($email)) $errors[] = "Por favor ingresa tu email.";
         if (empty($password)) $errors[] = "Por favor ingresa tu contraseña.";
 
@@ -59,8 +59,26 @@ class AuthController {
             $user = $this->userModel->getUserByEmail($email);
 
             if ($user && password_verify($password, $user['contrasena_hash'])) {
-                
-                // ✅ ESTABLECER VARIABLES DE SESIÓN
+
+                // 🔎 Normaliza "estado" con fallback a ACTIVO si no viene (evita falsos bloqueos)
+                $estadoRaw = isset($user['estado']) ? (string)$user['estado'] : 'ACTIVO';
+                $estado    = strtoupper(trim($estadoRaw ?: 'ACTIVO'));
+                error_log("DEBUG login: user_id=" . ($user['id'] ?? 'null') . " estado=" . $estado); // DEBUG
+
+                // 🚫 Si el usuario NO está ACTIVO, devolvemos error específico (sin tocar la sesión)
+                if ($estado !== 'ACTIVO') {
+                    $response = [
+                        'status'  => 'error',
+                        'message' => 'Tu cuenta está bloqueada. Si crees que es un error, contacta al administrador.',
+                        'blocked' => true
+                    ];
+                    echo json_encode($response);
+                    exit;
+                }
+
+                // ✅ ESTABLECER VARIABLES DE SESIÓN (solo si está ACTIVO)
+                if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
                 $_SESSION["user_id"] = $user['id'];
                 $_SESSION["user_name"] = $user['nombre'];
                 $_SESSION["loggedin"] = true;
@@ -72,7 +90,7 @@ class AuthController {
                 // Guardar cambios de sesión inmediatamente
                 session_write_close();
 
-                // Debug: Log session data to verify
+                // DEBUG: Log del estado final de sesión
                 error_log("Session after login: " . print_r($_SESSION, true));
 
                 $issuedAt = new DateTimeImmutable();
@@ -130,35 +148,35 @@ class AuthController {
             error_log('Token reCAPTCHA vacío');
             return false;
         }
-        
+
         $url = 'https://www.google.com/recaptcha/api/siteverify';
         $data = [
             'secret' => RECAPTCHA_SECRET_KEY,
             'response' => $token
         ];
-        
+
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
-        
+
         if ($result === FALSE) {
             error_log('Error al conectar con el servicio reCAPTCHA: ' . curl_error($ch));
             curl_close($ch);
             return false;
         }
-        
+
         curl_close($ch);
         $response = json_decode($result, true);
         error_log('Respuesta de reCAPTCHA: ' . print_r($response, true));
-        
+
         $isValid = $response['success'] && $response['score'] >= 0.5;
-        
+
         if (!$isValid) {
             error_log('Validación reCAPTCHA fallida: ' . print_r($response, true));
         }
-        
+
         return $isValid;
     }
 
@@ -206,7 +224,7 @@ class AuthController {
         // Validaciones básicas
         if (!$nombre) $errors[] = "Por favor ingresa tu nombre.";
         if (!$email) $errors[] = "Por favor ingresa tu email.";
-        if (!$password) $errors[] = "Por favor ingresa tu contraseña.";
+                if (!$password) $errors[] = "Por favor ingresa tu contraseña.";
         if ($password !== $confirm_password) $errors[] = "Las contraseñas no coinciden.";
         if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "El email no es válido.";
 
@@ -214,7 +232,7 @@ class AuthController {
         if (!$recaptchaToken) {
             $errors[] = "Falta la validación de seguridad (reCAPTCHA).";
         } else {
-            $secretKey = "6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH"; 
+            $secretKey = "6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH";
             $verifyURL = "https://www.google.com/recaptcha/api/siteverify?" . http_build_query([
                 'secret' => $secretKey,
                 'response' => $recaptchaToken

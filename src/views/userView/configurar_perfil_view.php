@@ -50,6 +50,7 @@
             <div class="card p-4">
                 <form action="<?= BASE_URL ?>configurar_perfil?step=personal" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="form_type" value="personal_info">
+                    <input type="hidden" name="id_usuario" value="<?= (int)$perfilData['id'] ?>">
                     <!-- Foto de Perfil -->
                     <div class="mb-3 text-center">
                         <label for="foto_perfil" class="form-label">Foto de Perfil</label>

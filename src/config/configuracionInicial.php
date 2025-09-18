@@ -62,7 +62,10 @@ if (!defined('DB_USER')) {
     define('DB_USER', 'root');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', 'caragors1');
+    define('DB_PASS', 'M1023622510');
+}
+if (!defined('DB_PORT')) {
+    define('DB_PORT', '3307');
 }
 
 /**
@@ -76,7 +79,7 @@ if (!function_exists('getDbConnection')) {
         static $pdo = null;
 
         if ($pdo === null) {
-            $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

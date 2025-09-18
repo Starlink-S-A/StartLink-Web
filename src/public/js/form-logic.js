@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             // Obtener token de reCAPTCHA
             let recaptchaToken;
             try {
@@ -227,7 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Token reCAPTCHA generado:', recaptchaToken);
             } catch (error) {
                 console.error('Error al obtener token de reCAPTCHA:', error);
-                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
+                Swal.fire({
+                icon: 'error',
+                title: 'Error de seguridad',
+                text: 'Por favor, recarga la página e intenta nuevamente.',
+                showConfirmButton: false,
+                timer: 5200,
+                timerProgressBar: true
+                });
                 return;
             }
 
@@ -250,31 +257,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const text = await response.text();
                 console.log('Respuesta del servidor (texto):', text);
-                
+
                 let result;
                 try {
                     result = JSON.parse(text);
                     console.log('Respuesta del servidor (JSON):', result);
                 } catch (e) {
                     console.error('Respuesta inválida:', text);
-                    throw new Error('Respuesta del servidor no válida');
+                    Swal.fire({
+                    icon: 'error',
+                    title: 'Error inesperado',
+                    text: 'Respuesta del servidor no válida.',
+                    showConfirmButton: false,
+                    timer: 5200,
+                    timerProgressBar: true
+                    });
+                    return;
                 }
 
                 if (result.status === 'success') {
-                    displayMessage(result.message, 'success');
-                    loginForm.reset();
-                    localStorage.setItem('token', result.token);
-                    
-                    // Redirect to dashboard
-                    window.location.href = (result.data && result.data.redirect) 
-                        ? result.data.redirect 
-                        : `${BASE_URL}dashboard`; // Changed to MVC route
+                    // Éxito -> toast y redirección
+                    Swal.fire({
+                        icon: 'success',
+                        title: result.message || '¡Bienvenido!',
+                        showConfirmButton: false,
+                        timer: 2200,
+                        timerProgressBar: true,
+                        toast: true,
+                        position: 'top-end'
+                    }).then(() => {
+                        const go = (result.data && result.data.redirect) ? result.data.redirect : `${BASE_URL}dashboard`;
+                        window.location.href = go;
+                    });
                 } else {
-                    displayMessage(result.message, 'danger');
+                    // Error -> si viene "blocked", mostrar advertencia
+                    const isBlocked = !!result.blocked;
+                    Swal.fire({
+                    icon: isBlocked ? 'warning' : 'error',
+                    title: isBlocked ? 'Cuenta bloqueada' : 'No puedes iniciar sesión',
+                    text: result.message || (isBlocked ? 'Tu cuenta está bloqueada.' : 'Correo o contraseña incorrectos.'),
+                    showConfirmButton: false,
+                    timer: 5200,
+                    timerProgressBar: true
+                    });
                 }
             } catch (error) {
                 console.error('Error en el inicio de sesión:', error);
-                displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
+                Swal.fire({
+                icon: 'error',
+                title: 'Error de red',
+                text: 'Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.',
+                showConfirmButton: false,
+                timer: 5200,
+                timerProgressBar: true
+                });
             }
         });
     }
