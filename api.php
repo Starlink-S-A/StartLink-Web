@@ -1,34 +1,53 @@
 <?php
-// api.php
+// api/auth.php
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // Para pruebas, ajusta en producción
+header('Access-Control-Allow-Origin: *'); // ⚠️ Solo para pruebas, en producción usa tu dominio
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-require_once __DIR__ . '/src/config/configuraciónInicial.php';
-require_once __DIR__ . '/src/controllers/AuthController.php';
+
+require_once __DIR__ . '/../src/config/configuraciónInicial.php';
+require_once __DIR__ . '/../src/controllers/AuthController.php';
 
 $controller = new AuthController();
 $method = $_SERVER['REQUEST_METHOD'];
-$path = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+$action = $_GET['action'] ?? null;
 
-if ($path[0] === 'api' && isset($path[1])) {
-    switch ($path[1]) {
+if ($method === 'OPTIONS') {
+    // Preflight para CORS
+    http_response_code(200);
+    exit;
+}
+
+if ($action) {
+    switch ($action) {
+        case 'requestPasswordReset':
+            $controller->forgotPassword();
+            break;
+
+        case 'verifyResetCode':
+            $controller->verifyResetCode();
+            break;
+
+        case 'resetPassword':
+            $controller->resetPassword();
+            break;
+
         case 'user':
-            if (isset($path[2]) && is_numeric($path[2])) {
-                $userId = $path[2];
-                $user = $controller->getUserById($userId);
-                echo json_encode($user);
+            if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+                $userId = (int) $_GET['id'];
+                echo json_encode($controller->getUserById($userId));
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'ID de usuario requerido']);
             }
             break;
+
         case 'users':
-            $users = $controller->getAllUsers();
-            echo json_encode($users);
+            echo json_encode($controller->getAllUsers());
             break;
+
         default:
-            echo json_encode(['status' => 'error', 'message' => 'Endpoint no válido']);
+            echo json_encode(['status' => 'error', 'message' => 'Acción no válida']);
     }
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Ruta no encontrada']);
+    echo json_encode(['status' => 'error', 'message' => 'No se especificó ninguna acción']);
 }
 exit;

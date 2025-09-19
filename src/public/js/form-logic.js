@@ -4,19 +4,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
     const showLoginLink = document.getElementById('showLoginLink');
+    const showForgotPasswordLink = document.getElementById('showForgotPasswordLink');
 
     const welcomeSection = document.getElementById('welcomeSection');
     const loginFormSection = document.getElementById('loginFormSection');
     const registerFormSection = document.getElementById('registerFormSection');
+    const forgotPasswordSection = document.getElementById('forgotPasswordSection');
 
     const loginForm = document.getElementById('loginForm');
     const registrationForm = document.getElementById('registrationForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
 
     const messageContainer = document.getElementById('alertMessageContainer');
-
     const transitionDuration = 600;
 
-    // Función para mostrar mensajes
     const displayMessage = (message, type) => {
         if (!messageContainer) {
             console.error('No se encontró el contenedor de mensajes');
@@ -30,9 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // Cambiar sección con animación
     const changeSection = (sectionToShow) => {
-        const sections = [welcomeSection, loginFormSection, registerFormSection];
+        const sections = [
+            welcomeSection, loginFormSection,
+            registerFormSection, forgotPasswordSection
+        ];
         let currentActiveSection = null;
 
         for (const section of sections) {
@@ -73,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messageContainer: !!messageContainer
     });
 
-    // Sección inicial
+    // -------- Sección inicial --------
     let initialSection;
     if (typeof FORM_TO_SHOW !== "undefined" && FORM_TO_SHOW === 'login') {
         initialSection = loginFormSection;
@@ -83,12 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initialSection = welcomeSection;
     }
 
-    // Ocultar todas las secciones primero
     if (welcomeSection) welcomeSection.style.display = 'none';
     if (loginFormSection) loginFormSection.style.display = 'none';
     if (registerFormSection) registerFormSection.style.display = 'none';
+    if (forgotPasswordSection) forgotPasswordSection.style.display = 'none';
 
-    // Mostrar la sección inicial
     if (initialSection) {
         initialSection.style.display = 'block';
         setTimeout(() => {
@@ -98,7 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------- Registro --------
-    if (registrationForm) {
+     if (registrationForm) {
+
         console.log('Formulario de registro encontrado');
         
         registrationForm.addEventListener('submit', async (e) => {
@@ -216,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------- Login --------
-    if (loginForm) {
+if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            
             // Obtener token de reCAPTCHA
             let recaptchaToken;
             try {
@@ -227,14 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Token reCAPTCHA generado:', recaptchaToken);
             } catch (error) {
                 console.error('Error al obtener token de reCAPTCHA:', error);
-                Swal.fire({
-                icon: 'error',
-                title: 'Error de seguridad',
-                text: 'Por favor, recarga la página e intenta nuevamente.',
-                showConfirmButton: false,
-                timer: 5200,
-                timerProgressBar: true
-                });
+                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
                 return;
             }
 
@@ -242,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch(`${BASE_URL}src/index.php?action=login`, { // Changed to use BASE_URL
+                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -257,65 +254,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const text = await response.text();
                 console.log('Respuesta del servidor (texto):', text);
-
+                
                 let result;
                 try {
                     result = JSON.parse(text);
                     console.log('Respuesta del servidor (JSON):', result);
                 } catch (e) {
                     console.error('Respuesta inválida:', text);
-                    Swal.fire({
-                    icon: 'error',
-                    title: 'Error inesperado',
-                    text: 'Respuesta del servidor no válida.',
-                    showConfirmButton: false,
-                    timer: 5200,
-                    timerProgressBar: true
-                    });
-                    return;
+                    throw new Error('Respuesta del servidor no válida');
                 }
 
                 if (result.status === 'success') {
-                    // Éxito -> toast y redirección
-                    Swal.fire({
-                        icon: 'success',
-                        title: result.message || '¡Bienvenido!',
-                        showConfirmButton: false,
-                        timer: 2200,
-                        timerProgressBar: true,
-                        toast: true,
-                        position: 'top-end'
-                    }).then(() => {
-                        const go = (result.data && result.data.redirect) ? result.data.redirect : `${BASE_URL}dashboard`;
-                        window.location.href = go;
-                    });
+                    displayMessage(result.message, 'success');
+                    loginForm.reset();
+                    localStorage.setItem('token', result.token);
+                    
+                    // Redirect to dashboard
+                    window.location.href = (result.data && result.data.redirect) 
+                        ? result.data.redirect 
+                        : `${BASE_URL}src/views/dashboardView/dashboard.php`;
                 } else {
-                    // Error -> si viene "blocked", mostrar advertencia
-                    const isBlocked = !!result.blocked;
-                    Swal.fire({
-                    icon: isBlocked ? 'warning' : 'error',
-                    title: isBlocked ? 'Cuenta bloqueada' : 'No puedes iniciar sesión',
-                    text: result.message || (isBlocked ? 'Tu cuenta está bloqueada.' : 'Correo o contraseña incorrectos.'),
-                    showConfirmButton: false,
-                    timer: 5200,
-                    timerProgressBar: true
-                    });
+                    displayMessage(result.message, 'danger');
                 }
             } catch (error) {
                 console.error('Error en el inicio de sesión:', error);
-                Swal.fire({
-                icon: 'error',
-                title: 'Error de red',
-                text: 'Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.',
-                showConfirmButton: false,
-                timer: 5200,
-                timerProgressBar: true
-                });
+                displayMessage('Hubo un problema al intentar iniciar sesión. Inténtalo de nuevo.', 'danger');
             }
         });
     }
 
-    // -------- Botones de navegación --------
+    // -------- Forgot Password --------
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) {
+                displayMessage("Debes ingresar tu correo.", "danger");
+                return;
+            }
+            displayMessage("Procesando solicitud...", "info");
+            try {
+                const response = await fetch(`${BASE_URL}src/index.php?action=forgotPassword`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                displayMessage(result.message, result.status === 'success' ? 'success' : 'danger');
+                if (result.status === 'success') forgotPasswordForm.reset();
+            } catch (err) {
+                console.error(err);
+                displayMessage("Error al conectar con el servidor.", "danger");
+            }
+        });
+    }
+
+
+    // -------- Botones navegación --------
     if (showLoginFormBtn) {
         showLoginFormBtn.addEventListener('click', () => {
             changeSection(loginFormSection);
@@ -354,3 +349,4 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Advertencia: faltan elementos HTML:", missingElements);
     }
 });
+

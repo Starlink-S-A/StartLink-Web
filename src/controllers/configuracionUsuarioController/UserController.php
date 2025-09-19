@@ -14,6 +14,7 @@ class UserController {
     public function configureProfile() {
         $idParam = $_GET['id'] ?? null;
         $userId = $idParam ? (int)$idParam : $_SESSION['user_id'];
+
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -28,6 +29,8 @@ class UserController {
         unset($_SESSION['message']);
         unset($_SESSION['message_type']);
 
+
+        $userId = $_SESSION['user_id'];
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRole = $_SESSION['id_rol'] ?? null;
 
@@ -252,6 +255,7 @@ class UserController {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors = [];
             $formType = $_POST['form_type'] ?? '';
+
             $userId = isset($_POST['id_usuario']) ? (int)$_POST['id_usuario'] : $_SESSION['user_id'];
 
             switch ($formType) {
@@ -329,10 +333,13 @@ class UserController {
                                     if (!empty($perfilData['foto_perfil']) && $perfilData['foto_perfil'] != 'default.jpg' && file_exists(ROOT_PATH . '/' . $perfilData['foto_perfil'])) {
                                         unlink(ROOT_PATH . '/' . $perfilData['foto_perfil']);
                                     }
+
                                     // *** SOLO si el usuario editado es el mismo logueado, refrescamos su sesión visual ***
                                     if ((int)$userId === (int)($_SESSION['user_id'] ?? 0)) {
                                         $_SESSION['foto_perfil'] = $fotoPerfilPath;
                                     }
+
+                                    $_SESSION['foto_perfil'] = $fotoPerfilPath;
                                 } else {
                                     $errors[] = 'Error al mover la foto de perfil. Verifica permisos de escritura.';
                                 }
@@ -375,6 +382,7 @@ class UserController {
                                 ':id_usuario' => $userId
                             ]);
 
+
                             // *** SOLO si el usuario editado es el mismo logueado, refrescamos su sesión visual ***
                             if ((int)$userId === (int)($_SESSION['user_id'] ?? 0)) {
                                 $_SESSION['user_name'] = $nombre;
@@ -392,6 +400,40 @@ class UserController {
                             } else {
                                 $errors[] = 'Error al guardar la información personal: ' . $e->getMessage();
                             }
+                        }
+                    }
+                    break;
+
+                case 'change_password':
+                    $newPassword = trim($_POST['new_password'] ?? '');
+                    $confirmPassword = trim($_POST['confirm_password'] ?? '');
+
+                    if (empty($newPassword) || empty($confirmPassword)) {
+                        $errors[] = 'Los campos de contraseña son obligatorios.';
+                    }
+                    if ($newPassword !== $confirmPassword) {
+                        $errors[] = 'Las contraseñas no coinciden.';
+                    }
+                    if (strlen($newPassword) < 8) {
+                        $errors[] = 'La contraseña debe tener al menos 8 caracteres.';
+                    }
+
+                    if (empty($errors)) {
+                        try {
+                            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                            $stmt = $pdo->prepare("UPDATE USUARIO SET contrasena_hash = :contrasena_hash WHERE id = :id_usuario");
+                            $stmt->execute([
+                                ':contrasena_hash' => $passwordHash,
+                                ':id_usuario' => $userId
+                            ]);
+
+                            $_SESSION['message'] = 'Contraseña actualizada correctamente.';
+                            $_SESSION['message_type'] = 'success';
+                            header("Location: " . BASE_URL . "configurar_perfil?step=personal");
+                            exit();
+                        } catch (PDOException $e) {
+                            error_log('Error al cambiar contraseña: ' . $e->getMessage());
+                            $errors[] = 'Error al cambiar la contraseña: ' . $e->getMessage();
                         }
                     }
                     break;
@@ -632,6 +674,11 @@ class UserController {
             if (!empty($errors)) {
                 $message = implode(' ', $errors);
                 $message_type = 'danger';
+                $_SESSION['message'] = $message;
+                $_SESSION['message_type'] = $message_type;
+                header("Location: " . BASE_URL . "configurar_perfil?step=" . $currentStep);
+                exit();
+
             }
         }
 

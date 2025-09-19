@@ -12,11 +12,21 @@ switch ($action) {
         $controller = new AuthController();
         $controller->login();
         break;
+
     case 'register':
         $controller = new AuthController();
         $controller->register();
         break;
-    case 'dashboard':
+    case 'forgotPassword':   // ✅ Solicitar enlace de recuperación
+        $controller = new AuthController();
+        $controller->forgotPassword();
+        break;
+
+    case 'resetPassword':    // ✅ Restablecer la contraseña con token
+        $controller = new AuthController();
+        $controller->resetPassword();
+        break;
+       case 'dashboard':
         $controller = new DashboardController();
         $controller->showDashboard();
         break;
@@ -28,12 +38,9 @@ switch ($action) {
         $controller = new AuthController();
         $controller->logout();
         break;
+
     case 'gestionar_usuarios':
         require_once __DIR__ . '/controllers/controller_gest_u/controller_gest_u.php';
-        break;
-    case 'gestionar_usuarios':
-    // Si quieres que el RolController también cargue la vista:
-        (new RolController())->index();
         break;
     case 'actualizar_rol':
         (new RolController())->updateUserRole();
