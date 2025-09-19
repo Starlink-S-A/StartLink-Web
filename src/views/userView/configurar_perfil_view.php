@@ -83,8 +83,8 @@
                     </div>
                     <!-- DNI -->
                     <div class="mb-3">
-                        <label for="DNI" class="form-label">DNI</label>
-                        <input type="text" class="form-control" id="DNI" name="DNI" value="<?= isset($_POST['DNI']) ? htmlspecialchars($_POST['DNI']) : htmlspecialchars($perfilData['DNI'] ?? '') ?>" maxlength="12" pattern="[0-9]{8,12}" title="El DNI debe contener entre 8 y 12 dígitos numéricos.">
+                        <label for="DNI" class="form-label">DNI <span class="text-danger">*</label>
+                        <input type="text" class="form-control" id="DNI" name="DNI" value="<?= isset($_POST['DNI']) ? htmlspecialchars($_POST['DNI']) : htmlspecialchars($perfilData['DNI'] ?? '') ?>" maxlength="12" pattern="[0-9]{8,12}" title="El DNI debe contener entre 8 y 12 dígitos numéricos." required>
                         <small class="form-text text-muted">Debe contener entre 8 y 12 dígitos numéricos.</small>
                     </div>
                     <!-- Teléfono -->
@@ -100,8 +100,8 @@
                     </div>
                     <!-- Departamento -->
                     <div class="mb-3">
-                        <label for="departamento" class="form-label">Departamento</label>
-                        <input type="text" class="form-control" id="departamento" name="departamento" value="<?= isset($_POST['departamento']) ? htmlspecialchars($_POST['departamento']) : htmlspecialchars($perfilData['departamento'] ?? '') ?>">
+                        <label for="departamento" class="form-label">Departamento <span class="text-danger">*</label>
+                        <input type="text" class="form-control" id="departamento" name="departamento" value="<?= isset($_POST['departamento']) ? htmlspecialchars($_POST['departamento']) : htmlspecialchars($perfilData['departamento'] ?? '') ?>" required>
                     </div>
                     <!-- País -->
                     <div class="mb-3">
