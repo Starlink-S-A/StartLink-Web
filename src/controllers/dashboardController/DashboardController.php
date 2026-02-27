@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/userModel/User.php'; // Asumiendo que existe
+require_once __DIR__ . '/../ofertasController/ofertasController.php';
 
 class DashboardController {
     private $userModel;
@@ -142,6 +143,12 @@ class DashboardController {
         }
 
         require_once __DIR__ . '/../../views/dashboardView/dashboard_view.php';
+    }
+
+    public function showOfertas() {
+        // Delegar a OfertasController
+        $ofertasController = new OfertasController();
+        $ofertasController->showOfertas();
     }
 
     private function isProfileComplete($userId) {

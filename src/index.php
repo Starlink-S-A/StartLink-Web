@@ -41,6 +41,16 @@ switch ($action) {
         $controller = new AuthController();
         $controller->logout();
         break;
+    case 'ofertas':
+        $controller = new DashboardController();
+        $controller->showOfertas();
+        break;
+
+    case 'crearEmpresa':
+        require_once __DIR__ . '/controllers/empresasController/EmpresasController.php';
+        $controller = new EmpresasController();
+        $controller->create();
+        break;
 
     default:
         $controller = new AuthController();

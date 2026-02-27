@@ -61,7 +61,7 @@ if (!defined('RECAPTCHA_SECRET_KEY')) {
 // 🔹 Configuración de JWT
 // -------------------------------
 if (!defined('JWT_SECRET_KEY')) {
-    define('JWT_SECRET_KEY', '123456789'); // cámbiala por una más segura
+    define('JWT_SECRET_KEY', 'StartLink_JWT_Secret_Key_2024_With_More_Than_32_Characters_For_SecurityHS256');
 }
 
 // -------------------------------
@@ -70,7 +70,7 @@ if (!defined('JWT_SECRET_KEY')) {
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
 if (!defined('DB_NAME')) define('DB_NAME', 'hrms_db');
 if (!defined('DB_USER')) define('DB_USER', 'root');
-if (!defined('DB_PASS')) define('DB_PASS', '1022114520');
+if (!defined('DB_PASS')) define('DB_PASS', 'caragors1');
 if (!defined('DB_PORT')) define('DB_PORT', '3306');
 
 /**

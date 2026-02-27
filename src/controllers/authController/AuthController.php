@@ -1,7 +1,10 @@
 <?php
+// 1. Subimos 3 niveles para llegar a la raíz y entrar a vendor
+require_once __DIR__ . '/../../../vendor/autoload.php';
+
+// 2. Ajustamos las rutas de tus otros archivos (suponiendo que están en src/config y src/models)
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/userModel/User.php';
-require_once __DIR__ . '/../../../vendor/autoload.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;

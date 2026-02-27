@@ -7,7 +7,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="<?= BASE_URL ?>dashboard">Startlink</a>
+        <a class="navbar-brand" href="<?= BASE_URL ?>dashboard">StartLink</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -16,9 +16,15 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a class="nav-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">Dashboard</a>
                 </li>
+                <li>
+                    <a class="nav-link <?= $currentPage == 'ofertas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>ofertas">Ofertas</a>
+                </li>
                 <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= BASE_URL ?>perfiles_candidatos.php">Publicar Mi Perfil</a>
+                </li>
+                <li>
+                    <a href="nav_link"></a>
                 </li>
                 <?php endif; ?>
                 <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
@@ -26,6 +32,9 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <a class="nav-link" href="<?= BASE_URL ?>mi_empresa.php">Mi Empresa</a>
                 </li>
                 <?php endif; ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">Crear Empresa</a>
+                </li>
             </ul>
             <ul class="navbar-nav">
                 <!-- Dropdown de Notificaciones (estático, sin AJAX) -->
