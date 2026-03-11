@@ -194,7 +194,7 @@
 <div class="modal fade" id="modalCrearOferta" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <form method="POST" action="<?= BASE_URL ?>crear_oferta.php" id="formCrearOferta">
+            <form method="POST" action="<?= BASE_URL ?>index.php?action=crear_oferta" id="formCrearOferta">
                 <input type="hidden" name="crear_oferta" value="1">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -202,7 +202,7 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <div class="mb-3">
                         <label class="form-label">Título de la oferta:</label>
                         <input type="text" name="titulo" class="form-control" required minlength="5" maxlength="255"
@@ -272,27 +272,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// Validación del formulario de creación
-document.getElementById('formCrearOferta')?.addEventListener('submit', function(e) {
-    const presupuestoMin = parseFloat(this.elements['presupuesto_min'].value);
-    const presupuestoMax = parseFloat(this.elements['presupuesto_max'].value);
-    
-    if (presupuestoMin > presupuestoMax) {
-        alert('El presupuesto mínimo no puede ser mayor que el máximo');
-        e.preventDefault();
-        return;
-    }
-    
-    const fechaCierre = new Date(this.elements['fecha_cierre'].value);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    if (fechaCierre < hoy) {
-        alert('La fecha de cierre no puede ser anterior a hoy');
-        e.preventDefault();
-    }
-});
-</script>
+<script src="<?= BASE_URL ?>src/public/js/ofertas.js"></script>
 </body>
 </html>

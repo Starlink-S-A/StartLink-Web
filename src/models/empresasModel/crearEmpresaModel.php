@@ -1,8 +1,8 @@
 <?php
 // src/models/empresasModel/crearEmpresaModel/crearEmpresaModel.php
 
-require_once __DIR__ . '/../../../config/configuracionInicial.php';
-require_once __DIR__ . '/../../userModel/User.php';
+require_once __DIR__ . '/../../config/configuracionInicial.php';
+require_once __DIR__ . '/../userModel/User.php';
 
 class EmpresasModel {
     private $pdo;
@@ -87,5 +87,7 @@ class EmpresasModel {
     public function updateUserRoleGlobal($userId, $rolGlobal) {
         return $this->userModel->updateUser($userId, ['id_rol' => $rolGlobal]);
     }
+
+
 }
 ?>

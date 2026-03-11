@@ -1,0 +1,52 @@
+    
+body { background-color: #f8f9fa; }
+        
+/* Estilos de las tarjetas de empresa */
+.empresa-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    height: 100%;
+}
+        
+.empresa-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+}
+
+.empresa-logo-container {
+    height: 140px;
+    background-color: #f1f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 20px;
+}
+
+.empresa-logo {
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: contain;
+}
+
+.empresa-icon-placeholder {
+    font-size: 3.5rem;
+    color: #adb5bd;
+}
+
+.empresa-card-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.empresa-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}

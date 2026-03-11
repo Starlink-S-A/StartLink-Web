@@ -36,6 +36,9 @@ class OfertasController {
         $rolGlobal = $_SESSION['id_rol'] ?? null;
         $esContratador = in_array($rolEmpresa, [1, 2]);
         $esUsuario = ($rolGlobal == 2);
+        
+        // Determinar si es administrador de empresa para el navbar
+        $esAdminEmpresa = in_array($rolEmpresa, [1, 2]);
 
         $mensaje = '';
         $ofertas = [];
@@ -62,8 +65,8 @@ class OfertasController {
 
                 // Preparar URL del logo
                 $ofertaEnriquecida['logoEmpresa'] = !empty($oferta['logo_ruta']) 
-                    ? BASE_URL . 'assets/images/uploads/logos_empresa/' . htmlspecialchars($oferta['logo_ruta']) 
-                    : BASE_URL . 'assets/images/uploads/logos_empresa/default_logo.png';
+                    ? BASE_URL . 'assets/images/Uploads/logos_empresa/' . htmlspecialchars($oferta['logo_ruta']) 
+                    : BASE_URL . 'assets/images/Uploads/logos_empresa/default_logo.png';
 
                 $ofertasConInfo[] = $ofertaEnriquecida;
             }
@@ -76,6 +79,52 @@ class OfertasController {
 
         // Variables para la vista
         $ofertas = $ofertasConInfo;
+
+        // Variables para el navbar
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
+        $defaultImage = 'https://static.thenounproject.com/png/4154905-200.png';
+        $profileImage = $defaultImage;
+        if (!empty($_SESSION['foto_perfil'])) {
+            $rutaAbsoluta = ROOT_PATH . '/assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
+            $rutaPublica  = BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
+            if (file_exists($rutaAbsoluta)) {
+                $profileImage = $rutaPublica;
+            }
+        }
+        $latestNotifications = [];
+        $unreadNotificationsCount = 0;
+
+        try {
+            $db = getDbConnection();
+            if ($db instanceof PDO) {
+                $stmtNotif = $db->prepare(
+                    "SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion
+                     FROM NOTIFICACIONES
+                     WHERE user_id = ?
+                     ORDER BY fecha_creacion DESC
+                     LIMIT 10"
+                );
+                $stmtNotif->execute([$userId]);
+                while ($row = $stmtNotif->fetch(PDO::FETCH_ASSOC)) {
+                    if (empty($row['icono'])) {
+                        switch ($row['tipo']) {
+                            case 'success': $row['icono'] = 'fas fa-check-circle text-success'; break;
+                            case 'warning': $row['icono'] = 'fas fa-exclamation-triangle text-warning'; break;
+                            case 'error':   $row['icono'] = 'fas fa-times-circle text-danger'; break;
+                            default:        $row['icono'] = 'fas fa-info-circle text-info'; break;
+                        }
+                    } elseif (strpos($row['icono'], 'text-') === false) {
+                        $row['icono'] .= ' text-primary';
+                    }
+                    $latestNotifications[] = $row;
+                    if (!$row['leida']) {
+                        $unreadNotificationsCount++;
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Error al obtener notificaciones en ofertas: " . $e->getMessage());
+        }
 
         // Cargar la vista
         require_once __DIR__ . '/../../views/ofertasView/ofertas_view.php';
@@ -97,12 +146,14 @@ class OfertasController {
         // Validar que sea contratador
         $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
         if (!in_array($rolEmpresa, [1, 2])) {
-            $this->respondJson(['status' => 'error', 'message' => 'No tienes permisos para crear ofertas']);
+            $_SESSION['mensaje'] = 'No tienes permisos para crear ofertas';
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
             exit();
         }
 
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            $this->respondJson(['status' => 'error', 'message' => 'Método HTTP no permitido']);
+            $_SESSION['mensaje'] = 'Método no permitido';
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
             exit();
         }
 
@@ -121,14 +172,13 @@ class OfertasController {
                 'id_creador_oferta' => $_SESSION['user_id']
             ];
 
-            // Validaciones
             $errores = $this->validarOferta($data);
             if (!empty($errores)) {
-                $this->respondJson(['status' => 'error', 'message' => implode(', ', $errores)]);
+                $_SESSION['mensaje'] = implode(', ', $errores);
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
                 exit();
             }
 
-            // Crear oferta
             $id_oferta = $this->ofertasModel->createOferta($data);
             
             if (!$id_oferta) {
@@ -136,15 +186,14 @@ class OfertasController {
             }
 
             $_SESSION['mensaje'] = "Oferta creada exitosamente";
-            $this->respondJson([
-                'status' => 'success',
-                'message' => 'Oferta creada exitosamente',
-                'id_oferta' => $id_oferta
-            ]);
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
 
         } catch (Exception $e) {
             error_log("Error al crear oferta: " . $e->getMessage());
-            $this->respondJson(['status' => 'error', 'message' => 'Error al crear la oferta']);
+            $_SESSION['mensaje'] = 'Error al crear la oferta: ' . escapeshellarg($e->getMessage());
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
         }
     }
 

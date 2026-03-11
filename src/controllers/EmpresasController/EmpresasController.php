@@ -2,7 +2,7 @@
 // src/controllers/empresasController/EmpresasController.php
 
 require_once __DIR__ . '/../../config/configuracionInicial.php';
-require_once __DIR__ . '/../../models/empresasModel/crearEmpresaModel/crearEmpresaModel.php';
+require_once __DIR__ . '/../../models/empresasModel/crearEmpresaModel.php';
 
 class EmpresasController {
     private $model;
@@ -68,7 +68,7 @@ class EmpresasController {
 
             // manejar logo
             if (empty($errors) && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = ROOT_PATH . 'uploads/logos_empresa/';
+                $uploadDir = ROOT_PATH . 'assets/images/Uploads/logos_empresa/';
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
@@ -116,8 +116,26 @@ class EmpresasController {
         $esContratador = false; // se calcula en vista si es necesario
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $userRoleGlobal = $_SESSION['id_rol'] ?? 2;
+        $userRolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
+        
+        // Determinar si es administrador de empresa para el navbar
+        $esAdminEmpresa = in_array($userRolEmpresa, [1, 2]);
 
-        require_once __DIR__ . '/../../views/CrearEmpresasView/crearEmpresa_view.php';
+        $defaultImage = 'https://static.thenounproject.com/png/4154905-200.png';
+        $profileImage = $defaultImage;
+        if (!empty($_SESSION['foto_perfil'])) {
+            $rutaAbsoluta = ROOT_PATH . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
+            $rutaPublica  = BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
+            if (file_exists($rutaAbsoluta)) {
+                $profileImage = $rutaPublica;
+            }
+        }
+
+        $unreadNotificationsCount = 0;
+
+        require_once __DIR__ . '/../../views/EmpresasView/crearEmpresa_view.php';
     }
+
+
 }
 ?>
