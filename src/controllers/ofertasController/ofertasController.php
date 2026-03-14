@@ -82,24 +82,22 @@ class OfertasController {
 
         // Variables para el navbar
         $userName = $_SESSION['user_name'] ?? 'Usuario';
-        $defaultImage = 'https://static.thenounproject.com/png/4154905-200.png';
-        $profileImage = $defaultImage;
-        if (!empty($_SESSION['foto_perfil'])) {
-            $rutaAbsoluta = ROOT_PATH . '/assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-            $rutaPublica  = BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-            if (file_exists($rutaAbsoluta)) {
-                $profileImage = $rutaPublica;
-            }
-        }
+        $dbFotoPerfil = null;
         $latestNotifications = [];
         $unreadNotificationsCount = 0;
 
         try {
             $db = getDbConnection();
             if ($db instanceof PDO) {
+                // Obtener datos del usuario (para el navbar)
+                $stmtUser = $db->prepare("SELECT foto_perfil FROM usuario WHERE id = ?");
+                $stmtUser->execute([$userId]);
+                $dbFotoPerfil = $stmtUser->fetchColumn();
+
+                // Notificaciones
                 $stmtNotif = $db->prepare(
                     "SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion
-                     FROM NOTIFICACIONES
+                     FROM notificaciones
                      WHERE user_id = ?
                      ORDER BY fecha_creacion DESC
                      LIMIT 10"
@@ -124,6 +122,27 @@ class OfertasController {
             }
         } catch (PDOException $e) {
             error_log("Error al obtener notificaciones en ofertas: " . $e->getMessage());
+        }
+
+        // --- LOGICA DE RESOLUCION DE IMAGEN DE PERFIL (Consistente con misEmpresasController) ---
+        $profileImage = 'https://static.thenounproject.com/png/4154905-200.png';
+
+        // 1. Prioridad: Sesión | 2. Fallback: Base de Datos
+        $fotoPath = !empty($_SESSION['foto_perfil']) ? $_SESSION['foto_perfil'] : ($dbFotoPerfil ?? null);
+
+        if (!empty($fotoPath)) {
+            $nombreArchivo = basename($fotoPath);
+            // Normalizar rutas usando DIRECTORY_SEPARATOR para file_exists
+            $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . $nombreArchivo;
+            $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+
+            if (file_exists($rutaAbsoluta)) {
+                $profileImage = $rutaPublica;
+                // Sincronizar sesión si vino de la BD
+                if (empty($_SESSION['foto_perfil'])) {
+                    $_SESSION['foto_perfil'] = 'assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+                }
+            }
         }
 
         // Cargar la vista

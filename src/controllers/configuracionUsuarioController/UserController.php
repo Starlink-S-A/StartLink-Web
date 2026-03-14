@@ -45,13 +45,13 @@ class UserController {
             } else {
                 try {
                     // Buscar id_habilidad
-                    $stmt = $pdo->prepare("SELECT id_habilidad FROM HABILIDAD WHERE nombre_habilidad = :nombre_habilidad");
+                    $stmt = $pdo->prepare("SELECT id_habilidad FROM habilidad WHERE nombre_habilidad = :nombre_habilidad");
                     $stmt->execute([':nombre_habilidad' => $skillToDelete]);
                     $habilidadId = $stmt->fetchColumn();
 
                     if ($habilidadId) {
                         $stmt = $pdo->prepare("
-                            DELETE FROM USUARIO_HABILIDAD 
+                            DELETE FROM usuario_habilidad 
                             WHERE id_usuario = :id_usuario AND id_habilidad = :id_habilidad
                         ");
                         $stmt->execute([
@@ -86,7 +86,7 @@ class UserController {
         // Cargar datos del perfil
         $perfilData = [];
         try {
-            $stmt = $pdo->prepare("SELECT * FROM USUARIO WHERE id = :id_usuario");
+            $stmt = $pdo->prepare("SELECT * FROM usuario WHERE id = :id_usuario");
             $stmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
             $stmt->execute();
             $perfilData = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -97,7 +97,7 @@ class UserController {
                     'nombre' => '',
                     'email' => '',
                     'genero' => '',
-                    'DNI' => '',
+                    'dni' => '',
                     'telefono' => '',
                     'ciudad' => '',
                     'departamento' => '',
@@ -118,20 +118,20 @@ class UserController {
 
         try {
             // Experiencias laborales
-            $stmt = $pdo->prepare("SELECT id_experiencia, id_usuario, titulo_puesto, empresa_nombre, descripcion, fecha_inicio, fecha_fin FROM EXPERIENCIA_LABORAL WHERE id_usuario = :id_usuario ORDER BY fecha_inicio DESC");
+            $stmt = $pdo->prepare("SELECT id_experiencia, id_usuario, titulo_puesto, empresa_nombre, descripcion, fecha_inicio, fecha_fin FROM experiencia_laboral WHERE id_usuario = :id_usuario ORDER BY fecha_inicio DESC");
             $stmt->execute([':id_usuario' => $userId]);
             $experiencias = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Estudios académicos
-            $stmt = $pdo->prepare("SELECT id_estudio, id_usuario, titulo_grado, institucion, fecha_inicio, fecha_fin, descripcion FROM ESTUDIO WHERE id_usuario = :id_usuario ORDER BY fecha_inicio DESC");
+            $stmt = $pdo->prepare("SELECT id_estudio, id_usuario, titulo_grado, institucion, fecha_inicio, fecha_fin, descripcion FROM estudio WHERE id_usuario = :id_usuario ORDER BY fecha_inicio DESC");
             $stmt->execute([':id_usuario' => $userId]);
             $estudios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Habilidades
             $stmt = $pdo->prepare("
                 SELECT h.nombre_habilidad 
-                FROM USUARIO_HABILIDAD uh 
-                JOIN HABILIDAD h ON uh.id_habilidad = h.id_habilidad 
+                FROM usuario_habilidad uh 
+                JOIN habilidad h ON uh.id_habilidad = h.id_habilidad 
                 WHERE uh.id_usuario = :id_usuario
             ");
             $stmt->execute([':id_usuario' => $userId]);
@@ -152,16 +152,36 @@ class UserController {
         $showPublishProfileLink = false;
         $unreadNotificationsCount = 0;
         $latestNotifications = [];
+
+        // --- LOGICA DE RESOLUCION DE IMAGEN DE PERFIL (Consistente con misEmpresasController) ---
         $profileImage = 'https://static.thenounproject.com/png/4154905-200.png';
+
+        // 1. Prioridad: Sesión | 2. Fallback: Base de Datos
+        $fotoPath = !empty($_SESSION['foto_perfil']) ? $_SESSION['foto_perfil'] : ($perfilData['foto_perfil'] ?? null);
+
+        if (!empty($fotoPath)) {
+            $nombreArchivo = basename($fotoPath);
+            // Normalizar rutas usando DIRECTORY_SEPARATOR para file_exists
+            $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . $nombreArchivo;
+            $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+
+            if (file_exists($rutaAbsoluta)) {
+                $profileImage = $rutaPublica;
+                // Sincronizar sesión si vino de la BD
+                if (empty($_SESSION['foto_perfil'])) {
+                    $_SESSION['foto_perfil'] = 'assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+                }
+            }
+        }
 
         try {
             // Obtener ID rol TRABAJADOR
-            $stmtRolTrabajador = $pdo->prepare("SELECT id FROM ROL WHERE nombre_rol = 'TRABAJADOR'");
+            $stmtRolTrabajador = $pdo->prepare("SELECT id FROM rol WHERE nombre_rol = 'TRABAJADOR'");
             $stmtRolTrabajador->execute();
             $rolTrabajadorId = $stmtRolTrabajador->fetchColumn();
 
             // Rol global del usuario
-            $stmtUserGlobalRole = $pdo->prepare("SELECT id_rol FROM USUARIO WHERE id = ?");
+            $stmtUserGlobalRole = $pdo->prepare("SELECT id_rol FROM usuario WHERE id = ?");
             $stmtUserGlobalRole->execute([$userId]);
             $currentUserGlobalRole = $stmtUserGlobalRole->fetchColumn();
 
@@ -181,7 +201,7 @@ class UserController {
             } else {
                 $stmtCompanyAssociation = $pdo->prepare("
                     SELECT id_empresa, id_rol_empresa 
-                    FROM USUARIO_EMPRESA 
+                    FROM usuario_empresa 
                     WHERE id_usuario = ? 
                     ORDER BY id_rol_empresa ASC 
                     LIMIT 1
@@ -210,7 +230,7 @@ class UserController {
             // Notificaciones
             $stmtNotifications = $pdo->prepare("
                 SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion, postulacion_id, solicitud_contratacion_id
-                FROM NOTIFICACIONES
+                FROM notificaciones
                 WHERE user_id = ?
                 ORDER BY fecha_creacion DESC
                 LIMIT 5
@@ -234,14 +254,6 @@ class UserController {
                 }
             }
 
-            // Foto de perfil
-            if (!empty($_SESSION['foto_perfil'])) {
-                $rutaAbsoluta = ROOT_PATH . '/assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-                $rutaPublica = BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-                if (file_exists($rutaAbsoluta)) {
-                    $profileImage = $rutaPublica;
-                }
-            }
         } catch (PDOException $e) {
             error_log("Error en UserController (navbar vars): " . $e->getMessage());
             $esTrabajadorActivo = ($userRole == 3 || in_array($_SESSION['id_rol_empresa'] ?? null, [2, 3]));
@@ -261,7 +273,7 @@ class UserController {
                     $ciudad = trim($_POST['ciudad'] ?? '');
                     $departamento = trim($_POST['departamento'] ?? '');
                     $pais = trim($_POST['pais'] ?? '');
-                    $DNI = trim($_POST['DNI'] ?? '');
+                    $dni = trim($_POST['dni'] ?? '');
                     $fotoPerfilPath = $perfilData['foto_perfil'] ?? null;
 
                     // Validaciones
@@ -270,13 +282,13 @@ class UserController {
                     elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'El correo electrónico no es válido.';
                     if (empty($genero)) $errors[] = 'El género es obligatorio.';
                     if (!empty($telefono) && !preg_match('/^[0-9+\-\(\) ]{7,15}$/', $telefono)) $errors[] = 'El teléfono no es válido.';
-                    if (!empty($DNI) && !preg_match('/^[0-9]{8,12}$/', $DNI)) $errors[] = 'El DNI no es válido.';
+                    if (!empty($dni) && !preg_match('/^[0-9]{8,12}$/', $dni)) $errors[] = 'El DNI no es válido.';
                     if (empty($ciudad)) $errors[] = 'La ciudad es obligatoria.';
                     if (empty($pais)) $errors[] = 'El país es obligatorio.';
 
                     // Verificar unicidad del email
                     try {
-                        $stmt = $pdo->prepare("SELECT id FROM USUARIO WHERE email = :email AND id != :id_usuario");
+                        $stmt = $pdo->prepare("SELECT id FROM usuario WHERE email = :email AND id != :id_usuario");
                         $stmt->execute([':email' => $email, ':id_usuario' => $userId]);
                         if ($stmt->fetch()) {
                             $errors[] = 'El correo electrónico ya está registrado para otro usuario.';
@@ -287,10 +299,10 @@ class UserController {
                     }
 
                     // Verificar unicidad del DNI
-                    if (!empty($DNI)) {
+                    if (!empty($dni)) {
                         try {
-                            $stmt = $pdo->prepare("SELECT id FROM USUARIO WHERE DNI = :DNI AND id != :id_usuario");
-                            $stmt->execute([':DNI' => $DNI, ':id_usuario' => $userId]);
+                            $stmt = $pdo->prepare("SELECT id FROM usuario WHERE dni = :dni AND id != :id_usuario");
+                            $stmt->execute([':dni' => $dni, ':id_usuario' => $userId]);
                             if ($stmt->fetch()) {
                                 $errors[] = 'El DNI ya está registrado para otro usuario.';
                             }
@@ -345,11 +357,11 @@ class UserController {
                     if (empty($errors)) {
                         try {
                             $stmt = $pdo->prepare("
-                                UPDATE USUARIO SET 
+                                UPDATE usuario SET 
                                     nombre = :nombre,
                                     email = :email,
                                     genero = :genero,
-                                    DNI = :DNI,
+                                    dni = :dni,
                                     telefono = :telefono,
                                     ciudad = :ciudad,
                                     departamento = :departamento,
@@ -361,7 +373,7 @@ class UserController {
                                 ':nombre' => $nombre,
                                 ':email' => $email,
                                 ':genero' => $genero,
-                                ':DNI' => $DNI ?: null,
+                                ':dni' => $dni ?: null,
                                 ':telefono' => $telefono ?: null,
                                 ':ciudad' => $ciudad,
                                 ':departamento' => $departamento ?: null,
@@ -405,7 +417,7 @@ class UserController {
                     if (empty($errors)) {
                         try {
                             $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-                            $stmt = $pdo->prepare("UPDATE USUARIO SET contrasena_hash = :contrasena_hash WHERE id = :id_usuario");
+                            $stmt = $pdo->prepare("UPDATE usuario SET contrasena_hash = :contrasena_hash WHERE id = :id_usuario");
                             $stmt->execute([
                                 ':contrasena_hash' => $passwordHash,
                                 ':id_usuario' => $userId
@@ -447,7 +459,7 @@ class UserController {
 
                     // Verificar que el usuario existe
                     try {
-                        $stmt = $pdo->prepare("SELECT id FROM USUARIO WHERE id = :id_usuario");
+                        $stmt = $pdo->prepare("SELECT id FROM usuario WHERE id = :id_usuario");
                         $stmt->execute([':id_usuario' => $userId]);
                         if (!$stmt->fetch()) {
                             $errors[] = 'Usuario no encontrado en la base de datos.';
@@ -460,7 +472,7 @@ class UserController {
                     if (empty($errors)) {
                         try {
                             $stmt = $pdo->prepare("
-                                INSERT INTO EXPERIENCIA_LABORAL (id_usuario, titulo_puesto, empresa_nombre, descripcion, fecha_inicio, fecha_fin)
+                                INSERT INTO experiencia_laboral (id_usuario, titulo_puesto, empresa_nombre, descripcion, fecha_inicio, fecha_fin)
                                 VALUES (:id_usuario, :titulo_puesto, :empresa_nombre, :descripcion, :fecha_inicio, :fecha_fin)
                             ");
                             $stmt->execute([
@@ -489,7 +501,7 @@ class UserController {
 
                     if (empty($errors)) {
                         try {
-                            $stmt = $pdo->prepare("DELETE FROM EXPERIENCIA_LABORAL WHERE id_experiencia = :id_experiencia AND id_usuario = :id_usuario");
+                            $stmt = $pdo->prepare("DELETE FROM experiencia_laboral WHERE id_experiencia = :id_experiencia AND id_usuario = :id_usuario");
                             $stmt->execute([':id_experiencia' => $experienceId, ':id_usuario' => $userId]);
 
                             $message = 'Experiencia laboral eliminada correctamente.';
@@ -519,7 +531,7 @@ class UserController {
                     if (empty($errors)) {
                         try {
                             $stmt = $pdo->prepare("
-                                INSERT INTO ESTUDIO (id_usuario, titulo_grado, institucion, fecha_inicio, fecha_fin)
+                                INSERT INTO estudio (id_usuario, titulo_grado, institucion, fecha_inicio, fecha_fin)
                                 VALUES (:id_usuario, :titulo_grado, :institucion, :fecha_inicio, :fecha_fin)
                             ");
                             $stmt->execute([
@@ -547,7 +559,7 @@ class UserController {
 
                     if (empty($errors)) {
                         try {
-                            $stmt = $pdo->prepare("DELETE FROM ESTUDIO WHERE id_estudio = :id_estudio AND id_usuario = :id_usuario");
+                            $stmt = $pdo->prepare("DELETE FROM estudio WHERE id_estudio = :id_estudio AND id_usuario = :id_usuario");
                             $stmt->execute([':id_estudio' => $educationId, ':id_usuario' => $userId]);
 
                             $message = 'Estudio académico eliminado correctamente.';
@@ -570,20 +582,20 @@ class UserController {
                     if (empty($errors)) {
                         try {
                             // Verificar si la habilidad existe en HABILIDAD
-                            $stmt = $pdo->prepare("SELECT id_habilidad FROM HABILIDAD WHERE nombre_habilidad = :nombre_habilidad");
+                            $stmt = $pdo->prepare("SELECT id_habilidad FROM habilidad WHERE nombre_habilidad = :nombre_habilidad");
                             $stmt->execute([':nombre_habilidad' => $newSkill]);
                             $habilidadId = $stmt->fetchColumn();
 
                             if (!$habilidadId) {
                                 // Insertar nueva habilidad en HABILIDAD
-                                $stmt = $pdo->prepare("INSERT INTO HABILIDAD (nombre_habilidad) VALUES (:nombre_habilidad)");
+                                $stmt = $pdo->prepare("INSERT INTO habilidad (nombre_habilidad) VALUES (:nombre_habilidad)");
                                 $stmt->execute([':nombre_habilidad' => $newSkill]);
                                 $habilidadId = $pdo->lastInsertId();
                             }
 
                             // Asociar habilidad al usuario en USUARIO_HABILIDAD
                             $stmt = $pdo->prepare("
-                                INSERT INTO USUARIO_HABILIDAD (id_usuario, id_habilidad, nivel_dominio)
+                                INSERT INTO usuario_habilidad (id_usuario, id_habilidad, nivel_dominio)
                                 VALUES (:id_usuario, :id_habilidad, :nivel_dominio)
                             ");
                             $stmt->execute([
@@ -613,15 +625,15 @@ class UserController {
                         error_log("Intentando eliminar habilidad: '$skillToDelete' para usuario ID: $userId");
                         try {
                             // Buscar id_habilidad
-                            $stmt = $pdo->prepare("SELECT id_habilidad FROM HABILIDAD WHERE nombre_habilidad = :nombre_habilidad");
+                            $stmt = $pdo->prepare("SELECT id_habilidad FROM habilidad WHERE nombre_habilidad = :nombre_habilidad");
                             $stmt->execute([':nombre_habilidad' => $skillToDelete]);
                             $habilidadId = $stmt->fetchColumn();
 
-                            error_log("Consulta ejecutada: SELECT id_habilidad FROM HABILIDAD WHERE nombre_habilidad = '$skillToDelete'; Resultado: " . ($habilidadId ? $habilidadId : 'No encontrado'));
+                            error_log("Consulta ejecutada: SELECT id_habilidad FROM habilidad WHERE nombre_habilidad = '$skillToDelete'; Resultado: " . ($habilidadId ? $habilidadId : 'No encontrado'));
 
                             if ($habilidadId) {
                                 $stmt = $pdo->prepare("
-                                    DELETE FROM USUARIO_HABILIDAD 
+                                    DELETE FROM usuario_habilidad 
                                     WHERE id_usuario = :id_usuario AND id_habilidad = :id_habilidad
                                 ");
                                 $stmt->execute([
@@ -629,7 +641,7 @@ class UserController {
                                     ':id_habilidad' => $habilidadId
                                 ]);
 
-                                error_log("Consulta ejecutada: DELETE FROM USUARIO_HABILIDAD WHERE id_usuario = $userId AND id_habilidad = $habilidadId; Filas afectadas: " . $stmt->rowCount());
+                                error_log("Consulta ejecutada: DELETE FROM usuario_habilidad WHERE id_usuario = $userId AND id_habilidad = $habilidadId; Filas afectadas: " . $stmt->rowCount());
 
                                 if ($stmt->rowCount() > 0) {
                                     $message = 'Habilidad eliminada correctamente.';

@@ -54,7 +54,7 @@
                     <div class="mb-3 text-center">
                         <label for="foto_perfil" class="form-label">Foto de Perfil</label>
                         <div class="profile-picture-container">
-                            <img src="<?= !empty($perfilData['foto_perfil']) ? BASE_URL . htmlspecialchars($perfilData['foto_perfil']) : 'https://static.thenounproject.com/png/4154905-200.png' ?>" alt="Foto de perfil" class="profile-picture">
+                            <img src="<?= $profileImage ?>" alt="Foto de perfil" class="profile-picture">
                             <div class="profile-picture-overlay">Cambiar Foto</div>
                             <input type="file" class="form-control" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/gif">
                         </div>
@@ -81,10 +81,10 @@
                             <option value="otro" <?= (isset($_POST['genero']) ? $_POST['genero'] : ($perfilData['genero'] ?? '')) == 'otro' ? 'selected' : '' ?>>Otro</option>
                         </select>
                     </div>
-                    <!-- DNI -->
+                    <!-- dni -->
                     <div class="mb-3">
-                        <label for="DNI" class="form-label">DNI <span class="text-danger">*</label>
-                        <input type="text" class="form-control" id="DNI" name="DNI" value="<?= isset($_POST['DNI']) ? htmlspecialchars($_POST['DNI']) : htmlspecialchars($perfilData['DNI'] ?? '') ?>" maxlength="12" pattern="[0-9]{8,12}" title="El DNI debe contener entre 8 y 12 dígitos numéricos." required>
+                        <label for="dni" class="form-label">DNI <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dni" name="dni" value="<?= isset($_POST['dni']) ? htmlspecialchars($_POST['dni']) : htmlspecialchars($perfilData['dni'] ?? '') ?>" maxlength="12" pattern="[0-9]{8,12}" title="El DNI debe contener entre 8 y 12 dígitos numéricos." required>
                         <small class="form-text text-muted">Debe contener entre 8 y 12 dígitos numéricos.</small>
                     </div>
                     <!-- Teléfono -->

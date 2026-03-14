@@ -84,7 +84,7 @@ if (!defined('JWT_SECRET_KEY')) {
 }
 
 // -------------------------------
-// 🔹 Configuración de Base de Datos
+// 🔹 Configuración de Base de Datos (Aiven Cloud)
 // -------------------------------
 if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
@@ -112,10 +112,15 @@ if (!function_exists('getDbConnection')) {
             try {
                 $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $e) {
+                // Logueamos el error internamente
                 error_log('❌ Error de conexión: ' . $e->getMessage());
+                
+                // Enviamos JSON limpio para que el Frontend lo entienda
+                header('Content-Type: application/json');
                 die(json_encode([
-                    "Error" => "No se pudo conectar a la base de datos",
-                    "Detalles" => $e->getMessage()
+                    "status" => "error",
+                    "message" => "No se pudo conectar a la base de datos remota.",
+                    "debug" => $e->getMessage()
                 ]));
             }
         }
@@ -130,6 +135,7 @@ if (!function_exists('isProfileComplete')) {
     function isProfileComplete($userId) {
         $pdo = getDbConnection();
         try {
+            // Nota: Verifica que los nombres de las tablas coincidan (minúsculas/mayúsculas)
             $stmt = $pdo->prepare("
                 SELECT COUNT(*)
                 FROM usuario
@@ -165,13 +171,15 @@ if (!function_exists('isProfileComplete')) {
 // -------------------------------
 // 🔹 Configuración PHPMailer
 // -------------------------------
-require_once ROOT_PATH . "vendor/autoload.php";
+// Asegúrate de que la ruta sea correcta según tu estructura
+if (file_exists(ROOT_PATH . "vendor/autoload.php")) {
+    require_once ROOT_PATH . "vendor/autoload.php";
+}
 
 if (!defined('SMTP_HOST')) define('SMTP_HOST', 'smtp.gmail.com');
 if (!defined('SMTP_PORT')) define('SMTP_PORT', 587);
-if (!defined('SMTP_USER')) define('SMTP_USER', 'tu_correo@gmail.com'); // 👉 cámbialo
-if (!defined('SMTP_PASS')) define('SMTP_PASS', 'clave_app_google');   // 👉 cámbialo
+if (!defined('SMTP_USER')) define('SMTP_USER', 'tu_correo@gmail.com'); 
+if (!defined('SMTP_PASS')) define('SMTP_PASS', 'clave_app_google');   
 if (!defined('SMTP_FROM')) define('SMTP_FROM', 'tu_correo@gmail.com');
 if (!defined('SMTP_NAME')) define('SMTP_NAME', 'TalentLink');
-
 ?>

@@ -20,7 +20,7 @@ class EmpresasModel {
      */
     public function companyExistsByName($nombre) {
         try {
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM EMPRESA WHERE nombre_empresa = ?");
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM empresa WHERE nombre_empresa = ?");
             $stmt->execute([$nombre]);
             return $stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
@@ -36,7 +36,7 @@ class EmpresasModel {
      */
     public function createCompany($data) {
         try {
-            $sql = "INSERT INTO EMPRESA (
+            $sql = "INSERT INTO empresa (
                         nombre_empresa, descripcion, email_contacto, telefono_contacto,
                         pais, departamento, ciudad, url_sitio_web, logo_ruta
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -70,7 +70,7 @@ class EmpresasModel {
      */
     public function linkUserToCompany($userId, $empresaId, $rolEmpresa) {
         try {
-            $stmt = $this->pdo->prepare("INSERT INTO USUARIO_EMPRESA (id_usuario, id_empresa, id_rol_empresa) VALUES (?, ?, ?)");
+            $stmt = $this->pdo->prepare("INSERT INTO usuario_empresa (id_usuario, id_empresa, id_rol_empresa) VALUES (?, ?, ?)");
             return $stmt->execute([$userId, $empresaId, $rolEmpresa]);
         } catch (PDOException $e) {
             error_log("Error al enlazar usuario a empresa: " . $e->getMessage());

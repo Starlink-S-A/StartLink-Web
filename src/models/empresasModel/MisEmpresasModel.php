@@ -19,8 +19,8 @@ class MisEmpresasModel {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT E.id_empresa, E.nombre_empresa, E.logo_ruta
-                FROM EMPRESA E
-                JOIN USUARIO_EMPRESA UE ON E.id_empresa = UE.id_empresa
+                FROM empresa E
+                JOIN usuario_empresa UE ON E.id_empresa = UE.id_empresa
                 WHERE UE.id_usuario = ? AND UE.id_rol_empresa IN (1,2)
             ");
             $stmt->execute([$userId]);

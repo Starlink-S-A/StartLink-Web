@@ -42,15 +42,18 @@ class DashboardController {
         $esAdminEmpresa = false;
         $esTrabajadorActivo = false;
         $showPublishProfileLink = false;
+        $dbFotoPerfil = null;
 
         try {
-            $stmtRolTrabajador = $conexion->prepare("SELECT id FROM ROL WHERE nombre_rol = 'TRABAJADOR'");
+            $stmtRolTrabajador = $conexion->prepare("SELECT id FROM rol WHERE nombre_rol = 'TRABAJADOR'");
             $stmtRolTrabajador->execute();
             $rolTrabajadorId = $stmtRolTrabajador->fetchColumn();
 
-            $stmtUserGlobalRole = $conexion->prepare("SELECT id_rol FROM USUARIO WHERE id = ?");
-            $stmtUserGlobalRole->execute([$userId]);
-            $currentUserGlobalRole = $stmtUserGlobalRole->fetchColumn();
+            $stmtUser = $conexion->prepare("SELECT id_rol, foto_perfil FROM usuario WHERE id = ?");
+            $stmtUser->execute([$userId]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+            $currentUserGlobalRole = $userRow['id_rol'] ?? $rolTrabajadorId;
+            $dbFotoPerfil = $userRow['foto_perfil'] ?? null;
 
             if ($currentUserGlobalRole != $rolTrabajadorId) {
                 $showPublishProfileLink = true;
@@ -67,7 +70,7 @@ class DashboardController {
             } else {
                 $stmtCompanyAssociation = $conexion->prepare("
                     SELECT id_empresa, id_rol_empresa 
-                    FROM USUARIO_EMPRESA 
+                    FROM usuario_empresa 
                     WHERE id_usuario = ? 
                     ORDER BY id_rol_empresa ASC 
                     LIMIT 1
@@ -96,7 +99,7 @@ class DashboardController {
             $latestNotifications = [];
             $stmtNotifications = $conexion->prepare("
                 SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion, postulacion_id, solicitud_contratacion_id
-                FROM NOTIFICACIONES
+                FROM notificaciones
                 WHERE user_id = ?
                 ORDER BY fecha_creacion DESC
                 LIMIT 5
@@ -132,13 +135,24 @@ class DashboardController {
             $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3]));
         }
 
-        $defaultImage = 'https://static.thenounproject.com/png/4154905-200.png';
-        $profileImage = $defaultImage;
-        if (!empty($_SESSION['foto_perfil'])) {
-            $rutaAbsoluta = ROOT_PATH . '/assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-            $rutaPublica = BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
+        // --- LOGICA DE RESOLUCION DE IMAGEN DE PERFIL (Consistente con misEmpresasController) ---
+        $profileImage = 'https://static.thenounproject.com/png/4154905-200.png';
+
+        // 1. Prioridad: Sesión | 2. Fallback: Base de Datos
+        $fotoPath = !empty($_SESSION['foto_perfil']) ? $_SESSION['foto_perfil'] : ($dbFotoPerfil ?? null);
+
+        if (!empty($fotoPath)) {
+            $nombreArchivo = basename($fotoPath);
+            // Normalizar rutas usando DIRECTORY_SEPARATOR para file_exists
+            $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . $nombreArchivo;
+            $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+
             if (file_exists($rutaAbsoluta)) {
                 $profileImage = $rutaPublica;
+                // Sincronizar sesión si vino de la BD
+                if (empty($_SESSION['foto_perfil'])) {
+                    $_SESSION['foto_perfil'] = 'assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+                }
             }
         }
 

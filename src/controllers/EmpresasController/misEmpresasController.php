@@ -42,7 +42,7 @@ class MisEmpresasController {
                 
                 // Cargar rol específico en la empresa seleccionada
                 $db = getDbConnection();
-                $stmt2 = $db->prepare("SELECT id_rol_empresa FROM USUARIO_EMPRESA WHERE id_usuario = ? AND id_empresa = ?");
+                $stmt2 = $db->prepare("SELECT id_rol_empresa FROM usuario_empresa WHERE id_usuario = ? AND id_empresa = ?");
                 $stmt2->execute([$userId, $empresaId]);
                 $_SESSION['id_rol_empresa'] = (int)$stmt2->fetchColumn();
 

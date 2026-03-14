@@ -31,8 +31,8 @@ class OfertasModel {
                     O.modalidad, O.fecha_cierre, O.limite_participantes,
                     O.id_empresa, O.id_creador_oferta,
                     E.nombre_empresa, E.logo_ruta
-                FROM OFERTA_TRABAJO O
-                LEFT JOIN EMPRESA E ON O.id_empresa = E.id_empresa
+                FROM oferta_trabajo O
+                LEFT JOIN empresa E ON O.id_empresa = E.id_empresa
                 WHERE O.estado_oferta = 'Abierta'
                 ORDER BY O.fecha_publicacion DESC
             ";
@@ -76,8 +76,8 @@ class OfertasModel {
                     O.modalidad, O.fecha_cierre, O.limite_participantes,
                     O.id_empresa, O.id_creador_oferta,
                     E.nombre_empresa, E.logo_ruta
-                FROM OFERTA_TRABAJO O
-                LEFT JOIN EMPRESA E ON O.id_empresa = E.id_empresa
+                FROM oferta_trabajo O
+                LEFT JOIN empresa E ON O.id_empresa = E.id_empresa
                 WHERE O.id_oferta = ? AND O.estado_oferta = 'Abierta'
             ";
 
@@ -108,7 +108,7 @@ class OfertasModel {
         try {
             $stmt = $this->conexion->prepare("
                 SELECT estado_postulacion 
-                FROM POSTULACION 
+                FROM postulacion 
                 WHERE id_usuario = ? AND id_oferta = ?
             ");
             $stmt->execute([$id_usuario, $id_oferta]);
@@ -131,7 +131,7 @@ class OfertasModel {
         try {
             $stmt = $this->conexion->prepare("
                 SELECT COUNT(*) as total 
-                FROM POSTULACION 
+                FROM postulacion 
                 WHERE id_oferta = ?
             ");
             $stmt->execute([$id_oferta]);
@@ -175,7 +175,7 @@ class OfertasModel {
     public function createOferta($data) {
         try {
             $sql = "
-                INSERT INTO OFERTA_TRABAJO 
+                INSERT INTO oferta_trabajo 
                 (titulo_oferta, descripcion_oferta, presupuesto_min, presupuesto_max, 
                  ubicacion, modalidad, fecha_cierre, requisitos, limite_participantes, 
                  id_empresa, id_creador_oferta, estado_oferta, fecha_publicacion)
@@ -217,7 +217,7 @@ class OfertasModel {
             // Verificar que el usuario sea el propietario
             $stmt = $this->conexion->prepare("
                 SELECT id_creador_oferta 
-                FROM OFERTA_TRABAJO 
+                FROM oferta_trabajo 
                 WHERE id_oferta = ?
             ");
             $stmt->execute([$id_oferta]);
@@ -228,7 +228,7 @@ class OfertasModel {
             }
 
             $stmtDelete = $this->conexion->prepare("
-                DELETE FROM OFERTA_TRABAJO 
+                DELETE FROM oferta_trabajo 
                 WHERE id_oferta = ?
             ");
 

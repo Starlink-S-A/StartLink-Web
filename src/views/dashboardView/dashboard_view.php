@@ -26,7 +26,7 @@ $link = getDbConnection();
 
 if ($link instanceof PDO) {
     try {
-        $stmt_notif = $link->prepare("SELECT id, mensaje, tipo, icono, fecha_creacion, leida FROM NOTIFICACIONES WHERE user_id = ? ORDER BY fecha_creacion DESC LIMIT 10");
+        $stmt_notif = $link->prepare("SELECT id, mensaje, tipo, icono, fecha_creacion, leida FROM notificaciones WHERE user_id = ? ORDER BY fecha_creacion DESC LIMIT 10");
         $stmt_notif->execute([$userId]);
 
         while ($row = $stmt_notif->fetch(PDO::FETCH_ASSOC)) {
