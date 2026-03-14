@@ -44,48 +44,71 @@ if (!defined('BASE_URL')) {
 }
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', $_SERVER['DOCUMENT_ROOT'] . '/StartLink-Web/');
+    define('ROOT_PATH', dirname(__DIR__, 2) . DIRECTORY_SEPARATOR);
+}
+
+// -------------------------------
+// 🔹 Cargar variables de entorno (.env)
+// -------------------------------
+if (file_exists(ROOT_PATH . '.env')) {
+    $lines = file(ROOT_PATH . '.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+        if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+            putenv(sprintf('%s=%s', $name, $value));
+            $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
+        }
+    }
 }
 
 // -------------------------------
 // 🔹 Configuración de reCAPTCHA
 // -------------------------------
 if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ'); 
+    define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: 'YOUR_RECAPTCHA_SITE_KEY'); 
 }
 if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH'); 
+    define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: 'YOUR_RECAPTCHA_SECRET_KEY'); 
 }
 
 // -------------------------------
 // 🔹 Configuración de JWT
 // -------------------------------
 if (!defined('JWT_SECRET_KEY')) {
-    define('JWT_SECRET_KEY', 'StartLink_JWT_Secret_Key_2024_With_More_Than_32_Characters_For_SecurityHS256');
+    define('JWT_SECRET_KEY', getenv('JWT_SECRET_KEY') ?: 'change_this_secret_key_in_production_environment');
 }
 
 // -------------------------------
 // 🔹 Configuración de Base de Datos
 // -------------------------------
-if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
-if (!defined('DB_NAME')) define('DB_NAME', 'hrms_db');
-if (!defined('DB_USER')) define('DB_USER', 'root');
-if (!defined('DB_PASS')) define('DB_PASS', 'caragors1');
-if (!defined('DB_PORT')) define('DB_PORT', '3306');
+if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
+if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: 'root');
+if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
+if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: '3306');
 
 /**
- * 📌 Conexión PDO Singleton
+ * 📌 Conexión PDO Singleton con Soporte SSL
  */
 if (!function_exists('getDbConnection')) {
     function getDbConnection() {
         static $pdo = null;
         if ($pdo === null) {
             $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+            
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
+                // 🔹 REQUERIDO PARA AIVEN: Habilita la conexión segura SSL
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ];
+
             try {
                 $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $e) {
