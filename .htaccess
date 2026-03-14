@@ -1,7 +1,12 @@
 RewriteEngine On
-RewriteBase /Proyecto-StartLink/StartLink-Web/
+RewriteBase /StartLink-Web/
 
-# Redirigir todo a src/index.php
+# Si piden directamente index.php en la raíz, lo mandamos al src/index.php
+RewriteRule ^index\.php$ src/index.php [L]
+
+# Si el archivo o carpeta existe, lo servimos normal
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ src/index.php?action=$1 [L,QSA]
+
+# Reescritura bonita -> src/index.php?action=...
+RewriteRule ^([^/]+)/?$ src/index.php?action=$1 [L,QSA]

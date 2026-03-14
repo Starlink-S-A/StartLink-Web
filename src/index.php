@@ -1,21 +1,75 @@
 <?php
-require_once __DIR__ . '/config/configuracionInicial.php';
-require_once __DIR__ . '/controllers/authController/AuthController.php';
+// src/index.php
 
-$controller = new AuthController();
-$action = $_GET['action'] ?? 'welcome';
-$status = $_GET['status'] ?? null;
-$form = $_GET['form'] ?? null;
+require_once __DIR__ . '/controllers/authController/AuthController.php';
+require_once __DIR__ . '/controllers/dashboardController/DashboardController.php';
+require_once __DIR__ . '/controllers/configuracionusuarioController/UserController.php';
+
+
+$action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'login':
-        $controller->login();
+        $authController = new AuthController();
+        $authController->login();
         break;
+
     case 'register':
-        $controller->register();
+        $authController = new AuthController();
+        $authController->register();
         break;
-    case 'welcome':
+
+    case 'forgotPassword':   // ✅ Solicitar enlace de recuperación
+        $authController = new AuthController();
+        $authController->forgotPassword();
+        break;
+
+    case 'resetPassword':    // ✅ Restablecer la contraseña con token
+        $authController = new AuthController();
+        $authController->resetPassword();
+        break;
+
+    case 'dashboard':
+        $dashboardController = new DashboardController();
+        $dashboardController->showDashboard();
+        break;
+
+    case 'configurar_perfil':
+        $userController = new UserController();
+        $userController->configureProfile();
+        break;
+
+    case 'logout':
+        $authController = new AuthController();
+        $authController->logout();
+        break;
+
+    case 'ofertas':
+        $dashboardController = new DashboardController();
+        $dashboardController->showOfertas();
+        break;
+
+    case 'crearEmpresa':
+        require_once __DIR__ . '/controllers/empresasController/EmpresasController.php';
+        $empresasController = new EmpresasController();
+        $empresasController->create();
+        break;
+
+    case 'mis_empresas':
+        require_once __DIR__ . '/controllers/EmpresasController/misEmpresasController.php';
+        $misEmpresasController = new MisEmpresasController();
+        $misEmpresasController->misEmpresas();
+        break;
+
+    case 'crear_oferta':
+        require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
+        $ofertasController = new OfertasController();
+        $ofertasController->createOferta();
+        break;
+
     default:
-        $controller->showWelcomePage($form, $status);
+        $authController = new AuthController();
+        $authController->showWelcomePage();
         break;
-}
+
+} 
