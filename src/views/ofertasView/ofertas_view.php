@@ -4,163 +4,170 @@
     <meta charset="UTF-8">
     <title>Ofertas de Empleo - StartLink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/navbar_styles.css"> 
+    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/dashboard_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body style="background-color: #f8fafc;">
 <?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
 
-<div class="container mt-4">
-    <h2 class="mb-4">Ofertas de Empleo</h2>
+<div class="container mt-5 pt-4">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="dash-title mb-1">Ofertas de Empleo</h2>
+            <p class="text-muted small">Encuentra tu próximo paso profesional o gestiona tus vacantes.</p>
+        </div>
+        <?php if ($esContratador): ?>
+            <button class="btn btn-dash-primary px-4" data-bs-toggle="modal" data-bs-target="#modalCrearOferta">
+                <i class="fas fa-plus me-2"></i> Nueva Oferta
+            </button>
+        <?php endif; ?>
+    </div>
 
     <?php if (!empty($_SESSION['mensaje'])): ?>
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($_SESSION['mensaje']) ?>
+        <div class="alert alert-profile border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-info-circle me-2"></i> <?= htmlspecialchars($_SESSION['mensaje']) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
         <?php unset($_SESSION['mensaje']); ?>
     <?php endif; ?>
 
     <?php if (!empty($mensaje)): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($mensaje) ?>
+        <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> <?= htmlspecialchars($mensaje) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     <?php endif; ?>
 
-    <?php if ($esContratador): ?>
-        <div class="mb-4 text-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearOferta">
-                <i class="fas fa-plus"></i> Nueva Oferta
-            </button>
-        </div>
-    <?php endif; ?>
-
-    <div class="row">
+    <div class="row g-4">
         <?php if (empty($ofertas)): ?>
             <div class="col-12">
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i> No hay ofertas disponibles en este momento.
+                <div class="dash-card p-5 text-center">
+                    <i class="fas fa-search text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h4>No hay ofertas disponibles</h4>
+                    <p class="text-muted">Vuelve más tarde para ver nuevas oportunidades.</p>
                 </div>
             </div>
         <?php else: ?>
             <?php foreach ($ofertas as $oferta): ?>
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
+                <div class="col-lg-6">
+                    <div class="dash-card h-100 p-4">
+                        <div class="d-flex align-items-start mb-3">
                             <?php if (!empty($oferta['logoEmpresa'])):?>
-                                <div class="mb-3 d-flex justify-content-center">
-                                    <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background-color: #f0f0f0;">
-                                        <img src="<?= htmlspecialchars($oferta['logoEmpresa']) ?>" alt="Logo Empresa"
+                                <div class="me-3" style="width: 64px; height: 64px; flex-shrink: 0;">
+                                    <div class="rounded-circle border overflow-hidden p-1 bg-white h-100 w-100">
+                                        <img src="<?= htmlspecialchars($oferta['logoEmpresa']) ?>" alt="Logo"
                                              class="w-100 h-100" style="object-fit: contain;">
                                     </div>
                                 </div>
+                            <?php else: ?>
+                                <div class="me-3 bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; flex-shrink: 0;">
+                                    <i class="fas fa-building text-muted"></i>
+                                </div>
                             <?php endif; ?>
                             
-                            <h5 class="card-title"><?= $oferta['titulo_oferta'] ?></h5>
-                            <p class="card-text text-muted"><?= $oferta['descripcion_oferta'] ?></p>
-                            
-                            <div class="mb-3">
-                                <p class="mb-1"><strong>Empresa:</strong> <?= $oferta['nombre_empresa'] ?></p>
-                                
-                                <?php if (!empty($oferta['presupuesto_min']) || !empty($oferta['presupuesto_max'])): ?>
-                                    <p class="mb-1"><strong>Salario:</strong> 
-                                        <?= isset($oferta['presupuesto_min']) ? number_format($oferta['presupuesto_min'], 2, ',', '.') : 'No especificado' ?> - 
-                                        <?= isset($oferta['presupuesto_max']) ? number_format($oferta['presupuesto_max'], 2, ',', '.') : 'No especificado' ?>
-                                    </p>
-                                <?php endif; ?>
-                                
-                                <p class="mb-1">
-                                    <strong>Ubicación:</strong> <?= $oferta['ubicacion'] ?? 'No especificada' ?> | 
-                                    <strong>Modalidad:</strong> <span class="badge bg-secondary"><?= $oferta['modalidad'] ?? 'No especificada' ?></span>
-                                </p>
-                                
-                                <p class="mb-1"><strong>Fecha de cierre:</strong> <?= $oferta['fecha_cierre'] ?? 'No especificada' ?></p>
-                                
-                                <p class="mb-0"><strong>Postulantes:</strong> <?= $oferta['numParticipantes'] ?>
-                                    <?php if (!empty($oferta['limite_participantes']) && $oferta['limite_participantes'] > 0): ?>
-                                        / <?= $oferta['limite_participantes'] ?>
-                                    <?php endif; ?>
-                                </p>
+                            <div class="flex-grow-1">
+                                <h5 class="fw-700 mb-1"><?= $oferta['titulo_oferta'] ?></h5>
+                                <p class="text-primary fw-600 small mb-0"><?= $oferta['nombre_empresa'] ?></p>
                             </div>
-                            
+
                             <?php if ($oferta['yaPostulado']): ?>
-                                <p class="mb-3"><strong>Tu estado:</strong>
+                                <div class="ms-2">
                                     <?php
                                     switch ($oferta['estadoPostulacion']) {
                                         case 'Contratado':
-                                            echo '<span class="badge bg-success"><i class="fas fa-check"></i> Contratado</span>';
+                                            echo '<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill"><i class="fas fa-check me-1"></i> Contratado</span>';
                                             break;
                                         case 'Rechazado':
-                                            echo '<span class="badge bg-danger"><i class="fas fa-times"></i> Rechazado</span>';
+                                            echo '<span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill"><i class="fas fa-times me-1"></i> Rechazado</span>';
                                             break;
                                         default:
-                                            echo '<span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half"></i> Postulado</span>';
+                                            echo '<span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> Postulado</span>';
                                     }
                                     ?>
-                                </p>
+                                </div>
                             <?php endif; ?>
+                        </div>
 
-                            <div class="d-flex flex-wrap gap-2 mt-3">
-                                <?php if ($oferta['yaPostulado']): ?>
-                                    <?php if ($esUsuario): ?>
-                                        <a href="<?= BASE_URL ?>index.php?action=chat&id_oferta=<?= $oferta['id_oferta'] ?>" 
-                                           class="btn btn-sm btn-success">
-                                            <i class="fas fa-comments"></i> Chat Grupal
-                                        </a>
-                                        <?php if ($userId != $oferta['id_creador_oferta']): ?>
-                                            <a href="<?= BASE_URL ?>index.php?action=chat&id_oferta=<?= $oferta['id_oferta'] ?>&privado=1" 
-                                               class="btn btn-sm btn-info">
-                                                <i class="fas fa-envelope"></i> Chat Privado
-                                            </a>
-                                        <?php endif; ?>
+                        <p class="text-muted small mb-3 line-clamp-2"><?= htmlspecialchars($oferta['descripcion_oferta']) ?></p>
+                        
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Salario</small>
+                                <span class="fw-600 small">
+                                    <?php if (!empty($oferta['presupuesto_min']) || !empty($oferta['presupuesto_max'])): ?>
+                                        $<?= number_format($oferta['presupuesto_min'], 0, ',', '.') ?> - $<?= number_format($oferta['presupuesto_max'], 0, ',', '.') ?>
+                                    <?php else: ?>
+                                        A convenir
                                     <?php endif; ?>
-                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" 
-                                            data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
-                                        <i class="fas fa-sign-out-alt"></i> Salir
-                                    </button>
-                                    
-                                    <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <form action="<?= BASE_URL ?>salir_oferta.php" method="POST">
-                                                    <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">¿Salir de esta oferta?</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        ¿Estás seguro de que deseas salir de esta oferta? Tu postulación será eliminada.
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="submit" class="btn btn-warning">Sí, salir</button>
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    </div>
-                                                </form>
-                                            </div>
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Ubicación</small>
+                                <span class="fw-600 small"><?= $oferta['ubicacion'] ?? 'Remoto' ?></span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Modalidad</small>
+                                <span class="badge bg-light text-dark border px-2 py-1"><?= $oferta['modalidad'] ?? 'Full-time' ?></span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Postulantes</small>
+                                <span class="fw-600 small text-primary"><?= $oferta['numParticipantes'] ?> convocados</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 pt-3 border-top mt-auto">
+                            <?php if ($oferta['yaPostulado']): ?>
+                                <a href="<?= BASE_URL ?>index.php?action=chat&id_oferta=<?= $oferta['id_oferta'] ?>" 
+                                   class="btn btn-sm btn-outline-success flex-grow-1">
+                                    <i class="fas fa-comments me-1"></i> Chat
+                                </a>
+                                <button class="btn btn-sm btn-link text-danger text-decoration-none" data-bs-toggle="modal" 
+                                        data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
+                                    Abandonar
+                                </button>
+                                
+                                <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg">
+                                            <form action="<?= BASE_URL ?>salir_oferta.php" method="POST">
+                                                <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h5 class="modal-title fw-700">¿Retirar postulación?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body py-4">
+                                                    Si abandonas esta oferta, perderás tu lugar en el proceso de selección de <strong><?= htmlspecialchars($oferta['nombre_empresa']) ?></strong>.
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, retirar</button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
+                                </div>
 
-                                <?php elseif ($esUsuario): ?>
-                                    <form action="<?= BASE_URL ?>postular_oferta.php" method="POST" class="d-inline">
-                                        <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-success">
-                                            <i class="fas fa-paper-plane"></i> Postularme
-                                        </button>
-                                    </form>
-                                <?php endif; ?>
-
-                                <?php if ($oferta['esCreador'] && $esContratador): ?>
-                                    <a href="<?= BASE_URL ?>detalle_oferta.php?id=<?= $oferta['id_oferta'] ?>" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-users"></i> Ver Postulados
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                            data-bs-target="#modalEliminarOferta<?= $oferta['id_oferta'] ?>">
-                                        <i class="fas fa-trash"></i> Eliminar
+                            <?php elseif ($esUsuario): ?>
+                                <form action="<?= BASE_URL ?>postular_oferta.php" method="POST" class="flex-grow-1">
+                                    <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-dash-primary w-100">
+                                        <i class="fas fa-paper-plane me-1"></i> Postularme ahora
                                     </button>
-                                <?php endif; ?>
-                            </div>
+                                </form>
+                            <?php endif; ?>
+
+                            <?php if ($oferta['esCreador'] && $esContratador): ?>
+                                <a href="<?= BASE_URL ?>detalle_oferta.php?id=<?= $oferta['id_oferta'] ?>" 
+                                   class="btn btn-sm btn-outline-primary px-3">
+                                    <i class="fas fa-users"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminarOferta<?= $oferta['id_oferta'] ?>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

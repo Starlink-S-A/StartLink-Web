@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurar Perfil - TalentLink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/navbar_styles.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/configurar_perfil.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
@@ -29,36 +28,52 @@
         <div class="progress-bar" role="progressbar" style="width: <?= $currentStep == 'personal' ? '25' : ($currentStep == 'experience' ? '50' : ($currentStep == 'education' ? '75' : '100')) ?>%;" aria-valuenow="<?= $currentStep == 'personal' ? '25' : ($currentStep == 'experience' ? '50' : ($currentStep == 'education' ? '75' : '100')) ?>" aria-valuemin="0" aria-valuemax="100">Paso <?= $currentStep == 'personal' ? '1' : ($currentStep == 'experience' ? '2' : ($currentStep == 'education' ? '3' : '4')) ?> de 4</div>
     </div>
 
-    <ul class="nav nav-tabs mb-4">
+    <ul class="nav flex-column profile-nav mb-4" id="profileTabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link <?= $currentStep == 'personal' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=personal">Información Personal</a>
+            <a class="nav-link <?= $currentStep == 'personal' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=personal">
+                <i class="fas fa-user-circle me-2"></i> Información Personal
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $currentStep == 'experience' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=experience">Experiencia Laboral</a>
+            <a class="nav-link <?= $currentStep == 'experience' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=experience">
+                <i class="fas fa-briefcase me-2"></i> Experiencia Laboral
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $currentStep == 'education' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=education">Estudios Académicos</a>
+            <a class="nav-link <?= $currentStep == 'education' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=education">
+                <i class="fas fa-graduation-cap me-2"></i> Estudios Académicos
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $currentStep == 'skills' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=skills">Habilidades</a>
+            <a class="nav-link <?= $currentStep == 'skills' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=skills">
+                <i class="fas fa-tools me-2"></i> Habilidades
+            </a>
         </li>
     </ul>
 
     <div class="tab-content">
         <?php if ($currentStep == 'personal'): ?>
-            <!-- Formulario Información Personal -->
-            <div class="card p-4">
+            <div class="card p-4 layout-premium border-0 shadow-sm">
+                <div class="section-header mb-4">
+                    <h4 class="mb-0">Información de Perfil</h4>
+                    <p class="text-muted small">Mantén tus datos actualizados para mejorar tu visibilidad.</p>
+                </div>
                 <form action="<?= BASE_URL ?>configurar_perfil?step=personal" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="form_type" value="personal_info">
                     <!-- Foto de Perfil -->
-                    <div class="mb-3 text-center">
-                        <label for="foto_perfil" class="form-label">Foto de Perfil</label>
-                        <div class="profile-picture-container">
-                            <img src="<?= $profileImage ?>" alt="Foto de perfil" class="profile-picture">
-                            <div class="profile-picture-overlay">Cambiar Foto</div>
-                            <input type="file" class="form-control" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/gif">
+                    <div class="mb-4 text-center">
+                        <div class="position-relative d-inline-block">
+                            <img src="<?= isset($profileImage) ? $profileImage : 'https://static.thenounproject.com/png/4154905-200.png' ?>" alt="Foto de perfil" class="img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                            <div class="mt-2">
+                                <label for="foto_perfil" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-camera me-1"></i> Cambiar Foto
+                                </label>
+                                <input type="file" class="d-none" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/gif">
+                            </div>
                         </div>
-                        <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF. Máximo 5MB. Haz clic en la imagen para cambiarla.</small>
+                        <div class="mt-2">
+                            <small class="form-text text-muted">JPG, PNG, GIF. Máximo 5MB.</small>
+                        </div>
                     </div>
                     <!-- Nombre -->
                     <div class="mb-3">
@@ -108,8 +123,10 @@
                         <label for="pais" class="form-label">País <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="pais" name="pais" value="<?= isset($_POST['pais']) ? htmlspecialchars($_POST['pais']) : htmlspecialchars($perfilData['pais'] ?? '') ?>" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Guardar Información Personal</button>
-                    <button type="button" class="btn btn-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Cambiar Contraseña</button>
+                    <div class="form-navigation mt-4">
+                        <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Seguridad</button>
+                    </div>
                 </form>
             </div>
 
@@ -141,124 +158,148 @@
             </div>
         <?php elseif ($currentStep == 'experience'): ?>
             <!-- Formulario Experiencia Laboral -->
-            <div class="card p-4">
-                <h5 class="mb-3">Añadir Nueva Experiencia Laboral</h5>
+            <div class="card p-4 layout-premium border-0 shadow-sm">
+                <div class="section-header mb-4">
+                    <h4 class="mb-0">Añadir Nueva Experiencia</h4>
+                </div>
                 <form action="<?= BASE_URL ?>configurar_perfil?step=experience" method="post">
                     <input type="hidden" name="form_type" value="add_experience">
                     <div class="mb-3">
                         <label for="cargo" class="form-label">Cargo <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="cargo" name="cargo" value="<?= isset($_POST['cargo']) ? htmlspecialchars($_POST['cargo']) : '' ?>" required>
+                        <input type="text" class="form-control" id="cargo" name="cargo" required>
                     </div>
                     <div class="mb-3">
                         <label for="empresa" class="form-label">Empresa <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="empresa" name="empresa" value="<?= isset($_POST['empresa']) ? htmlspecialchars($_POST['empresa']) : '' ?>" required>
+                        <input type="text" class="form-control" id="empresa" name="empresa" required>
                     </div>
                     <div class="mb-3">
                         <label for="descripcion" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="descripcion" name="descripcion" rows="4"><?= isset($_POST['descripcion']) ? htmlspecialchars($_POST['descripcion']) : '' ?></textarea>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="4"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="fecha_inicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="<?= isset($_POST['fecha_inicio']) ? htmlspecialchars($_POST['fecha_inicio']) : '' ?>" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_inicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="fecha_fin" class="form-label">Fecha de Fin (dejar en blanco si es actual)</label>
-                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="<?= isset($_POST['fecha_fin']) ? htmlspecialchars($_POST['fecha_fin']) : '' ?>">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Añadir Experiencia</button>
+                    <button type="submit" class="btn btn-primary px-4">Añadir Experiencia</button>
                 </form>
 
-                <h5 class="mt-4">Mis Experiencias Laborales</h5>
+                <h5 class="mt-5 mb-3">Mis Experiencias Laborales</h5>
                 <?php if (!empty($experiencias)): ?>
-                    <div class="list-group">
+                    <div class="list-group list-group-flush">
                         <?php foreach ($experiencias as $exp): ?>
-                            <div class="list-group-item">
-                                <h6><?= htmlspecialchars($exp['titulo_puesto']) ?> en <?= htmlspecialchars($exp['empresa_nombre']) ?></h6>
-                                <p class="mb-1"><?= htmlspecialchars($exp['descripcion'] ?? 'Sin descripción') ?></p>
-                                <small class="text-muted">
-                                    <?= date('M Y', strtotime($exp['fecha_inicio'])) ?> - 
-                                    <?= $exp['fecha_fin'] ? date('M Y', strtotime($exp['fecha_fin'])) : 'Actual' ?>
-                                </small>
-                                <button class="btn btn-danger btn-sm float-end" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal<?= $exp['id_experiencia'] ?>">Eliminar</button>
+                            <div class="list-group-item px-0 py-3">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1"><?= htmlspecialchars($exp['titulo_puesto']) ?></h6>
+                                        <p class="text-primary mb-1 small fw-600"><?= htmlspecialchars($exp['empresa_nombre']) ?></p>
+                                        <small class="text-muted">
+                                            <?= date('M Y', strtotime($exp['fecha_inicio'])) ?> - 
+                                            <?= $exp['fecha_fin'] ? date('M Y', strtotime($exp['fecha_fin'])) : 'Actual' ?>
+                                        </small>
+                                    </div>
+                                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal<?= $exp['id_experiencia'] ?>">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="text-muted">No has añadido experiencias laborales aún.</p>
+                    <p class="text-muted text-center py-4">No has añadido experiencias laborales aún.</p>
                 <?php endif; ?>
             </div>
         <?php elseif ($currentStep == 'education'): ?>
             <!-- Formulario Estudios Académicos -->
-            <div class="card p-4">
-                <h5 class="mb-3">Añadir Nuevo Estudio Académico</h5>
+            <div class="card p-4 layout-premium border-0 shadow-sm">
+                <div class="section-header mb-4">
+                    <h4 class="mb-0">Añadir Nuevo Estudio</h4>
+                </div>
                 <form action="<?= BASE_URL ?>configurar_perfil?step=education" method="post">
                     <input type="hidden" name="form_type" value="add_education">
                     <div class="mb-3">
-                        <label for="titulo" class="form-label">Título <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="titulo" name="titulo" value="<?= isset($_POST['titulo']) ? htmlspecialchars($_POST['titulo']) : '' ?>" required>
+                        <label for="titulo" class="form-label">Título / Grado <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" required>
                     </div>
                     <div class="mb-3">
                         <label for="institucion" class="form-label">Institución <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="institucion" name="institucion" value="<?= isset($_POST['institucion']) ? htmlspecialchars($_POST['institucion']) : '' ?>" required>
+                        <input type="text" class="form-control" id="institucion" name="institucion" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="fecha_inicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="<?= isset($_POST['fecha_inicio']) ? htmlspecialchars($_POST['fecha_inicio']) : '' ?>" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_inicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for 'fecha_fin' class="form-label">Fecha de Fin (dejar en blanco si es actual)</label>
-                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="<?= isset($_POST['fecha_fin']) ? htmlspecialchars($_POST['fecha_fin']) : '' ?>">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Añadir Estudio</button>
+                    <button type="submit" class="btn btn-primary px-4">Añadir Estudio</button>
                 </form>
 
-                <h5 class="mt-4">Mis Estudios Académicos</h5>
+                <h5 class="mt-5 mb-3">Mis Estudios Académicos</h5>
                 <?php if (!empty($estudios)): ?>
-                    <div class="list-group">
+                    <div class="list-group list-group-flush">
                         <?php foreach ($estudios as $edu): ?>
-                            <div class="list-group-item">
-                                <h6><?= htmlspecialchars($edu['titulo_grado']) ?> en <?= htmlspecialchars($edu['institucion']) ?></h6>
-                                <small class="text-muted">
-                                    <?= date('M Y', strtotime($edu['fecha_inicio'])) ?> - 
-                                    <?= $edu['fecha_fin'] ? date('M Y', strtotime($edu['fecha_fin'])) : 'Actual' ?>
-                                </small>
-                                <button class="btn btn-danger btn-sm float-end" data-bs-toggle="modal" data-bs-target="#confirmDeleteEstudioModal<?= $edu['id_estudio'] ?>">Eliminar</button>
+                            <div class="list-group-item px-0 py-3">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1"><?= htmlspecialchars($edu['titulo_grado']) ?></h6>
+                                        <p class="text-primary mb-1 small fw-600"><?= htmlspecialchars($edu['institucion']) ?></p>
+                                        <small class="text-muted">
+                                            <?= date('M Y', strtotime($edu['fecha_inicio'])) ?> - 
+                                            <?= $edu['fecha_fin'] ? date('M Y', strtotime($edu['fecha_fin'])) : 'Actual' ?>
+                                        </small>
+                                    </div>
+                                    <button class="delete-btn" data-bs-toggle="modal" data-bs-target="#confirmDeleteEstudioModal<?= $edu['id_estudio'] ?>">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="text-muted">No has añadido estudios académicos aún.</p>
+                    <p class="text-muted text-center py-4">No has añadido estudios académicos aún.</p>
                 <?php endif; ?>
             </div>
         <?php elseif ($currentStep == 'skills'): ?>
-            <!-- Formulario Habilidades -->
-            <div class="card p-4">
-                <h5 class="mb-3">Añadir Nueva Habilidad</h5>
+            <div class="card p-4 layout-premium border-0 shadow-sm">
+                <div class="section-header mb-4">
+                    <h4 class="mb-0">Mis Habilidades</h4>
+                    <p class="text-muted small">Agrega palabras clave sobre tus conocimientos técnicos o blandos.</p>
+                </div>
                 <form action="<?= BASE_URL ?>configurar_perfil?step=skills" method="post">
                     <input type="hidden" name="form_type" value="add_skill">
-                    <div class="skill-input-container mb-3 d-flex">
-                        <input type="text" class="form-control me-2" name="new_skill" value="<?= isset($_POST['new_skill']) ? htmlspecialchars($_POST['new_skill']) : '' ?>" placeholder="Ej: PHP, MySQL, JavaScript" maxlength="100">
-                        <button type="submit" name="add_skill" class="btn btn-primary btn-add-skill">
-                            <i class="fas fa-plus"></i> Añadir
+                    <div class="skill-input-container mb-3 d-flex gap-2">
+                        <input type="text" class="form-control" name="new_skill" value="<?= isset($_POST['new_skill']) ? htmlspecialchars($_POST['new_skill']) : '' ?>" placeholder="Ej: PHP, React, Liderazgo" maxlength="100">
+                        <button type="submit" name="add_skill" class="btn btn-primary px-4">
+                            <i class="fas fa-plus me-1"></i> Añadir
                         </button>
                     </div>
-                    <small class="form-text text-muted">Escribe una habilidad y presiona añadir.</small>
                 </form>
 
-                <h5 class="mt-4">Mis Habilidades (<?= count($habilidades) ?>)</h5>
+                <h5 class="mt-4 mb-3">Tus Skills (<?= count($habilidades) ?>)</h5>
                 <?php if (!empty($habilidades)): ?>
-                    <div class="skills-container mb-3">
+                    <div class="skills-container">
                         <?php foreach ($habilidades as $skill): ?>
-                            <span class="skill-badge">
-                                <?= htmlspecialchars($skill) ?>
-                                <a href="<?= BASE_URL ?>configurar_perfil?step=skills&delete_skill=<?= urlencode($skill) ?>" class="skill-delete-btn" onclick="return confirm('¿Estás seguro de que deseas eliminar la habilidad: <?= htmlspecialchars($skill) ?>?');" title="Eliminar habilidad">
-                                    &times;
+                            <div class="skill-badge">
+                                <span><?= htmlspecialchars($skill) ?></span>
+                                <a href="<?= BASE_URL ?>configurar_perfil?step=skills&delete_skill=<?= urlencode($skill) ?>" class="remove-skill" onclick="return confirm('¿Eliminar <?= htmlspecialchars($skill) ?>?');">
+                                    <i class="fas fa-times"></i>
                                 </a>
-                            </span>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <p class="text-muted">No has agregado habilidades aún.</p>
+                    <div class="text-center py-4 bg-light rounded">
+                        <p class="text-muted mb-0">No has agregado habilidades aún.</p>
+                    </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>

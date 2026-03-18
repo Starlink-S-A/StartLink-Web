@@ -1,0 +1,169 @@
+/* styles/mi_empresa.css - Diseño Premium SaaS */
+
+body {
+    background-color: #f8fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Tabs Principales de Navegación */
+.premium-tabs {
+    border-bottom: 2px solid #e2e8f0;
+    gap: 2rem;
+    padding: 0 1rem;
+}
+
+.premium-tabs .nav-link {
+    color: #64748b;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 1rem 0.5rem;
+    font-weight: 500;
+    font-size: 1.05rem;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.premium-tabs .nav-link:hover {
+    color: #0f172a;
+}
+
+.premium-tabs .nav-link.active {
+    color: #0f172a;
+    background: transparent;
+    border-bottom: 3px solid #00b894; /* Color emerald/teal corporativo */
+    font-weight: 600;
+}
+
+/* Tarjeta de Información de Empresa */
+.company-info-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.company-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #00b894 100%);
+}
+
+.company-logo-wrapper {
+    width: 140px;
+    height: 140px;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.company-logo-wrapper:hover {
+    border-color: #00b894;
+    cursor: pointer;
+}
+
+.company-logo-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+    background-color: white;
+}
+
+.company-logo-icon {
+    font-size: 3rem;
+    color: #94a3b8;
+}
+
+/* Formularios Premium */
+.form-label {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+
+.form-control:focus {
+    background-color: #ffffff;
+    border-color: #00b894;
+    box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.1);
+    outline: none;
+}
+
+.form-control[readonly] {
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+}
+
+.btn-premium {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 184, 148, 0.35);
+    color: white;
+}
+
+/* Modales y utilidades */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    background-color: #f8fafc;
+    border-radius: 16px 16px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 1.5rem;
+    background-color: #f8fafc;
+    border-radius: 0 0 16px 16px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

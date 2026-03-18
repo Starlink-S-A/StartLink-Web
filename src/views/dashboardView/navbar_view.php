@@ -1,151 +1,122 @@
 <?php
-// views/dashboardView/navbar_view.php
-
-// Lógica ya manejada en DashboardController o UserController; variables pasadas globalmente
+// views/dashboardView/navbar_view.php (Now as Sidebar)
 $currentPage = basename($_SERVER['PHP_SELF']);
 ?>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="<?= BASE_URL ?>dashboard">StartLink</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= $currentPage == 'ofertas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>ofertas">Ofertas</a>
-                </li>
-                <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= BASE_URL ?>perfiles_candidatos.php">Publicar Mi Perfil</a>
-                </li>
-                <?php endif; ?>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">Crear Empresa</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <!-- Dropdown de Notificaciones (estático, sin AJAX) -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell"></i>
-                        <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount">
-                                <?= $unreadNotificationsCount ?>
-                            </span>
-                        <?php endif; ?>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="max-height: 400px; overflow-y: auto;">
-                        <?php if (empty($latestNotifications)): ?>
-                            <li><span class="dropdown-item text-center">No hay notificaciones</span></li>
-                        <?php else: ?>
-                            <?php foreach ($latestNotifications as $notification): ?>
-                                <li class="dropdown-item notification-item <?= !$notification['leida'] ? 'unread' : '' ?>" data-notification-id="<?= $notification['id'] ?>">
-                                    <div class="d-flex align-items-center">
-                                        <i class="<?= htmlspecialchars($notification['icono']) ?> me-2"></i>
-                                        <div class="flex-grow-1">
-                                            <small class="text-muted"><?= date('d M H:i', strtotime($notification['fecha_creacion'])) ?></small>
-                                            <p class="mb-0"><?= htmlspecialchars($notification['mensaje']) ?></p>
-                                            <?php if (!empty($notification['url_redireccion'])): ?>
-                                                <a href="<?= htmlspecialchars($notification['url_redireccion']) ?>" class="small text-primary">Ver más</a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-center" href="<?= BASE_URL ?>notificaciones.php">Ver todas</a></li>
-                    </ul>
-                </li>
-                <!-- Dropdown de Perfil Usuario -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userProfileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="<?= isset($profileImage) ? $profileImage : 'https://static.thenounproject.com/png/4154905-200.png' ?>" alt="Profile" class="rounded-circle" width="30" height="30">
-                        <?= htmlspecialchars(isset($userName) ? $userName : 'Usuario') ?>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userProfileDropdown">
-                        <li>
-                            <a class="dropdown-item" href="<?= BASE_URL ?>configurar_perfil">
-                                <i class="fas fa-user me-2"></i>Configurar Perfil
-                            </a>
-                        </li>
-                        <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
-                        <li>
-                            <a class="dropdown-item" href="<?= BASE_URL ?>index.php?action=mis_empresas">
-                                <i class="fas fa-building me-2"></i>Mis Empresas
-                            </a>
-                        </li>
-                        <?php endif; ?>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" href="<?= BASE_URL ?>logout">
-                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/sidebar_styles.css">
 
-<!-- Script JS para inicializar dropdowns con manejo de errores -->
+<!-- Toggle Button for Mobile -->
+<button class="sidebar-toggler d-lg-none" id="mobileSidebarToggle">
+    <i class="fas fa-bars"></i>
+</button>
+
+<aside class="sidebar-premium" id="sidebarMenu">
+    <div class="sidebar-header">
+        <a class="sidebar-brand" href="<?= BASE_URL ?>dashboard">
+            <i class="fas fa-rocket"></i> StartLink
+        </a>
+    </div>
+
+    <!-- User Section -->
+    <div class="sidebar-user">
+        <?php 
+        // Lógica de bienvenida solo una vez por sesión
+        if (!isset($_SESSION['welcome_msg_shown'])): 
+            $_SESSION['welcome_msg_shown'] = true;
+        ?>
+            <span class="sidebar-greeting">¡Qué bueno verte!</span>
+        <?php endif; ?>
+        
+        <div class="position-relative d-inline-block">
+            <img src="<?= isset($profileImage) ? $profileImage : 'https://static.thenounproject.com/png/4154905-200.png' ?>" 
+                 alt="Profile" class="user-avatar-large">
+            <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
+                <div class="notif-dot"></div>
+            <?php endif; ?>
+        </div>
+        <span class="user-name"><?= htmlspecialchars($userName ?? 'Candidato') ?></span>
+        <span class="user-role"><?= isset($esAdminEmpresa) && $esAdminEmpresa ? 'PRO Admin' : 'Candidato' ?></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav-container">
+        <ul class="sidebar-nav">
+            <li>
+                <a class="sidebar-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            <li class="position-relative">
+                <a class="sidebar-link <?= $currentPage == 'ofertas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>ofertas">
+                    <i class="fas fa-briefcase"></i> Ofertas
+                </a>
+                <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
+                     <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unreadNotificationsCount ?></span>
+                <?php endif; ?>
+            </li>
+            <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
+            <li>
+                <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos.php">
+                    <i class="fas fa-paper-plane"></i> Publicar Mi Perfil
+                </a>
+            </li>
+            <?php endif; ?>
+            <li>
+                <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
+                    <i class="fas fa-plus-circle"></i> Nueva Empresa
+                </a>
+            </li>
+            <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
+            <li>
+                <a class="sidebar-link <?= $currentPage == 'mis_empresas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_empresas">
+                    <i class="fas fa-building"></i> Gestionar Empresas
+                </a>
+            </li>
+            <?php endif; ?>
+            
+            <div class="sidebar-divider my-4 mx-3" style="border-top: 1px solid #f1f5f9;"></div>
+            
+            <li>
+                <a class="sidebar-link <?= $currentPage == 'configurar_perfil_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil">
+                    <i class="fas fa-user-cog"></i> Mi Configuración
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link text-danger" href="<?= BASE_URL ?>logout" style="margin-top: 2rem;">
+                    <i class="fas fa-power-off"></i> Salir
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- App Version or Branding -->
+    <div class="mt-auto px-3">
+        <p class="text-center mt-3 text-muted" style="font-size: 0.65rem; letter-spacing: 1px;">&copy; 2026 STARTLINK CLOUD</p>
+    </div>
+</aside>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Verificar si Bootstrap está cargado
-        if (typeof bootstrap === 'undefined') {
-            console.error('Bootstrap no está cargado. Verifica la inclusión del script de Bootstrap.');
-            // Fallback: Toggle manual para dropdowns
-            const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            dropdownToggles.forEach(toggle => {
-                toggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const dropdownMenu = toggle.nextElementSibling;
-                    if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
-                        dropdownMenu.classList.toggle('show');
-                    }
-                });
-            });
-            return;
-        }
-
-        // Inicialización de Dropdowns de Bootstrap
-        const dropdownToggleElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-        dropdownToggleElements.forEach(function(dropdownToggle) {
-            new bootstrap.Dropdown(dropdownToggle);
+    const toggle = document.getElementById('mobileSidebarToggle');
+    const sidebar = document.getElementById('sidebarMenu');
+    
+    if (toggle && sidebar) {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            toggle.querySelector('i').classList.toggle('fa-bars');
+            toggle.querySelector('i').classList.toggle('fa-times');
         });
 
-        // Logs para depuración
-        const notificationsDropdownElement = document.getElementById('notificationsDropdown');
-        const userProfileDropdownElement = document.getElementById('userProfileDropdown');
-        if (notificationsDropdownElement) {
-            notificationsDropdownElement.addEventListener('click', function() {
-                console.log('Notifications dropdown clicked!');
-            });
-        }
-        if (userProfileDropdownElement) {
-            userProfileDropdownElement.addEventListener('click', function() {
-                console.log('User profile dropdown clicked!');
-            });
-        }
-    } catch (error) {
-        console.error('Error al inicializar dropdowns:', error);
+        // Close when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+                toggle.querySelector('i').classList.add('fa-bars');
+                toggle.querySelector('i').classList.remove('fa-times');
+            }
+        });
     }
 });
-
-// Cerrar dropdowns al hacer clic fuera
-document.addEventListener('click', function(e) {
-    const dropdowns = document.querySelectorAll('.dropdown-menu.show');
-    dropdowns.forEach(dropdown => {
-        if (!dropdown.parentElement.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
-});
+</script>
 </script>
