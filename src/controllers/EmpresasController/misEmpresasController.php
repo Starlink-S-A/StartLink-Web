@@ -66,7 +66,7 @@ class MisEmpresasController {
                 $stmt2->execute([$userId, $empresaId]);
                 $_SESSION['id_rol_empresa'] = (int)$stmt2->fetchColumn();
 
-                header("Location: " . BASE_URL . "index.php?action=dashboard"); // Redirigir al dashboard de la empresa
+                header("Location: " . BASE_URL . "mi_empresa");
                 exit();
             } else {
                 $_SESSION['mensaje'] = "Error: no perteneces a la empresa seleccionada.";
