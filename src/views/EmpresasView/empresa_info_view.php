@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
 </head>
 <body>
 
-<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
+<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
 <?php $seccion = $seccion ?? 'informacion'; ?>
 <?php $isUsuarios = $seccion === 'usuarios'; ?>

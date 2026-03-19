@@ -22,7 +22,7 @@
 $userName     = $_SESSION["user_name"] ?? 'Usuario';
 
 // Incluir el navbar después de las variables base (o si ya vienen del controlador)
-include ROOT_PATH . 'src/views/dashboardView/navbar_view.php';
+include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
 ?>
 
 <div class="container mt-4">

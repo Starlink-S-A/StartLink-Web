@@ -1,221 +1,410 @@
 <?php
 require_once 'configuraciónInicial.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Verifica sesión iniciada
+// Redirigir si el usuario no está logueado
 if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
-    header("Location: bienvenida.php");
+    header("Location: " . BASE_URL . "bienvenida.php");
     exit();
 }
 
-// Obtener la conexión a la base de datos
-$link = getDbConnection();
 $userId = $_SESSION["user_id"];
-$userEmpresaId = $_SESSION["id_empresa"] ?? null;
-$userRolEmpresa = $_SESSION["id_rol_empresa"] ?? null;
+$userName = $_SESSION["user_name"] ?? 'Usuario';
+$userRoleGlobal = $_SESSION["id_rol"] ?? null;
+$userEmpresaIdSession = $_SESSION["id_empresa"] ?? null; // ID de la empresa asociada en sesión
+$userRolEmpresaSession = $_SESSION["id_rol_empresa"] ?? null; // Rol dentro de la empresa asociada
 
-// --- NUEVA LÓGICA DE VERIFICACIÓN DE EMPRESA SELECCIONADA ---
-if ($userEmpresaId === null) {
-    $_SESSION['mensaje'] = "Por favor, selecciona una empresa para gestionar.";
-    $_SESSION['tipo'] = "warning";
-    header("Location: " . BASE_URL . "mis_empresas.php");
-    exit();
-}
-// --- FIN NUEVA LÓGICA ---
+$link = getDbConnection();
 
-// Función para actualizar el rol global del usuario
-function actualizarRolGlobal($userId, $link) {
-    $stmt = $link->prepare("SELECT COUNT(*) FROM USUARIO_EMPRESA WHERE id_usuario = ?");
-    $stmt->execute([$userId]);
-    $tieneEmpresas = $stmt->fetchColumn() > 0;
-
-    $nuevoRol = $tieneEmpresas ? 3 : 2; // 3=Trabajador, 2=Usuario normal
-    $stmt = $link->prepare("UPDATE USUARIO SET id_rol = ? WHERE id = ?");
-    $stmt->execute([$nuevoRol, $userId]);
-    
-    if ($userId == $_SESSION["user_id"]) {
-        $_SESSION["id_rol"] = $nuevoRol;
-    }
-}
-
-// --- Lógica de Procesamiento de POST (DEBE IR ANTES DE CUALQUIER SALIDA HTML) ---
+$selectedCompanyId = null;
+$companyInfo = null;
+$internalUsers = [];
 
 $mensaje = '';
-$tipoMensaje = 'success';
+$tipoMensaje = '';
 
-// Cargar mensajes de sesión que puedan venir de otros archivos o de POST anteriores
-if (isset($_SESSION['mensaje'])) {
-    $mensaje = $_SESSION['mensaje'];
-    $tipoMensaje = $_SESSION['tipo'] ?? 'success';
-    unset($_SESSION['mensaje']);
-    unset($_SESSION['tipo']);
-}
+// Roles de empresa que pueden acceder a esta sección (Admin Empresa, Contratador, Empleado Interno)
+$allowedCompanyRoles = [1, 2, 3];
 
-// Procesar eliminación de usuario de la empresa
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['eliminar_usuario_id'])) {
-    $eliminarId = (int)$_POST['eliminar_usuario_id'];
+// Obtener el ID del rol 'ADMINISTRADOR' global
+$stmtGlobalAdminRole = $link->prepare("SELECT id FROM ROL WHERE nombre_rol = 'ADMINISTRADOR'");
+$stmtGlobalAdminRole->execute();
+$globalAdminRoleId = $stmtGlobalAdminRole->fetchColumn();
+$isGlobalAdmin = ($userRoleGlobal == $globalAdminRoleId);
 
-    // Esta verificación ya no es estrictamente necesaria aquí si la anterior redirige,
-    // pero se mantiene como doble seguridad.
-    if ($userEmpresaId === null) {
-        $_SESSION['mensaje'] = "Error: No hay empresa seleccionada.";
-        $_SESSION['tipo'] = "danger";
-        header("Location: mi_empresa.php?seccion=usuarios"); exit();
-    }
-
-    try {
-        $stmt = $link->prepare("SELECT id_rol_empresa FROM USUARIO_EMPRESA WHERE id_usuario = ? AND id_empresa = ?");
-        $stmt->execute([$eliminarId, $userEmpresaId]);
-        $rolUsuarioAEliminar = $stmt->fetchColumn();
-
-        // Validar que el usuario logueado tenga permisos para eliminar y no sea el administrador principal
-        if (in_array($userRolEmpresa, [1, 2]) && $rolUsuarioAEliminar && $rolUsuarioAEliminar != 1) {
-            $link->beginTransaction();
-            
-            $stmt = $link->prepare("DELETE FROM USUARIO_EMPRESA WHERE id_usuario = ? AND id_empresa = ?");
-            $stmt->execute([$eliminarId, $userEmpresaId]);
-            
-            actualizarRolGlobal($eliminarId, $link);
-            
-            $link->commit();
-            $_SESSION['mensaje'] = "Usuario eliminado correctamente de la empresa.";
-            $_SESSION['tipo'] = "success";
-        } else {
-            $_SESSION['mensaje'] = "No tienes permiso para eliminar a este usuario o es el administrador principal.";
-            $_SESSION['tipo'] = "warning";
-        }
-    } catch (PDOException $e) {
-        $link->rollBack();
-        $_SESSION['mensaje'] = "Error al eliminar: " . $e->getMessage();
-        $_SESSION['tipo'] = "danger";
-    }
-    header("Location: mi_empresa.php?seccion=usuarios");
-    exit();
-}
-
-// Procesar agregar usuario a la empresa (este bloque ya no se usará para el envío de solicitudes por DNI,
-// esa lógica se movió a gestion_usuarios_empresa.php como AJAX)
-// Este bloque se mantiene por si hay otras formas de "agregar" que no sean por DNI.
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['dni_usuario_OLD'], $_POST['rol_empresa_agregar_OLD'])) {
-    // Esta lógica ha sido reemplazada por la función 'send_hiring_request_by_dni' en gestion_usuarios_empresa.php
-    // y se maneja por AJAX. Este bloque puede ser eliminado si no hay otra forma de "agregar".
-    // Si lo dejas, asegúrate de que los nombres de los campos POST no colisionen.
-    $_SESSION['mensaje'] = "La funcionalidad de agregar usuario ha sido actualizada. Por favor, usa el nuevo formulario de solicitud por DNI.";
-    $_SESSION['tipo'] = "info";
-    header("Location: mi_empresa.php?seccion=usuarios");
-    exit();
-}
-
-// Procesar seguimiento de desempeño
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'seguimiento_desempeno') {
-    $idUsuarioEvaluado = (int)$_POST['id_usuario_evaluado'];
-    $fechaEvaluacion = trim($_POST['fecha_evaluacion']);
-    $tipoEvaluacion = trim($_POST['tipo_evaluacion']);
-    $puntuacion = floatval($_POST['puntuacion']);
-    $comentarios = trim($_POST['comentarios']);
-    $objetivosLogrados = trim($_POST['objetivos_logrados']);
-
-    $errors = [];
-
-    if ($userEmpresaId === null) {
-        $errors[] = "Error: No hay empresa seleccionada para el seguimiento de desempeño.";
-    }
-    if (!in_array($userRolEmpresa, [1, 2])) { // Solo Admin de Empresa o Contratador pueden registrar desempeño
-        $errors[] = "Acceso no autorizado para registrar desempeño.";
-    }
-    if (empty($idUsuarioEvaluado)) { $errors[] = "ID de usuario evaluado es requerido."; }
-    if (empty($fechaEvaluacion)) { $errors[] = "Fecha de evaluación es requerida."; }
-    if (empty($tipoEvaluacion)) { $errors[] = "Tipo de evaluación es requerido."; }
-    if ($puntuacion < 0 || $puntuacion > 5) { $errors[] = "La puntuación debe estar entre 0 y 5."; }
-
-    if (empty($errors)) {
-        try {
-            $stmt = $link->prepare("
-                INSERT INTO SEGUIMIENTO_DESEMPEÑO (id_usuario, evaluador_id, fecha_evaluacion, tipo_evaluacion, puntuacion, comentarios, objetivos_logrados)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $idUsuarioEvaluado,
-                $userId, // El usuario logueado es el evaluador
-                $fechaEvaluacion,
-                $tipoEvaluacion,
-                $puntuacion,
-                $comentarios,
-                $objetivosLogrados
-            ]);
-
-            $_SESSION['mensaje'] = "Información de seguimiento de desempeño guardada exitosamente.";
-            $_SESSION['tipo'] = "success";
-        } catch (PDOException $e) {
-            error_log("Error al guardar seguimiento de desempeño: " . $e->getMessage());
-            $_SESSION['mensaje'] = "Error al guardar la información de seguimiento: " . $e->getMessage();
-            $_SESSION['tipo'] = "danger";
-        }
+// Determinar el ID de la empresa a mostrar
+if (isset($_GET['id_empresa']) && is_numeric($_GET['id_empresa'])) {
+    $selectedCompanyId = (int)$_GET['id_empresa'];
+} else {
+    // Si no viene en GET, intentar usar el de la sesión para Contratadores/Empleados Internos
+    // o redirigir a seleccionar_empresa.php si es un Admin de Empresa sin selección
+    if (in_array($userRolEmpresaSession, [2, 3])) {
+        $selectedCompanyId = $userEmpresaIdSession;
     } else {
-        $_SESSION['mensaje'] = implode('<br>', $errors);
-        $_SESSION['tipo'] = "danger";
+        // Si no es Contratador/Empleado Interno y no hay id_empresa en GET,
+        // redirigir a la página de selección de empresa.
+        header("Location: " . BASE_URL . "seleccionar_empresa.php");
+        exit();
     }
-    header("Location: mi_empresa.php?seccion=usuarios");
+}
+
+// Validar que el usuario tiene permiso para ver la empresa seleccionada
+$hasPermissionToViewCompany = false;
+try {
+    if ($selectedCompanyId) {
+        if ($isGlobalAdmin) {
+            // El administrador global puede ver cualquier empresa
+            $hasPermissionToViewCompany = true;
+        } else {
+            // Verificar si el usuario está asociado a la empresa con un rol permitido
+            $stmtCheckAccess = $link->prepare("
+                SELECT COUNT(*) FROM USUARIO_EMPRESA
+                WHERE id_usuario = ? AND id_empresa = ? AND id_rol_empresa IN (" . implode(',', $allowedCompanyRoles) . ")
+            ");
+            $stmtCheckAccess->execute([$userId, $selectedCompanyId]);
+            if ($stmtCheckAccess->fetchColumn() > 0) {
+                $hasPermissionToViewCompany = true;
+            }
+        }
+    }
+} catch (PDOException $e) {
+    error_log("Error al verificar permisos de empresa: " . $e->getMessage());
+    $mensaje = "Error al verificar permisos de acceso a la empresa.";
+    $tipoMensaje = "danger";
+}
+
+
+if (!$hasPermissionToViewCompany) {
+    $_SESSION['error'] = "No tienes permiso para acceder al equipo de esta empresa.";
+    header("Location: " . BASE_URL . "dashboard.php");
     exit();
 }
 
-// Verifica rol permitido para acceder a mi_empresa.php (después de POST)
-if (!in_array($userRolEmpresa, [1, 2])) {
-    echo "<div class='alert alert-danger text-center mt-5'>Acceso no autorizado.</div>";
-    exit();
+try {
+    // Obtener información de la empresa seleccionada/asociada
+    $stmtCompanyInfo = $link->prepare("
+        SELECT nombre_empresa, descripcion, email_contacto, telefono_contacto, url_sitio_web, logo_ruta
+        FROM EMPRESA
+        WHERE id_empresa = ?
+    ");
+    $stmtCompanyInfo->execute([$selectedCompanyId]);
+    $companyInfo = $stmtCompanyInfo->fetch(PDO::FETCH_ASSOC);
+
+    if ($companyInfo) {
+        // Procesar ruta del logo
+        $companyInfo['logo_url'] = BASE_URL . 'images/default_logo.png'; // Fallback
+        if (!empty($companyInfo['logo_ruta'])) {
+            $logoFullPath = ROOT_PATH . 'uploads/logos_empresa/' . basename($companyInfo['logo_ruta']);
+            $logoPublicPath = BASE_URL . 'uploads/logos_empresa/' . basename($companyInfo['logo_ruta']);
+            if (file_exists($logoFullPath)) {
+                $companyInfo['logo_url'] = $logoPublicPath;
+            }
+        }
+
+        // Obtener usuarios internos de la empresa
+        $stmtInternalUsers = $link->prepare("
+            SELECT U.id, U.nombre, U.email, U.foto_perfil, RE.nombre_rol_empresa
+            FROM USUARIO_EMPRESA UE
+            JOIN USUARIO U ON UE.id_usuario = U.id
+            JOIN ROL_EMPRESA RE ON UE.id_rol_empresa = RE.id_rol_empresa
+            WHERE UE.id_empresa = ?
+            ORDER BY U.nombre ASC
+        ");
+        $stmtInternalUsers->execute([$selectedCompanyId]);
+        $internalUsers = $stmtInternalUsers->fetchAll(PDO::FETCH_ASSOC);
+
+        // Procesar fotos de perfil de usuarios internos
+        foreach ($internalUsers as &$user) {
+            $user['profile_image_url'] = BASE_URL . 'images/default-profile.jpg';
+            if (!empty($user['foto_perfil'])) {
+                $profileFullPath = ROOT_PATH . 'uploads/profile_pictures/' . basename($user['foto_perfil']);
+                $profilePublicPath = BASE_URL . 'uploads/profile_pictures/' . basename($user['foto_perfil']);
+                if (file_exists($profileFullPath)) {
+                    $user['profile_image_url'] = $profilePublicPath;
+                }
+            }
+        }
+        unset($user); // Romper la referencia
+
+    } else {
+        $mensaje = "No se encontró información para la empresa seleccionada.";
+        $tipoMensaje = "danger";
+    }
+
+    // --- Lógica para crear chat grupal ---
+    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['create_group_chat'])) {
+        $selectedUserIds = $_POST['selected_users'] ?? [];
+        $groupChatName = trim($_POST['group_chat_name'] ?? '');
+
+        if (empty($selectedUserIds)) {
+            $mensaje = "Debes seleccionar al menos un usuario para crear un chat grupal.";
+            $tipoMensaje = "danger";
+        } else {
+            // Asegurarse de que el usuario actual también esté en el chat si no está seleccionado
+            if (!in_array($userId, $selectedUserIds)) {
+                $selectedUserIds[] = $userId;
+            }
+
+            // Validar que los usuarios seleccionados pertenecen a la empresa actual
+            $validUserIds = [];
+            foreach ($internalUsers as $u) {
+                if (in_array($u['id'], $selectedUserIds)) {
+                    $validUserIds[] = $u['id'];
+                }
+            }
+
+            if (count($validUserIds) < 2) { // Un chat grupal necesita al menos 2 participantes (incluyendo el creador)
+                $mensaje = "Selecciona al menos otro usuario además de ti para crear un chat grupal.";
+                $tipoMensaje = "danger";
+            } else {
+                $link->beginTransaction();
+                try {
+                    // Generar un título si no se proporciona uno
+                    if (empty($groupChatName)) {
+                        $names = [];
+                        foreach ($validUserIds as $id) {
+                            foreach ($internalUsers as $u) {
+                                if ($u['id'] == $id) {
+                                    $names[] = $u['nombre'];
+                                    break;
+                                }
+                            }
+                        }
+                        $groupChatName = "Chat de equipo: " . implode(", ", array_slice($names, 0, 3)) . (count($names) > 3 ? "..." : "");
+                    }
+
+                    // Insertar nueva conversación
+                    $stmtInsertConv = $link->prepare("
+                        INSERT INTO CONVERSACION (tipo_conversacion, titulo_conversacion, fecha_creacion, id_proyecto)
+                        VALUES ('empresa_interna', ?, NOW(), ?) -- CORREGIDO: 'equipo_interno' a 'empresa_interna'
+                    ");
+                    // id_proyecto se puede usar para almacenar el id_empresa si es un chat de equipo
+                    $stmtInsertConv->execute([$groupChatName, $selectedCompanyId]);
+                    $newChatId = $link->lastInsertId();
+
+                    // Añadir participantes a la conversación
+                    $stmtInsertParticipant = $link->prepare("
+                        INSERT INTO CONVERSACION_PARTICIPANTE (id_conversacion, id_usuario)
+                        VALUES (?, ?)
+                    ");
+                    foreach ($validUserIds as $participantId) {
+                        $stmtInsertParticipant->execute([$newChatId, $participantId]);
+                    }
+
+                    $link->commit();
+                    $_SESSION['mensaje'] = "Chat grupal creado exitosamente.";
+                    $_SESSION['tipo'] = "success";
+                    header("Location: " . BASE_URL . "mis_chats.php?chat_id=" . $newChatId);
+                    exit();
+
+                } catch (PDOException $e) {
+                    $link->rollBack();
+                    error_log("Error al crear chat grupal: " . $e->getMessage());
+                    $mensaje = "Error al crear el chat grupal: " . $e->getMessage();
+                    $tipoMensaje = "danger";
+                }
+            }
+        }
+    }
+
+} catch (PDOException $e) {
+    error_log("Error PDO en mi_equipo.php: " . $e->getMessage());
+    $mensaje = "Error de base de datos al cargar la página.";
+    $tipoMensaje = "danger";
+} catch (Exception $e) {
+    error_log("Error general en mi_equipo.php: " . $e->getMessage());
+    $mensaje = "Ocurrió un error inesperado.";
+    $tipoMensaje = "danger";
 }
-
-// Detectar sección actual (por defecto: informacion)
-$seccion = $_GET['seccion'] ?? 'informacion';
-
-// Manejo de mensajes (GET)
-// Ya se cargan desde la sesión al principio.
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mi Empresa - TalentLink</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $companyInfo ? htmlspecialchars($companyInfo['nombre_empresa']) : 'Mi Equipo' ?> - TalentLink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= BASE_URL ?>styles/dashboard_styles.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>styles/navbar_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>styles/navbar_styles.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>styles/mi_equipo.css">
 </head>
 <body>
-
 <?php include 'navbar.php'; ?>
 
 <div class="container mt-4">
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link <?= $seccion === 'informacion' ? 'active' : '' ?>" href="?seccion=informacion">Información de la Empresa</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link <?= $seccion === 'usuarios' ? 'active' : '' ?>" href="?seccion=usuarios">Gestión de Usuarios</a>
-        </li>
-    </ul>
-
     <?php if (!empty($mensaje)): ?>
-        <div class="alert alert-<?= htmlspecialchars($tipoMensaje) ?> alert-dismissible fade show" role="alert">
+        <div class="alert alert-<?= $tipoMensaje ?> alert-dismissible fade show" role="alert">
             <?= htmlspecialchars($mensaje) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
-    <div id="contenido-seccion">
-        <?php
-        if ($seccion === 'usuarios') {
-            // Este archivo ahora solo contiene la lógica de obtención de datos y la presentación HTML
-            include 'gestion_usuarios_empresa.php';
-        } else {
-            // Sección de información de la empresa (se incluye info_empresa.php)
-            include 'info_empresa.php'; // ¡Esta es la línea corregida!
-        }
-        ?>
-    </div>
+    <h2 class="mb-4 text-center">
+        <?= $companyInfo ? 'Equipo de ' . htmlspecialchars($companyInfo['nombre_empresa']) : 'Mi Equipo' ?>
+    </h2>
+
+    <?php if ($companyInfo): ?>
+        <div class="card company-info-card mb-4">
+            <div class="card-body text-center">
+                <img src="<?= htmlspecialchars($companyInfo['logo_url']) ?>" alt="Logo de la empresa" class="company-logo mb-3">
+                <h3><?= htmlspecialchars($companyInfo['nombre_empresa']) ?></h3>
+                <p class="text-muted"><?= htmlspecialchars($companyInfo['descripcion'] ?? 'Sin descripción.') ?></p>
+                <p><i class="fas fa-envelope me-2"></i><?= htmlspecialchars($companyInfo['email_contacto']) ?></p>
+                <p><i class="fas fa-phone me-2"></i><?= htmlspecialchars($companyInfo['telefono_contacto']) ?></p>
+                <?php if (!empty($companyInfo['url_sitio_web'])): ?>
+                    <p><i class="fas fa-globe me-2"></i><a href="<?= htmlspecialchars($companyInfo['url_sitio_web']) ?>" target="_blank"><?= htmlspecialchars($companyInfo['url_sitio_web']) ?></a></p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <h3 class="mb-3">Miembros del Equipo</h3>
+
+        <?php if (empty($internalUsers)): ?>
+            <div class="alert alert-info text-center">No hay miembros en el equipo de esta empresa.</div>
+        <?php else: ?>
+            <form id="groupChatForm" method="POST">
+                <input type="hidden" name="create_group_chat" value="1">
+                
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupChatModal">
+                        Crear Chat Grupal con Seleccionados
+                    </button>
+                </div>
+
+                <div class="row">
+                    <?php foreach ($internalUsers as $user): ?>
+                        <div class="col-md-4 mb-4">
+                            <div class="card user-card h-100">
+                                <img src="<?= htmlspecialchars($user['profile_image_url']) ?>" alt="Foto de perfil" class="user-avatar">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title"><?= htmlspecialchars($user['nombre']) ?></h5>
+                                    <p class="card-text text-muted"><?= htmlspecialchars($user['email']) ?></p>
+                                    <p class="card-text">
+                                        <span class="badge bg-secondary"><?= htmlspecialchars($user['nombre_rol_empresa']) ?></span>
+                                    </p>
+                                    <div class="d-flex justify-content-center gap-2 mt-3">
+                                        <?php if ($user['id'] != $userId): // No mostrar chat privado consigo mismo ?>
+                                            <a href="<?= BASE_URL ?>mis_chats.php?candidate_id=<?= htmlspecialchars($user['id']) ?>" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-comment"></i> Chat Privado
+                                            </a>
+                                        <?php endif; ?>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input user-checkbox" type="checkbox" name="selected_users[]" value="<?= htmlspecialchars($user['id']) ?>" id="user_<?= htmlspecialchars($user['id']) ?>" <?= ($user['id'] == $userId) ? 'checked disabled' : '' ?>>
+                                            <label class="form-check-label" for="user_<?= htmlspecialchars($user['id']) ?>">
+                                                Seleccionar
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Modal para Crear Chat Grupal -->
+                <div class="modal fade" id="createGroupChatModal" tabindex="-1" aria-labelledby="createGroupChatModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="createGroupChatModalLabel">Crear Chat Grupal</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="groupChatName" class="form-label">Nombre del Chat Grupal (opcional):</label>
+                                    <input type="text" class="form-control" id="groupChatName" name="group_chat_name" placeholder="Ej: Equipo de Proyecto X">
+                                    <small class="text-muted">Si lo dejas vacío, se generará un nombre automáticamente.</small>
+                                </div>
+                                <p>Usuarios seleccionados:</p>
+                                <ul id="selectedUsersList" class="list-group">
+                                    <!-- Los usuarios seleccionados se listarán aquí dinámicamente -->
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="confirmCreateGroupChatBtn">Crear Chat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        <?php endif; ?>
+    <?php else: ?>
+        <div class="alert alert-warning text-center">
+            No se pudo cargar la información de la empresa o no tienes permiso para verla.
+        </div>
+    <?php endif; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createGroupChatModal = document.getElementById('createGroupChatModal');
+    const selectedUsersList = document.getElementById('selectedUsersList');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const confirmCreateGroupChatBtn = document.getElementById('confirmCreateGroupChatBtn');
+    const groupChatForm = document.getElementById('groupChatForm');
+
+    // Función para actualizar la lista de usuarios seleccionados en el modal
+    function updateSelectedUsersInModal() {
+        selectedUsersList.innerHTML = '';
+        let selectedCount = 0;
+        const currentUserId = <?= json_encode($userId) ?>; // Obtener el ID del usuario actual de PHP
+
+        userCheckboxes.forEach(checkbox => {
+            const userId = checkbox.value;
+            const userName = checkbox.closest('.user-card').querySelector('.card-title').textContent;
+
+            // Asegurarse de que el usuario actual siempre esté en la lista del modal, incluso si su checkbox está deshabilitado
+            if (checkbox.checked || userId == currentUserId) {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-group-item');
+                listItem.textContent = userName + ((userId == currentUserId) ? ' (Tú)' : '');
+                selectedUsersList.appendChild(listItem);
+                selectedCount++;
+            }
+        });
+
+        // Deshabilitar el botón de crear chat si no hay al menos 2 usuarios seleccionados (incluyendo el actual)
+        if (selectedCount < 2) {
+            confirmCreateGroupChatBtn.disabled = true;
+            const warningItem = document.createElement('li');
+            warningItem.classList.add('list-group-item', 'list-group-item-warning');
+            warningItem.textContent = 'Selecciona al menos otro usuario para crear un chat grupal.';
+            selectedUsersList.appendChild(warningItem);
+        } else {
+            confirmCreateGroupChatBtn.disabled = false;
+        }
+    }
+
+    // Event listener para abrir el modal
+    if (createGroupChatModal) {
+        createGroupChatModal.addEventListener('show.bs.modal', function() {
+            updateSelectedUsersInModal();
+        });
+    }
+
+    // Event listener para cambios en los checkboxes
+    userCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // No es necesario actualizar el modal aquí, solo cuando se abre
+            // La función updateSelectedUsersInModal se encarga de eso.
+        });
+    });
+
+    // Asegurarse de que el checkbox del usuario actual esté marcado y deshabilitado al cargar
+    userCheckboxes.forEach(checkbox => {
+        const userId = checkbox.value;
+        const currentUserId = <?= json_encode($userId) ?>;
+        if (userId == currentUserId) {
+            checkbox.checked = true;
+            checkbox.disabled = true;
+        }
+    });
+});
+</script>
 </body>
 </html>

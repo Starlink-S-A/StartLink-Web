@@ -2,7 +2,7 @@
 // src/index.php
 
 require_once __DIR__ . '/controllers/authController/AuthController.php';
-require_once __DIR__ . '/controllers/dashboardController/DashboardController.php';
+require_once __DIR__ . '/controllers/dashboardController/sideBarController.php';
 require_once __DIR__ . '/controllers/configuracionusuarioController/UserController.php';
 
 
@@ -65,6 +65,18 @@ switch ($action) {
         require_once __DIR__ . '/controllers/EmpresasController/EmpresaInfoController.php';
         $empresaInfoController = new EmpresaInfoController();
         $empresaInfoController->show();
+        break;
+
+    case 'mis_equipos':
+        require_once __DIR__ . '/controllers/EmpresasController/misEquiposController.php';
+        $misEquiposController = new MisEquiposController();
+        $misEquiposController->index();
+        break;
+
+    case 'mi_equipo':
+        require_once __DIR__ . '/controllers/EmpresasController/miEquipoController.php';
+        $miEquipoController = new MiEquipoController();
+        $miEquipoController->show();
         break;
 
     case 'salir_oferta':

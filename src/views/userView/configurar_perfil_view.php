@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
+<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
 <div class="container mt-4">
     <?php if (!empty($message)): ?>
