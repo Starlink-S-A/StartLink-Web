@@ -387,7 +387,7 @@ class UserController {
 
                             $_SESSION['message'] = 'Información personal actualizada correctamente.';
                             $_SESSION['message_type'] = 'success';
-                            header("Location: " . BASE_URL . "dashboard");
+                            header("Location: " . BASE_URL . "configurar_perfil?step=personal");
                             exit();
                         } catch (PDOException $e) {
                             error_log('Error al actualizar perfil: ' . $e->getMessage());

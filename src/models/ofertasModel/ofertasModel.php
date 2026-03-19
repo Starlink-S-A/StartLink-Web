@@ -26,13 +26,15 @@ class OfertasModel {
         try {
             $sql = "
                 SELECT 
-                    O.id_oferta, O.titulo_oferta, O.descripcion_oferta, 
-                    O.presupuesto_min, O.presupuesto_max, O.ubicacion, 
-                    O.modalidad, O.fecha_cierre, O.limite_participantes,
-                    O.id_empresa, O.id_creador_oferta,
-                    E.nombre_empresa, E.logo_ruta
+                    O.id_oferta, O.id_creador_oferta, O.id_empresa, 
+                    O.titulo_oferta, O.descripcion_oferta, O.presupuesto_min, 
+                    O.presupuesto_max, O.ubicacion, O.modalidad, 
+                    O.fecha_cierre, O.requisitos, O.limite_participantes,
+                    E.nombre_empresa, E.logo_ruta,
+                    U.nombre AS nombre_creador
                 FROM oferta_trabajo O
                 LEFT JOIN empresa E ON O.id_empresa = E.id_empresa
+                LEFT JOIN usuario U ON O.id_creador_oferta = U.id
                 WHERE O.estado_oferta = 'Abierta'
                 ORDER BY O.fecha_publicacion DESC
             ";
@@ -207,6 +209,49 @@ class OfertasModel {
     }
 
     /**
+     * Actualizar oferta
+     * @param array $data
+     * @return bool
+     */
+    public function updateOferta($data) {
+        try {
+            $sql = "
+                UPDATE oferta_trabajo 
+                SET titulo_oferta = ?, 
+                    descripcion_oferta = ?, 
+                    presupuesto_min = ?, 
+                    presupuesto_max = ?, 
+                    ubicacion = ?, 
+                    modalidad = ?, 
+                    fecha_cierre = ?, 
+                    requisitos = ?, 
+                    limite_participantes = ?
+                WHERE id_oferta = ? AND id_creador_oferta = ?
+            ";
+
+            $stmt = $this->conexion->prepare($sql);
+            
+            return $stmt->execute([
+                $data['titulo'],
+                $data['descripcion'],
+                $data['presupuesto_min'],
+                $data['presupuesto_max'],
+                $data['ubicacion'],
+                $data['modalidad'],
+                $data['fecha_cierre'],
+                $data['requisitos'],
+                $data['limite_postulantes'],
+                $data['id_oferta'],
+                $data['id_creador_oferta']
+            ]);
+
+        } catch (PDOException $e) {
+            error_log("Error al actualizar oferta: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Eliminar oferta
      * @param int $id_oferta
      * @param int $id_usuario_propietario
@@ -214,7 +259,7 @@ class OfertasModel {
      */
     public function deleteOferta($id_oferta, $id_usuario_propietario) {
         try {
-            // Verificar que el usuario sea el propietario
+            // Verificar que el usuario sea the propietario
             $stmt = $this->conexion->prepare("
                 SELECT id_creador_oferta 
                 FROM oferta_trabajo 
@@ -239,5 +284,28 @@ class OfertasModel {
             return false;
         }
     }
+
+    /**
+     * Postular un usuario a una oferta
+     * @param int $id_usuario
+     * @param int $id_oferta
+     * @return bool
+     */
+    public function postular($id_usuario, $id_oferta) {
+        try {
+            // Verificar si ya está postulado
+            $status = $this->getUserApplicationStatus($id_usuario, $id_oferta);
+            if ($status !== false) {
+                return false; // Ya está postulado
+            }
+
+            $sql = "INSERT INTO postulacion (id_usuario, id_oferta, fecha_postulacion, estado_postulacion) VALUES (?, ?, NOW(), 'Postulado')";
+            $stmt = $this->conexion->prepare($sql);
+            return $stmt->execute([$id_usuario, $id_oferta]);
+
+        } catch (PDOException $e) {
+            error_log("Error al postular: " . $e->getMessage());
+            return false;
+        }
+    }
 }
-?>

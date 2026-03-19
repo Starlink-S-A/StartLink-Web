@@ -175,7 +175,7 @@
                 <div class="modal fade" id="modalEliminarOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
-                            <form method="POST" action="eliminar_oferta.php">
+                            <form method="POST" action="<?= BASE_URL ?>index.php?action=eliminar_oferta">
                                 <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
                                 <div class="modal-header">
                                     <h5 class="modal-title">¿Eliminar esta oferta?</h5>
@@ -270,6 +270,85 @@
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Publicar Oferta
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar oferta -->
+<div class="modal fade" id="modalEditarOferta" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>index.php?action=editar_oferta" id="formEditarOferta">
+                <input type="hidden" name="id_oferta" id="edit_id_oferta">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit"></i> Editar Oferta de Empleo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="mb-3">
+                        <label class="form-label">Título de la oferta:</label>
+                        <input type="text" name="titulo" id="edit_titulo" class="form-control" required minlength="5" maxlength="255">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción:</label>
+                        <textarea name="descripcion" id="edit_descripcion" class="form-control" required minlength="20" 
+                                  style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Presupuesto Mínimo:</label>
+                            <input type="number" name="presupuesto_min" id="edit_presupuesto_min" class="form-control" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Presupuesto Máximo:</label>
+                            <input type="number" name="presupuesto_max" id="edit_presupuesto_max" class="form-control" required min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ubicación:</label>
+                            <input type="text" name="ubicacion" id="edit_ubicacion" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Modalidad:</label>
+                            <select name="modalidad" id="edit_modalidad" class="form-select" required>
+                                <option value="">Selecciona una modalidad</option>
+                                <option value="Presencial">Presencial</option>
+                                <option value="Remoto">Remoto</option>
+                                <option value="Híbrido">Híbrido</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Cierre:</label>
+                        <input type="date" name="fecha_cierre" id="edit_fecha_cierre" class="form-control" required 
+                               min="<?= date('Y-m-d') ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Requisitos:</label>
+                        <textarea name="requisitos" id="edit_requisitos" class="form-control" required 
+                                  style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Límite de Postulantes (0 = ilimitado):</label>
+                        <input type="number" name="limite_postulantes" id="edit_limite_postulantes" class="form-control" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Guardar Cambios
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 </div>
