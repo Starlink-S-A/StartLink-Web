@@ -24,8 +24,20 @@
 
     <h1 class="text-center mb-4">Configura tu Perfil</h1>
 
+    <?php
+        $stepOrder = [
+            'personal' => 1,
+            'experience' => 2,
+            'education' => 3,
+            'skills' => 4,
+            'cv' => 5,
+        ];
+        $stepNum = $stepOrder[$currentStep] ?? 1;
+        $progress = (int)round(($stepNum / 5) * 100);
+    ?>
+
     <div class="progress mb-4">
-        <div class="progress-bar" role="progressbar" style="width: <?= $currentStep == 'personal' ? '25' : ($currentStep == 'experience' ? '50' : ($currentStep == 'education' ? '75' : '100')) ?>%;" aria-valuenow="<?= $currentStep == 'personal' ? '25' : ($currentStep == 'experience' ? '50' : ($currentStep == 'education' ? '75' : '100')) ?>" aria-valuemin="0" aria-valuemax="100">Paso <?= $currentStep == 'personal' ? '1' : ($currentStep == 'experience' ? '2' : ($currentStep == 'education' ? '3' : '4')) ?> de 4</div>
+        <div class="progress-bar" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100">Paso <?= $stepNum ?> de 5</div>
     </div>
 
     <ul class="nav flex-column profile-nav mb-4" id="profileTabs" role="tablist">
@@ -47,6 +59,11 @@
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'skills' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=skills">
                 <i class="fas fa-tools me-2"></i> Habilidades
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $currentStep == 'cv' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=cv">
+                <i class="fas fa-file-alt me-2"></i> Hoja de Vida (CV)
             </a>
         </li>
     </ul>
@@ -326,6 +343,42 @@
                         <p class="text-muted mb-0">No has agregado habilidades aún.</p>
                     </div>
                 <?php endif; ?>
+            </div>
+        <?php elseif ($currentStep == 'cv'): ?>
+            <?php
+                $rutaHdv = (string)($perfilData['ruta_hdv'] ?? '');
+                $cvUrl = '';
+                $cvFileName = '';
+                if ($rutaHdv !== '') {
+                    $cvFileName = basename($rutaHdv);
+                    $cvUrl = rtrim(BASE_URL, '/') . '/' . ltrim($rutaHdv, '/');
+                }
+            ?>
+            <div class="card p-4 layout-premium border-0 shadow-sm">
+                <div class="section-header mb-4">
+                    <h4 class="mb-0">Hoja de Vida (CV)</h4>
+                    <p class="text-muted small">Sube tu CV para postularte más rápido a las ofertas.</p>
+                </div>
+
+                <?php if ($rutaHdv !== ''): ?>
+                    <div class="alert alert-info border-0 shadow-sm">
+                        CV actual: <a href="<?= htmlspecialchars($cvUrl) ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($cvFileName) ?></a>
+                    </div>
+                <?php else: ?>
+                    <div class="text-muted small mb-3">Aún no has subido una hoja de vida.</div>
+                <?php endif; ?>
+
+                <form action="<?= BASE_URL ?>configurar_perfil?step=cv" method="post" enctype="multipart/form-data" novalidate>
+                    <input type="hidden" name="form_type" value="upload_cv">
+                    <div class="mb-3">
+                        <label for="cv" class="form-label">Subir hoja de vida</label>
+                        <input type="file" class="form-control" id="cv" name="cv" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                        <small class="form-text text-muted">Formatos permitidos: PDF, DOC, DOCX. Máx. 5MB.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-upload me-1"></i> Subir
+                    </button>
+                </form>
             </div>
         <?php endif; ?>
     </div>
