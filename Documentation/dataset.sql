@@ -17,7 +17,9 @@ CREATE TABLE empresa (
     url_sitio_web VARCHAR(255),
     logo_ruta VARCHAR(255),
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    estado VARCHAR(50) DEFAULT 'Activa'
+    estado VARCHAR(50) DEFAULT 'Activa',
+    ultima_actualizacion DATETIME NULL,
+    ultimo_editor_id INT NULL
 );
 
 CREATE TABLE rol_empresa (

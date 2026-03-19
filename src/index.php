@@ -61,6 +61,12 @@ switch ($action) {
         $misEmpresasController->misEmpresas();
         break;
 
+    case 'mi_empresa':
+        require_once __DIR__ . '/controllers/EmpresasController/EmpresaInfoController.php';
+        $empresaInfoController = new EmpresaInfoController();
+        $empresaInfoController->show();
+        break;
+
     case 'salir_oferta':
         require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
         require_once __DIR__ . '/models/ofertasModel/detallesOfertasModel.php';
