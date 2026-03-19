@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
+<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">

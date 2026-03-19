@@ -69,7 +69,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<?php include 'navbar_view.php'; ?>
+<?php include __DIR__ . '/sidebar_View.php'; ?>
 
 
     <?php 

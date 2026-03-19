@@ -1,19 +1,19 @@
 <?php
-// views/dashboardView/navbar_view.php (Now as Sidebar)
+// views/dashboardView/sidebar_view.php
 $currentPage = basename($_SERVER['PHP_SELF']);
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/sidebar_styles.css">
 
-<!-- Toggle Button for Mobile -->
-<button class="sidebar-toggler d-lg-none" id="mobileSidebarToggle">
-    <i class="fas fa-bars"></i>
-</button>
-
 <aside class="sidebar-premium" id="sidebarMenu">
     <div class="sidebar-header">
+        <button class="sidebar-toggler" id="sidebarToggle" type="button" aria-label="Abrir o cerrar el menú lateral">
+            <span class="sidebar-toggler-bar"></span>
+            <span class="sidebar-toggler-bar"></span>
+            <span class="sidebar-toggler-bar"></span>
+        </button>
         <a class="sidebar-brand" href="<?= BASE_URL ?>dashboard">
-            <i class="fas fa-rocket"></i> StartLink
+            <i class="fas fa-rocket"></i> <span class="sidebar-brand-text">StartLink</span>
         </a>
     </div>
 
@@ -43,12 +43,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         <ul class="sidebar-nav">
             <li>
                 <a class="sidebar-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">
-                    <i class="fas fa-home"></i> Home
+                    <i class="fas fa-home"></i> <span class="sidebar-link-text">Home</span>
                 </a>
             </li>
             <li class="position-relative">
                 <a class="sidebar-link <?= $currentPage == 'ofertas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>ofertas">
-                    <i class="fas fa-briefcase"></i> Ofertas
+                    <i class="fas fa-briefcase"></i> <span class="sidebar-link-text">Ofertas</span>
                 </a>
                 <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
                      <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unreadNotificationsCount ?></span>
@@ -57,19 +57,24 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
             <li>
                 <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos.php">
-                    <i class="fas fa-paper-plane"></i> Publicar Mi Perfil
+                    <i class="fas fa-paper-plane"></i> <span class="sidebar-link-text">Publicar Mi Perfil</span>
                 </a>
             </li>
             <?php endif; ?>
             <li>
                 <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
-                    <i class="fas fa-plus-circle"></i> Nueva Empresa
+                    <i class="fas fa-plus-circle"></i> <span class="sidebar-link-text">Nueva Empresa</span>
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=mis_equipos">
+                    <i class="fas fa-users"></i> <span class="sidebar-link-text">Mi Equipo</span>
                 </a>
             </li>
             <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
             <li>
                 <a class="sidebar-link <?= $currentPage == 'mis_empresas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_empresas">
-                    <i class="fas fa-building"></i> Gestionar Empresas
+                    <i class="fas fa-building"></i> <span class="sidebar-link-text">Gestionar Empresas</span>
                 </a>
             </li>
             <?php endif; ?>
@@ -78,12 +83,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             
             <li>
                 <a class="sidebar-link <?= $currentPage == 'configurar_perfil_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil">
-                    <i class="fas fa-user-cog"></i> Mi Configuración
+                    <i class="fas fa-user-cog"></i> <span class="sidebar-link-text">Mi Configuración</span>
                 </a>
             </li>
             <li>
                 <a class="sidebar-link text-danger" href="<?= BASE_URL ?>logout" style="margin-top: 2rem;">
-                    <i class="fas fa-power-off"></i> Salir
+                    <i class="fas fa-power-off"></i> <span class="sidebar-link-text">Salir</span>
                 </a>
             </li>
         </ul>
@@ -95,28 +100,4 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     </div>
 </aside>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.getElementById('mobileSidebarToggle');
-    const sidebar = document.getElementById('sidebarMenu');
-    
-    if (toggle && sidebar) {
-        toggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            sidebar.classList.toggle('active');
-            toggle.querySelector('i').classList.toggle('fa-bars');
-            toggle.querySelector('i').classList.toggle('fa-times');
-        });
-
-        // Close when clicking outside on mobile
-        document.addEventListener('click', function(e) {
-            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                sidebar.classList.remove('active');
-                toggle.querySelector('i').classList.add('fa-bars');
-                toggle.querySelector('i').classList.remove('fa-times');
-            }
-        });
-    }
-});
-</script>
-</script>
+<script src="<?= BASE_URL ?>src/public/js/sideBar.js"></script>

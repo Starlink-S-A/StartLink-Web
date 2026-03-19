@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body style="background-color: #f8fafc;">
-<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
+<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
 <div class="container mt-5 pt-4">
     <div class="d-flex justify-content-between align-items-center mb-5">
