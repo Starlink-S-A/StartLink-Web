@@ -1,0 +1,221 @@
+<?php
+require_once 'configuraciónInicial.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Verifica sesión iniciada
+if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
+    header("Location: bienvenida.php");
+    exit();
+}
+
+// Obtener la conexión a la base de datos
+$link = getDbConnection();
+$userId = $_SESSION["user_id"];
+$userEmpresaId = $_SESSION["id_empresa"] ?? null;
+$userRolEmpresa = $_SESSION["id_rol_empresa"] ?? null;
+
+// --- NUEVA LÓGICA DE VERIFICACIÓN DE EMPRESA SELECCIONADA ---
+if ($userEmpresaId === null) {
+    $_SESSION['mensaje'] = "Por favor, selecciona una empresa para gestionar.";
+    $_SESSION['tipo'] = "warning";
+    header("Location: " . BASE_URL . "mis_empresas.php");
+    exit();
+}
+// --- FIN NUEVA LÓGICA ---
+
+// Función para actualizar el rol global del usuario
+function actualizarRolGlobal($userId, $link) {
+    $stmt = $link->prepare("SELECT COUNT(*) FROM USUARIO_EMPRESA WHERE id_usuario = ?");
+    $stmt->execute([$userId]);
+    $tieneEmpresas = $stmt->fetchColumn() > 0;
+
+    $nuevoRol = $tieneEmpresas ? 3 : 2; // 3=Trabajador, 2=Usuario normal
+    $stmt = $link->prepare("UPDATE USUARIO SET id_rol = ? WHERE id = ?");
+    $stmt->execute([$nuevoRol, $userId]);
+    
+    if ($userId == $_SESSION["user_id"]) {
+        $_SESSION["id_rol"] = $nuevoRol;
+    }
+}
+
+// --- Lógica de Procesamiento de POST (DEBE IR ANTES DE CUALQUIER SALIDA HTML) ---
+
+$mensaje = '';
+$tipoMensaje = 'success';
+
+// Cargar mensajes de sesión que puedan venir de otros archivos o de POST anteriores
+if (isset($_SESSION['mensaje'])) {
+    $mensaje = $_SESSION['mensaje'];
+    $tipoMensaje = $_SESSION['tipo'] ?? 'success';
+    unset($_SESSION['mensaje']);
+    unset($_SESSION['tipo']);
+}
+
+// Procesar eliminación de usuario de la empresa
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['eliminar_usuario_id'])) {
+    $eliminarId = (int)$_POST['eliminar_usuario_id'];
+
+    // Esta verificación ya no es estrictamente necesaria aquí si la anterior redirige,
+    // pero se mantiene como doble seguridad.
+    if ($userEmpresaId === null) {
+        $_SESSION['mensaje'] = "Error: No hay empresa seleccionada.";
+        $_SESSION['tipo'] = "danger";
+        header("Location: mi_empresa.php?seccion=usuarios"); exit();
+    }
+
+    try {
+        $stmt = $link->prepare("SELECT id_rol_empresa FROM USUARIO_EMPRESA WHERE id_usuario = ? AND id_empresa = ?");
+        $stmt->execute([$eliminarId, $userEmpresaId]);
+        $rolUsuarioAEliminar = $stmt->fetchColumn();
+
+        // Validar que el usuario logueado tenga permisos para eliminar y no sea el administrador principal
+        if (in_array($userRolEmpresa, [1, 2]) && $rolUsuarioAEliminar && $rolUsuarioAEliminar != 1) {
+            $link->beginTransaction();
+            
+            $stmt = $link->prepare("DELETE FROM USUARIO_EMPRESA WHERE id_usuario = ? AND id_empresa = ?");
+            $stmt->execute([$eliminarId, $userEmpresaId]);
+            
+            actualizarRolGlobal($eliminarId, $link);
+            
+            $link->commit();
+            $_SESSION['mensaje'] = "Usuario eliminado correctamente de la empresa.";
+            $_SESSION['tipo'] = "success";
+        } else {
+            $_SESSION['mensaje'] = "No tienes permiso para eliminar a este usuario o es el administrador principal.";
+            $_SESSION['tipo'] = "warning";
+        }
+    } catch (PDOException $e) {
+        $link->rollBack();
+        $_SESSION['mensaje'] = "Error al eliminar: " . $e->getMessage();
+        $_SESSION['tipo'] = "danger";
+    }
+    header("Location: mi_empresa.php?seccion=usuarios");
+    exit();
+}
+
+// Procesar agregar usuario a la empresa (este bloque ya no se usará para el envío de solicitudes por DNI,
+// esa lógica se movió a gestion_usuarios_empresa.php como AJAX)
+// Este bloque se mantiene por si hay otras formas de "agregar" que no sean por DNI.
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['dni_usuario_OLD'], $_POST['rol_empresa_agregar_OLD'])) {
+    // Esta lógica ha sido reemplazada por la función 'send_hiring_request_by_dni' en gestion_usuarios_empresa.php
+    // y se maneja por AJAX. Este bloque puede ser eliminado si no hay otra forma de "agregar".
+    // Si lo dejas, asegúrate de que los nombres de los campos POST no colisionen.
+    $_SESSION['mensaje'] = "La funcionalidad de agregar usuario ha sido actualizada. Por favor, usa el nuevo formulario de solicitud por DNI.";
+    $_SESSION['tipo'] = "info";
+    header("Location: mi_empresa.php?seccion=usuarios");
+    exit();
+}
+
+// Procesar seguimiento de desempeño
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['form_type']) && $_POST['form_type'] === 'seguimiento_desempeno') {
+    $idUsuarioEvaluado = (int)$_POST['id_usuario_evaluado'];
+    $fechaEvaluacion = trim($_POST['fecha_evaluacion']);
+    $tipoEvaluacion = trim($_POST['tipo_evaluacion']);
+    $puntuacion = floatval($_POST['puntuacion']);
+    $comentarios = trim($_POST['comentarios']);
+    $objetivosLogrados = trim($_POST['objetivos_logrados']);
+
+    $errors = [];
+
+    if ($userEmpresaId === null) {
+        $errors[] = "Error: No hay empresa seleccionada para el seguimiento de desempeño.";
+    }
+    if (!in_array($userRolEmpresa, [1, 2])) { // Solo Admin de Empresa o Contratador pueden registrar desempeño
+        $errors[] = "Acceso no autorizado para registrar desempeño.";
+    }
+    if (empty($idUsuarioEvaluado)) { $errors[] = "ID de usuario evaluado es requerido."; }
+    if (empty($fechaEvaluacion)) { $errors[] = "Fecha de evaluación es requerida."; }
+    if (empty($tipoEvaluacion)) { $errors[] = "Tipo de evaluación es requerido."; }
+    if ($puntuacion < 0 || $puntuacion > 5) { $errors[] = "La puntuación debe estar entre 0 y 5."; }
+
+    if (empty($errors)) {
+        try {
+            $stmt = $link->prepare("
+                INSERT INTO SEGUIMIENTO_DESEMPEÑO (id_usuario, evaluador_id, fecha_evaluacion, tipo_evaluacion, puntuacion, comentarios, objetivos_logrados)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $idUsuarioEvaluado,
+                $userId, // El usuario logueado es el evaluador
+                $fechaEvaluacion,
+                $tipoEvaluacion,
+                $puntuacion,
+                $comentarios,
+                $objetivosLogrados
+            ]);
+
+            $_SESSION['mensaje'] = "Información de seguimiento de desempeño guardada exitosamente.";
+            $_SESSION['tipo'] = "success";
+        } catch (PDOException $e) {
+            error_log("Error al guardar seguimiento de desempeño: " . $e->getMessage());
+            $_SESSION['mensaje'] = "Error al guardar la información de seguimiento: " . $e->getMessage();
+            $_SESSION['tipo'] = "danger";
+        }
+    } else {
+        $_SESSION['mensaje'] = implode('<br>', $errors);
+        $_SESSION['tipo'] = "danger";
+    }
+    header("Location: mi_empresa.php?seccion=usuarios");
+    exit();
+}
+
+// Verifica rol permitido para acceder a mi_empresa.php (después de POST)
+if (!in_array($userRolEmpresa, [1, 2])) {
+    echo "<div class='alert alert-danger text-center mt-5'>Acceso no autorizado.</div>";
+    exit();
+}
+
+// Detectar sección actual (por defecto: informacion)
+$seccion = $_GET['seccion'] ?? 'informacion';
+
+// Manejo de mensajes (GET)
+// Ya se cargan desde la sesión al principio.
+?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Empresa - TalentLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?= BASE_URL ?>styles/dashboard_styles.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>styles/navbar_styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+<?php include 'navbar.php'; ?>
+
+<div class="container mt-4">
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link <?= $seccion === 'informacion' ? 'active' : '' ?>" href="?seccion=informacion">Información de la Empresa</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $seccion === 'usuarios' ? 'active' : '' ?>" href="?seccion=usuarios">Gestión de Usuarios</a>
+        </li>
+    </ul>
+
+    <?php if (!empty($mensaje)): ?>
+        <div class="alert alert-<?= htmlspecialchars($tipoMensaje) ?> alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($mensaje) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif; ?>
+
+    <div id="contenido-seccion">
+        <?php
+        if ($seccion === 'usuarios') {
+            // Este archivo ahora solo contiene la lógica de obtención de datos y la presentación HTML
+            include 'gestion_usuarios_empresa.php';
+        } else {
+            // Sección de información de la empresa (se incluye info_empresa.php)
+            include 'info_empresa.php'; // ¡Esta es la línea corregida!
+        }
+        ?>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
