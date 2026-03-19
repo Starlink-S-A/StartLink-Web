@@ -61,10 +61,42 @@ switch ($action) {
         $misEmpresasController->misEmpresas();
         break;
 
+    case 'salir_oferta':
+        require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
+        require_once __DIR__ . '/models/ofertasModel/detallesOfertasModel.php';
+        $ofertasController = new OfertasController();
+        $ofertasController->salirOferta();
+        break;
+
+    case 'eliminar_oferta':
+        require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
+        $ofertasController = new OfertasController();
+        $ofertasController->deleteOferta();
+        break;
+
+    case 'postular':
+        require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
+        $ofertasController = new OfertasController();
+        $ofertasController->postular();
+        break;
+
     case 'crear_oferta':
         require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
         $ofertasController = new OfertasController();
         $ofertasController->createOferta();
+        break;
+
+    case 'editar_oferta':
+        require_once __DIR__ . '/controllers/ofertasController/ofertasController.php';
+        $ofertasController = new OfertasController();
+        $ofertasController->updateOferta();
+        break;
+
+    case 'detalle_oferta':
+        require_once __DIR__ . '/controllers/ofertasController/detallesOfertasController.php';
+        $db = getDbConnection();
+        $controller = new DetallesOfertasController($db);
+        $controller->index();
         break;
 
     default:

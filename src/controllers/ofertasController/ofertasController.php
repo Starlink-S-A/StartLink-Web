@@ -63,10 +63,20 @@ class OfertasController {
                 // Validar si es creador
                 $ofertaEnriquecida['esCreador'] = ($userId == ($oferta['id_creador_oferta'] ?? null));
 
-                // Preparar URL del logo
-                $ofertaEnriquecida['logoEmpresa'] = !empty($oferta['logo_ruta']) 
-                    ? BASE_URL . 'assets/images/Uploads/logos_empresa/' . htmlspecialchars($oferta['logo_ruta']) 
-                    : BASE_URL . 'assets/images/Uploads/logos_empresa/default_logo.png';
+                // --- PROCESAMIENTO DEL LOGO DE LA EMPRESA ---
+                $defaultCompanyImage = 'https://cdn-icons-png.flaticon.com/512/3061/3061341.png';
+                $ofertaEnriquecida['logoEmpresa'] = $defaultCompanyImage;
+
+                if (!empty($oferta['logo_ruta'])) {
+                    $nombreArchivo = basename($oferta['logo_ruta']);
+                    $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'logos_empresa' . DIRECTORY_SEPARATOR . $nombreArchivo;
+                    $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/logos_empresa/' . $nombreArchivo;
+
+                    if (file_exists($rutaAbsoluta)) {
+                        $ofertaEnriquecida['logoEmpresa'] = $rutaPublica;
+                    }
+                }
+                // --- FIN PROCESAMIENTO LOGO ---
 
                 $ofertasConInfo[] = $ofertaEnriquecida;
             }
@@ -217,6 +227,128 @@ class OfertasController {
     }
 
     /**
+     * Actualizar oferta existente
+     */
+    public function updateOferta() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
+            header("Location: " . BASE_URL);
+            exit();
+        }
+
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            $_SESSION['mensaje'] = 'Método no permitido';
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+
+        try {
+            $data = [
+                'id_oferta' => intval($_POST['id_oferta'] ?? 0),
+                'titulo' => trim($_POST['titulo'] ?? ''),
+                'descripcion' => trim($_POST['descripcion'] ?? ''),
+                'presupuesto_min' => floatval($_POST['presupuesto_min'] ?? 0),
+                'presupuesto_max' => floatval($_POST['presupuesto_max'] ?? 0),
+                'ubicacion' => trim($_POST['ubicacion'] ?? ''),
+                'modalidad' => trim($_POST['modalidad'] ?? ''),
+                'fecha_cierre' => $_POST['fecha_cierre'] ?? '',
+                'requisitos' => trim($_POST['requisitos'] ?? ''),
+                'limite_postulantes' => intval($_POST['limite_postulantes'] ?? 0),
+                'id_creador_oferta' => $_SESSION['user_id']
+            ];
+
+            if ($data['id_oferta'] <= 0) {
+                throw new Exception("ID de oferta inválido");
+            }
+
+            $errores = $this->validarOferta($data);
+            if (!empty($errores)) {
+                $_SESSION['mensaje'] = implode(', ', $errores);
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
+            $resultado = $this->ofertasModel->updateOferta($data);
+            
+            if (!$resultado) {
+                throw new Exception("No se pudo actualizar la oferta o no tienes permiso");
+            }
+
+            $_SESSION['mensaje'] = "Oferta actualizada exitosamente";
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+
+        } catch (Exception $e) {
+            error_log("Error al actualizar oferta: " . $e->getMessage());
+            $_SESSION['mensaje'] = 'Error: ' . $e->getMessage();
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+    }
+
+    /**
+     * Salir / retirar postulación propia
+     */
+    public function salirOferta() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
+            header("Location: " . BASE_URL . "bienvenida.php");
+            exit();
+        }
+
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+
+        $userId   = $_SESSION["user_id"];
+        $ofertaId = intval($_POST['id_oferta'] ?? 0);
+
+        if ($ofertaId <= 0) {
+            $_SESSION['mensaje'] = "Oferta inválida.";
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+
+        try {
+            $db    = getDbConnection();
+            $model = new \DetallesOfertasModel($db);
+
+            // Verificar si el usuario fue rechazado permanentemente
+            $stmtCheck = $db->prepare(
+                "SELECT rechazo_permanente FROM postulacion WHERE id_oferta = ? AND id_usuario = ? LIMIT 1"
+            );
+            $stmtCheck->execute([$ofertaId, $userId]);
+            $row = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+            if ($row && $row['rechazo_permanente'] == 1) {
+                $_SESSION['mensaje'] = "No puedes retirarte de esta oferta porque fuiste rechazado permanentemente.";
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
+            $ok = $model->retirarPostulacion($ofertaId, $userId);
+
+            $_SESSION['mensaje'] = $ok
+                ? "Has salido de la postulación correctamente."
+                : "No se pudo procesar tu solicitud.";
+
+        } catch (Exception $e) {
+            error_log("Error en salirOferta: " . $e->getMessage());
+            $_SESSION['mensaje'] = "Error al procesar la solicitud.";
+        }
+
+        header("Location: " . BASE_URL . "index.php?action=ofertas");
+        exit();
+    }
+
+    /**
      * Eliminar oferta
      */
     public function deleteOferta() {
@@ -225,12 +357,12 @@ class OfertasController {
         }
 
         if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
-            $this->respondJson(['status' => 'error', 'message' => 'No autorizado']);
+            header("Location: " . BASE_URL . "bienvenida.php");
             exit();
         }
 
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            $this->respondJson(['status' => 'error', 'message' => 'Método HTTP no permitido']);
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
             exit();
         }
 
@@ -248,12 +380,14 @@ class OfertasController {
             }
 
             $_SESSION['mensaje'] = "Oferta eliminada exitosamente";
-            $this->respondJson(['status' => 'success', 'message' => 'Oferta eliminada exitosamente']);
 
         } catch (Exception $e) {
             error_log("Error al eliminar oferta: " . $e->getMessage());
-            $this->respondJson(['status' => 'error', 'message' => $e->getMessage()]);
+            $_SESSION['mensaje'] = "Error: " . $e->getMessage();
         }
+
+        header("Location: " . BASE_URL . "index.php?action=ofertas");
+        exit();
     }
 
     /**
@@ -307,6 +441,58 @@ class OfertasController {
         }
 
         return $errores;
+    }
+
+    /**
+     * Postular a una oferta
+     */
+    public function postular() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
+            header("Location: " . BASE_URL . "bienvenida.php");
+            exit();
+        }
+
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+
+        $userId = $_SESSION["user_id"];
+        $ofertaId = intval($_POST['id_oferta'] ?? 0);
+
+        if ($ofertaId <= 0) {
+            $_SESSION['mensaje'] = "Oferta inválida";
+            header("Location: " . BASE_URL . "index.php?action=ofertas");
+            exit();
+        }
+
+        try {
+            // Verificar si el usuario tiene rol de TRABAJADOR (id_rol = 2)
+            if ($_SESSION['id_rol'] != 2) {
+                $_SESSION['mensaje'] = "Solo los candidatos pueden postularse a ofertas.";
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
+            $resultado = $this->ofertasModel->postular($userId, $ofertaId);
+
+            if ($resultado) {
+                $_SESSION['mensaje'] = "¡Postulación exitosa! Ya formas parte de esta oferta.";
+            } else {
+                $_SESSION['mensaje'] = "No se pudo realizar la postulación o ya estás postulado.";
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en postular: " . $e->getMessage());
+            $_SESSION['mensaje'] = "Error al procesar la postulación.";
+        }
+
+        header("Location: " . BASE_URL . "index.php?action=ofertas");
+        exit();
     }
 
     /**

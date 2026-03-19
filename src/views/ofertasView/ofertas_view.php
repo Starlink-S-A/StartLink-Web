@@ -60,8 +60,10 @@
                             <h5 class="card-title"><?= $oferta['titulo_oferta'] ?></h5>
                             <p class="card-text text-muted"><?= $oferta['descripcion_oferta'] ?></p>
                             
-                            <div class="mb-3">
-                                <p class="mb-1"><strong>Empresa:</strong> <?= $oferta['nombre_empresa'] ?></p>
+                                <p class="mb-1">
+                                    <strong>Empresa:</strong> <?= $oferta['nombre_empresa'] ?><br>
+                                    <small class="text-muted"><i class="fas fa-user-tie"></i> Publicado por: <?= htmlspecialchars($oferta['nombre_creador'] ?? 'Desconocido') ?></small>
+                                </p>
                                 
                                 <?php if (!empty($oferta['presupuesto_min']) || !empty($oferta['presupuesto_max'])): ?>
                                     <p class="mb-1"><strong>Salario:</strong> 
@@ -115,15 +117,21 @@
                                             </a>
                                         <?php endif; ?>
                                     <?php endif; ?>
+                                    <?php if ($oferta['estadoPostulacion'] === 'Rechazado'): ?>
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-ban"></i> Rechazado
+                                        </span>
+                                    <?php else: ?>
                                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal" 
                                             data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
                                         <i class="fas fa-sign-out-alt"></i> Salir
                                     </button>
+                                    <?php endif; ?>
                                     
                                     <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
-                                                <form action="<?= BASE_URL ?>salir_oferta.php" method="POST">
+                                                <form action="<?= BASE_URL ?>index.php?action=salir_oferta" method="POST">
                                                     <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
                                                     <div class="modal-header">
                                                         <h5 class="modal-title">¿Salir de esta oferta?</h5>
@@ -142,7 +150,7 @@
                                     </div>
 
                                 <?php elseif ($esUsuario): ?>
-                                    <form action="<?= BASE_URL ?>postular_oferta.php" method="POST" class="d-inline">
+                                    <form action="<?= BASE_URL ?>index.php?action=postular" method="POST" class="d-inline">
                                         <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-success">
                                             <i class="fas fa-paper-plane"></i> Postularme
@@ -151,10 +159,25 @@
                                 <?php endif; ?>
 
                                 <?php if ($oferta['esCreador'] && $esContratador): ?>
-                                    <a href="<?= BASE_URL ?>detalle_oferta.php?id=<?= $oferta['id_oferta'] ?>" 
+                                    <a href="<?= BASE_URL ?>index.php?action=detalle_oferta&id=<?= $oferta['id_oferta'] ?>" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-users"></i> Ver Postulados
                                     </a>
+                                    <button class="btn btn-sm btn-outline-warning btn-editar-oferta" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalEditarOferta"
+                                            data-id="<?= $oferta['id_oferta'] ?>"
+                                            data-titulo="<?= htmlspecialchars($oferta['titulo_oferta']) ?>"
+                                            data-descripcion="<?= htmlspecialchars($oferta['descripcion_oferta']) ?>"
+                                            data-presupuesto-min="<?= $oferta['presupuesto_min'] ?>"
+                                            data-presupuesto-max="<?= $oferta['presupuesto_max'] ?>"
+                                            data-ubicacion="<?= htmlspecialchars($oferta['ubicacion']) ?>"
+                                            data-modalidad="<?= htmlspecialchars($oferta['modalidad']) ?>"
+                                            data-fecha-cierre="<?= $oferta['fecha_cierre'] ?>"
+                                            data-requisitos="<?= htmlspecialchars($oferta['requisitos'] ?? '') ?>"
+                                            data-limite="<?= $oferta['limite_participantes'] ?>">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
                                     <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
                                             data-bs-target="#modalEliminarOferta<?= $oferta['id_oferta'] ?>">
                                         <i class="fas fa-trash"></i> Eliminar
@@ -168,7 +191,7 @@
                 <div class="modal fade" id="modalEliminarOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
-                            <form method="POST" action="eliminar_oferta.php">
+                            <form method="POST" action="<?= BASE_URL ?>index.php?action=eliminar_oferta">
                                 <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
                                 <div class="modal-header">
                                     <h5 class="modal-title">¿Eliminar esta oferta?</h5>
@@ -263,6 +286,85 @@
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Publicar Oferta
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar oferta -->
+<div class="modal fade" id="modalEditarOferta" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="POST" action="<?= BASE_URL ?>index.php?action=editar_oferta" id="formEditarOferta">
+                <input type="hidden" name="id_oferta" id="edit_id_oferta">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit"></i> Editar Oferta de Empleo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="mb-3">
+                        <label class="form-label">Título de la oferta:</label>
+                        <input type="text" name="titulo" id="edit_titulo" class="form-control" required minlength="5" maxlength="255">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción:</label>
+                        <textarea name="descripcion" id="edit_descripcion" class="form-control" required minlength="20" 
+                                  style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Presupuesto Mínimo:</label>
+                            <input type="number" name="presupuesto_min" id="edit_presupuesto_min" class="form-control" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Presupuesto Máximo:</label>
+                            <input type="number" name="presupuesto_max" id="edit_presupuesto_max" class="form-control" required min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ubicación:</label>
+                            <input type="text" name="ubicacion" id="edit_ubicacion" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Modalidad:</label>
+                            <select name="modalidad" id="edit_modalidad" class="form-select" required>
+                                <option value="">Selecciona una modalidad</option>
+                                <option value="Presencial">Presencial</option>
+                                <option value="Remoto">Remoto</option>
+                                <option value="Híbrido">Híbrido</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Cierre:</label>
+                        <input type="date" name="fecha_cierre" id="edit_fecha_cierre" class="form-control" required 
+                               min="<?= date('Y-m-d') ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Requisitos:</label>
+                        <textarea name="requisitos" id="edit_requisitos" class="form-control" required 
+                                  style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Límite de Postulantes (0 = ilimitado):</label>
+                        <input type="number" name="limite_postulantes" id="edit_limite_postulantes" class="form-control" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Guardar Cambios
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 </div>
