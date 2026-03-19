@@ -1,235 +1,214 @@
-/* styles/configurar_perfil_styles.css */
+/* estilos/configurar_perfil.css */
 
-/* Profile Picture Styles */
-.profile-picture-container {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    margin: 0 auto 20px;
-    cursor: pointer;
+body {
+    background-color: #f8fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.profile-picture {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #ddd;
-    transition: opacity 0.3s;
+/* Reducción de animaciones pesadas para un flujo más rápido */
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.profile-picture:hover {
-    opacity: 0.8;
+.layout-premium {
+    animation: fadeInSlide 0.5s ease;
 }
 
-.profile-picture-container input[type="file"] {
-    display: none;
-}
-
-.profile-picture-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.profile-picture-container:hover .profile-picture-overlay {
-    opacity: 1;
-}
-
-/* General Form Styles */
-.card {
+/* ------- BARRA LATERAL (SIDEBAR TABS) ------- */
+.profile-nav .nav-link {
+    color: #475569;
+    background-color: transparent;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-    padding: 20px;
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
 }
 
-.form-label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
+.profile-nav .nav-link:hover {
+    color: #1e293b;
+    background-color: #f1f5f9;
 }
 
-.form-control, .form-select {
-    border-radius: 6px;
-    border: 1px solid #ced4da;
-    padding: 10px;
-    font-size: 16px;
-    transition: border-color 0.3s, box-shadow 0.3s;
+.profile-nav .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, #00a680 0%, #059669 100%);
+    box-shadow: 0 4px 15px rgba(0, 166, 128, 0.3);
+    border-color: transparent;
 }
 
-.form-control:focus, .form-select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-    outline: none;
+/* ------- BARRA DE PROGRESO ------- */
+.progress {
+    height: 10px;
+    border-radius: 20px;
+    background-color: #f1f5f9;
 }
 
-.form-text {
-    font-size: 14px;
-    color: #6c757d;
+.progress-bar {
+    background: linear-gradient(90deg, #00a680 0%, #059669 100%) !important;
+    border-radius: 20px;
+}
+
+/* ------- TARJETA DE CONTENIDO ------- */
+.section-header {
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 12px;
+}
+
+.form-navigation {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #00a680 0%, #059669 100%);
     border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    padding: 10px 24px;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    box-shadow: 0 6px 16px rgba(0, 166, 128, 0.35);
+    transform: translateY(-2px);
+    background: #008c6a;
 }
 
-.btn-danger {
-    background-color: #dc3545;
-    border: none;
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    color: #334155;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(0, 166, 128, 0.1);
+    border-color: #00a680;
+}
+
+/* ------- ALERTAS ------- */
+.alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+/* ------- IMAGEN DE PERFIL ------- */
+.img-thumbnail {
+    border: 4px solid #ffffff;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.img-thumbnail:hover {
+    transform: scale(1.05);
+}
+
+.btn-outline-primary {
+    color: #00a680;
+    border-color: #00a680;
+}
+
+.btn-outline-primary:hover {
+    background-color: #00a680;
+    color: #fff;
+    border-color: #00a680;
+}
+
+/* ------- LISTAS (EXPERIENCIA/ESTUDIOS) ------- */
+.list-group-item {
+    border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    border-radius: 12px !important;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    border-color: #00a680;
+    box-shadow: 0 4px 12px rgba(0, 166, 128, 0.04);
+}
+
+.text-primary {
+    color: #00a680 !important;
+}
+
+.delete-btn {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
     padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: background-color 0.3s;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.btn-danger:hover {
-    background-color: #b02a37;
+.delete-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
 }
 
-.btn-success {
-    background-color: #28a745;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: background-color 0.3s;
-}
-
-.btn-success:hover {
-    background-color: #218838;
-}
-
-/* Specific Form Elements */
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.skill-input-container {
-    display: flex;
-    align-items: center;
-}
-
-.skill-input-container .form-control {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.btn-add-skill {
-    padding: 10px 20px;
-    font-size: 14px;
-}
-
+/* ------- SKILLS ------- */
 .skills-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .skill-badge {
-    background-color: #e9ecef;
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    display: inline-flex;
+    background: #f0fdf4;
+    color: #059669;
+    border: 1px solid #dcfce7;
+    padding: 8px 16px;
+    border-radius: 24px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.2s ease;
 }
 
-.skill-delete-btn {
-    color: #dc3545;
-    text-decoration: none;
-    font-size: 16px;
-    line-height: 1;
+.skill-badge:hover {
+    background: #dcfce7;
+    transform: translateY(-2px);
 }
 
-.skill-delete-btn:hover {
-    color: #b02a37;
+.skill-badge .remove-skill {
+    color: #4ade80;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
 }
 
-/* List Group for Experiences and Education */
-.list-group-item {
-    border-radius: 6px;
-    margin-bottom: 10px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+.skill-badge .remove-skill:hover {
+    color: #059669;
 }
 
-.list-group-item h6 {
-    font-weight: 600;
-    margin-bottom: 8px;
+/* Transiciones entre pestañas */
+.tab-content > .tab-pane {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
 }
 
-.list-group-item p {
-    margin-bottom: 8px;
-    color: #495057;
-}
-
-.list-group-item .text-muted {
-    font-size: 14px;
-}
-
-/* Modal Styles */
-.modal-content {
-    border-radius: 10px;
-}
-
-.modal-header.bg-danger {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-}
-
-.modal-footer {
-    border-top: none;
-    padding: 15px;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 576px) {
-    .profile-picture-container {
-        width: 120px;
-        height: 120px;
-    }
-
-    .form-control, .form-select {
-        font-size: 14px;
-        padding: 8px;
-    }
-
-    .btn-primary, .btn-success {
-        padding: 8px 16px;
-        font-size: 14px;
-    }
-
-    .skill-input-container {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .skill-input-container .form-control {
-        margin-right: 0;
-    }
+.tab-content > .tab-pane.show {
+    opacity: 1;
 }
