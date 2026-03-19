@@ -128,6 +128,33 @@ if (!function_exists('getDbConnection')) {
     }
 }
 
+if (
+    isset($_SESSION['loggedin'], $_SESSION['user_id']) &&
+    $_SESSION['loggedin'] === true &&
+    !empty($_SESSION['id_empresa'])
+) {
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("
+            SELECT u.id_rol, ue.id_rol_empresa
+            FROM usuario u
+            LEFT JOIN usuario_empresa ue
+                ON ue.id_usuario = u.id AND ue.id_empresa = ?
+            WHERE u.id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([(int)$_SESSION['id_empresa'], (int)$_SESSION['user_id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            if (isset($row['id_rol'])) {
+                $_SESSION['id_rol'] = (int)$row['id_rol'];
+            }
+            $_SESSION['id_rol_empresa'] = $row['id_rol_empresa'] !== null ? (int)$row['id_rol_empresa'] : null;
+        }
+    } catch (Throwable $e) {
+    }
+}
+
 // -------------------------------
 // 🔹 Verificar si perfil de usuario está completo
 // -------------------------------

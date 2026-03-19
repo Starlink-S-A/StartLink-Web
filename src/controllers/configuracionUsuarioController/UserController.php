@@ -103,6 +103,7 @@ class UserController {
                     'departamento' => '',
                     'pais' => '',
                     'foto_perfil' => '',
+                    'ruta_hdv' => '',
                 ];
             }
         } catch (PDOException $e) {
@@ -312,6 +313,27 @@ class UserController {
                         }
                     }
 
+                    // Verificar unicidad del teléfono
+                    if (!empty($telefono)) {
+                        $telefonoNormalizado = preg_replace('/\D+/', '', $telefono);
+                        try {
+                            $stmt = $pdo->prepare("SELECT id, telefono FROM usuario WHERE telefono IS NOT NULL AND telefono <> '' AND id != :id_usuario");
+                            $stmt->execute([':id_usuario' => $userId]);
+                            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                $telDb = (string)($row['telefono'] ?? '');
+                                if ($telDb === '') continue;
+                                $telDbNormalizado = preg_replace('/\D+/', '', $telDb);
+                                if ($telDbNormalizado !== '' && $telDbNormalizado === $telefonoNormalizado) {
+                                    $errors[] = 'El teléfono ya está registrado para otro usuario.';
+                                    break;
+                                }
+                            }
+                        } catch (PDOException $e) {
+                            error_log('Error al verificar unicidad del teléfono: ' . $e->getMessage());
+                            $errors[] = 'Error al verificar el teléfono. Inténtalo de nuevo.';
+                        }
+                    }
+
                     // Manejo de la foto de perfil
                     if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] == UPLOAD_ERR_OK) {
                         $fileTmpPath = $_FILES['foto_perfil']['tmp_name'];
@@ -397,6 +419,77 @@ class UserController {
                                 $errors[] = 'Error al guardar la información personal: ' . $e->getMessage();
                             }
                         }
+                    }
+                    break;
+
+                case 'upload_cv':
+                    if (isset($_FILES['cv']) && $_FILES['cv']['error'] !== UPLOAD_ERR_NO_FILE) {
+                        if ($_FILES['cv']['error'] !== UPLOAD_ERR_OK) {
+                            $errors[] = 'Error al subir la hoja de vida.';
+                        } else {
+                            $maxFileSize = 5 * 1024 * 1024;
+                            if ((int)$_FILES['cv']['size'] > $maxFileSize) {
+                                $errors[] = 'La hoja de vida excede el tamaño máximo (5MB).';
+                            } else {
+                                $ext = strtolower((string)pathinfo((string)$_FILES['cv']['name'], PATHINFO_EXTENSION));
+                                $allowedExt = ['pdf', 'doc', 'docx'];
+                                if (!in_array($ext, $allowedExt, true)) {
+                                    $errors[] = 'Formato no permitido. Usa PDF, DOC o DOCX.';
+                                } else {
+                                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                                    $mime = $finfo->file($_FILES['cv']['tmp_name']);
+                                    $allowedMime = [
+                                        'application/pdf',
+                                        'application/msword',
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    ];
+                                    if (!in_array($mime, $allowedMime, true)) {
+                                        $errors[] = 'El archivo no es un PDF/DOC/DOCX válido.';
+                                    } else {
+                                        $uploadDir = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'cvs' . DIRECTORY_SEPARATOR;
+                                        if (!is_dir($uploadDir)) {
+                                            mkdir($uploadDir, 0755, true);
+                                        }
+
+                                        $newFileName = md5((string)time() . (string)$_FILES['cv']['name']) . '.' . $ext;
+                                        $destPath = $uploadDir . $newFileName;
+                                        if (move_uploaded_file($_FILES['cv']['tmp_name'], $destPath)) {
+                                            $rutaRelativa = 'assets/cvs/' . $newFileName;
+
+                                            if (!empty($perfilData['ruta_hdv'])) {
+                                                $oldRel = (string)$perfilData['ruta_hdv'];
+                                                $oldAbs = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($oldRel, '/\\'));
+                                                if (is_file($oldAbs)) {
+                                                    unlink($oldAbs);
+                                                }
+                                            }
+
+                                            $stmt = $pdo->prepare("UPDATE usuario SET ruta_hdv = :ruta_hdv WHERE id = :id_usuario");
+                                            $stmt->execute([
+                                                ':ruta_hdv' => $rutaRelativa,
+                                                ':id_usuario' => $userId,
+                                            ]);
+
+                                            $_SESSION['message'] = 'Hoja de vida actualizada correctamente.';
+                                            $_SESSION['message_type'] = 'success';
+                                            header("Location: " . BASE_URL . "configurar_perfil?step=cv");
+                                            exit();
+                                        } else {
+                                            $errors[] = 'Error al guardar la hoja de vida. Verifica permisos de escritura.';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        $errors[] = 'Selecciona un archivo para subir.';
+                    }
+
+                    if (!empty($errors)) {
+                        $_SESSION['message'] = implode(' ', $errors);
+                        $_SESSION['message_type'] = 'danger';
+                        header("Location: " . BASE_URL . "configurar_perfil?step=cv");
+                        exit();
                     }
                     break;
 

@@ -22,9 +22,9 @@ if (session_status() === PHP_SESSION_NONE) {
 <?php $seccion = $seccion ?? 'informacion'; ?>
 <?php $isUsuarios = $seccion === 'usuarios'; ?>
 
-<div class="container mt-5 mb-5 pt-4">
+<div class="container-fluid mt-5 mb-5 pt-4">
     <div class="row justify-content-center">
-        <div class="col-lg-9">
+        <div class="col-12 col-xxl-11">
             <div class="company-info-card">
                 <ul class="nav premium-tabs mb-4">
                     <li class="nav-item">
@@ -74,17 +74,7 @@ if (session_status() === PHP_SESSION_NONE) {
                 <?php endif; ?>
 
                 <?php if ($isUsuarios): ?>
-                    <div class="alert alert-info border-0 shadow-sm mb-0">
-                        Esta sección se implementará después. Por ahora solo se habilitó la navegación entre secciones.
-                    </div>
-                    <div class="mt-4 d-flex flex-wrap gap-3">
-                        <a href="<?= BASE_URL ?>mi_empresa?seccion=informacion" class="btn-premium">
-                            <i class="fas fa-arrow-left"></i> Volver a Información
-                        </a>
-                        <a href="<?= BASE_URL ?>mis_empresas" class="btn btn-light rounded-pill px-4 align-self-center">
-                            Volver a Gestionar Empresas
-                        </a>
-                    </div>
+                    <?php include __DIR__ . '/gestionUsuariosView.php'; ?>
                 <?php else: ?>
                 <form method="POST" action="" enctype="multipart/form-data" novalidate>
                     <div class="text-center mb-4">
@@ -200,10 +190,6 @@ if (session_status() === PHP_SESSION_NONE) {
                             <button type="submit" class="btn-premium flex-grow-1 justify-content-center">
                                 <i class="fas fa-save"></i> Guardar Cambios
                             </button>
-                        <?php else: ?>
-                            <div class="alert alert-warning w-100 mb-0">
-                                Solo el Administrador de Empresa (Dueño) o el Administrador global puede editar esta información.
-                            </div>
                         <?php endif; ?>
                         <a href="<?= BASE_URL ?>mis_empresas" class="btn btn-light rounded-pill px-4 align-self-center">
                             Volver

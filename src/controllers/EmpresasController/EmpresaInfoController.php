@@ -50,6 +50,17 @@ class EmpresaInfoController {
             exit();
         }
 
+        if ($seccion === 'usuarios') {
+            require_once __DIR__ . '/gestionUsuariosController.php';
+            $gestionUsuariosController = new GestionUsuariosController();
+            $gestionUsuariosData = $gestionUsuariosController->handle($empresaId, $userId, $userRoleGlobal, $userRolEmpresa);
+
+            $canManageUsers = $gestionUsuariosData['canManageUsers'] ?? false;
+            $canChangeRoles = $gestionUsuariosData['canChangeRoles'] ?? false;
+            $usuarios = $gestionUsuariosData['usuarios'] ?? [];
+            $rolesEmpresa = $gestionUsuariosData['rolesEmpresa'] ?? [];
+        }
+
         $data = [
             'nombre_empresa' => $empresa['nombre_empresa'] ?? '',
             'descripcion' => $empresa['descripcion'] ?? '',
