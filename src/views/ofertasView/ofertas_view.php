@@ -70,6 +70,9 @@
                             <div class="flex-grow-1">
                                 <h5 class="fw-700 mb-1"><?= $oferta['titulo_oferta'] ?></h5>
                                 <p class="text-primary fw-600 small mb-0"><?= $oferta['nombre_empresa'] ?></p>
+                                <?php if (!empty($oferta['nombre_creador'])): ?>
+                                    <p class="text-muted small mb-0">Publicado por <?= $oferta['nombre_creador'] ?></p>
+                                <?php endif; ?>
                             </div>
 
                             <?php if ($oferta['yaPostulado']): ?>
@@ -159,12 +162,29 @@
                             <?php endif; ?>
 
                             <?php if ($oferta['esCreador'] && $esContratador): ?>
-                                <a href="<?= BASE_URL ?>detalle_oferta.php?id=<?= $oferta['id_oferta'] ?>" 
-                                   class="btn btn-sm btn-outline-primary px-3">
+                                <a href="<?= BASE_URL ?>index.php?action=detalle_oferta&id=<?= $oferta['id_oferta'] ?>#postulantes" 
+                                   class="btn btn-sm btn-outline-primary px-3" title="Ver postulantes">
                                     <i class="fas fa-users"></i>
                                 </a>
+                                <button class="btn btn-sm btn-outline-warning px-3" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditarOferta"
+                                        data-id="<?= $oferta['id_oferta'] ?>"
+                                        data-titulo="<?= $oferta['titulo_oferta'] ?>"
+                                        data-descripcion="<?= $oferta['descripcion_oferta'] ?>"
+                                        data-presupuesto-min="<?= $oferta['presupuesto_min'] ?>"
+                                        data-presupuesto-max="<?= $oferta['presupuesto_max'] ?>"
+                                        data-ubicacion="<?= htmlspecialchars($oferta['ubicacion'] ?? '') ?>"
+                                        data-modalidad="<?= htmlspecialchars($oferta['modalidad'] ?? '') ?>"
+                                        data-fecha-cierre="<?= $oferta['fecha_cierre'] ?>"
+                                        data-requisitos="<?= htmlspecialchars($oferta['requisitos'] ?? '') ?>"
+                                        data-limite="<?= $oferta['limite_participantes'] ?>"
+                                        title="Editar oferta">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalEliminarOferta<?= $oferta['id_oferta'] ?>">
+                                        data-bs-target="#modalEliminarOferta<?= $oferta['id_oferta'] ?>"
+                                        title="Eliminar oferta">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             <?php endif; ?>
@@ -210,6 +230,30 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <?php if (!empty($empresasUsuario)): ?>
+                        <?php $empresaSeleccionada = (int)($_SESSION['id_empresa'] ?? 0); ?>
+                        <div class="mb-3">
+                            <label class="form-label">Empresa:</label>
+                            <select name="id_empresa" class="form-select" required>
+                                <?php if (count($empresasUsuario) > 1): ?>
+                                    <option value="">Selecciona una empresa</option>
+                                <?php endif; ?>
+                                <?php foreach ($empresasUsuario as $empresa): ?>
+                                    <?php
+                                    $empresaId = (int)($empresa['id_empresa'] ?? 0);
+                                    $selected = ($empresaSeleccionada > 0 && $empresaId === $empresaSeleccionada)
+                                        || ($empresaSeleccionada === 0 && count($empresasUsuario) === 1);
+                                    ?>
+                                    <option value="<?= $empresaId ?>" <?= $selected ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($empresa['nombre_empresa'] ?? '') ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php else: ?>
+                        <input type="hidden" name="id_empresa" value="<?= (int)($_SESSION['id_empresa'] ?? 0) ?>">
+                    <?php endif; ?>
+
                     <div class="mb-3">
                         <label class="form-label">Título de la oferta:</label>
                         <input type="text" name="titulo" class="form-control" required minlength="5" maxlength="255"

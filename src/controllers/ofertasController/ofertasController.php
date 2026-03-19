@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/ofertasModel/ofertasModel.php';
+require_once __DIR__ . '/../../models/empresasModel/MisEmpresasModel.php';
 
 class OfertasController {
     private $ofertasModel;
@@ -43,6 +44,7 @@ class OfertasController {
         $mensaje = '';
         $ofertas = [];
         $ofertasConInfo = [];
+        $empresasUsuario = [];
 
         try {
             // Obtener todas las ofertas activas
@@ -89,6 +91,10 @@ class OfertasController {
 
         // Variables para la vista
         $ofertas = $ofertasConInfo;
+        if ($esContratador) {
+            $misEmpresasModel = new MisEmpresasModel();
+            $empresasUsuario = $misEmpresasModel->getEmpresasUsuario($userId);
+        }
 
         // Variables para el navbar
         $userName = $_SESSION['user_name'] ?? 'Usuario';
@@ -172,14 +178,6 @@ class OfertasController {
             exit();
         }
 
-        // Validar que sea contratador
-        $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
-        if (!in_array($rolEmpresa, [1, 2])) {
-            $_SESSION['mensaje'] = 'No tienes permisos para crear ofertas';
-            header("Location: " . BASE_URL . "index.php?action=ofertas");
-            exit();
-        }
-
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
             $_SESSION['mensaje'] = 'Método no permitido';
             header("Location: " . BASE_URL . "index.php?action=ofertas");
@@ -187,6 +185,30 @@ class OfertasController {
         }
 
         try {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            $empresaId = (int)($_POST['id_empresa'] ?? 0);
+
+            if ($empresaId <= 0) {
+                $_SESSION['mensaje'] = 'Selecciona una empresa válida para publicar la oferta';
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
+            $db = getDbConnection();
+            if (!($db instanceof PDO)) {
+                throw new Exception("No se pudo validar la empresa seleccionada");
+            }
+
+            $stmt = $db->prepare("SELECT id_rol_empresa FROM usuario_empresa WHERE id_usuario = ? AND id_empresa = ? LIMIT 1");
+            $stmt->execute([$userId, $empresaId]);
+            $rolEmpresa = (int)$stmt->fetchColumn();
+
+            if (!in_array($rolEmpresa, [1, 2], true)) {
+                $_SESSION['mensaje'] = 'No tienes permisos para crear ofertas en la empresa seleccionada';
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
             $data = [
                 'titulo' => trim($_POST['titulo'] ?? ''),
                 'descripcion' => trim($_POST['descripcion'] ?? ''),
@@ -197,8 +219,8 @@ class OfertasController {
                 'fecha_cierre' => $_POST['fecha_cierre'] ?? '',
                 'requisitos' => trim($_POST['requisitos'] ?? ''),
                 'limite_postulantes' => intval($_POST['limite_postulantes'] ?? 0),
-                'id_empresa' => $_SESSION['id_empresa'] ?? null,
-                'id_creador_oferta' => $_SESSION['user_id']
+                'id_empresa' => $empresaId,
+                'id_creador_oferta' => $userId
             ];
 
             $errores = $this->validarOferta($data);

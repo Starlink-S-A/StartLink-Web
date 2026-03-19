@@ -49,7 +49,7 @@ include ROOT_PATH . 'src/views/dashboardView/navbar_view.php';
     <p><strong>Descripción:</strong> <?= nl2br(htmlspecialchars($oferta['descripcion_oferta'] ?? '')) ?></p>
     <p><strong>Requisitos:</strong> <?= nl2br(htmlspecialchars($oferta['requisitos'] ?? '')) ?></p>
 
-    <hr>
+    <hr id="postulantes">
     <h3>Postulantes (<?= count($postulantes) ?>)</h3>
 
     <?php if (empty($postulantes)): ?>

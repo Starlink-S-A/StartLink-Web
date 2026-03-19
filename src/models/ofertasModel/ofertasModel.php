@@ -156,6 +156,7 @@ class OfertasModel {
         $oferta['titulo_oferta'] = htmlspecialchars($oferta['titulo_oferta'] ?? 'Sin título', ENT_QUOTES, 'UTF-8');
         $oferta['descripcion_oferta'] = htmlspecialchars($oferta['descripcion_oferta'] ?? 'Descripción no disponible', ENT_QUOTES, 'UTF-8');
         $oferta['nombre_empresa'] = htmlspecialchars($oferta['nombre_empresa'] ?? 'Empresa no especificada', ENT_QUOTES, 'UTF-8');
+        $oferta['nombre_creador'] = htmlspecialchars($oferta['nombre_creador'] ?? '', ENT_QUOTES, 'UTF-8');
         
         // Validación de fechas
         if (!empty($oferta['fecha_cierre'])) {
