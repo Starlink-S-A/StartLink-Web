@@ -54,26 +54,10 @@ $empresas = $empresas ?? [];
             
             <div class="row g-4">
                 <?php foreach ($empresas as $e): ?>
-                    <?php 
-                        // Resolver ruta del logo
-                        $logo_url = null;
-                        if (!empty($e['logo_ruta'])) {
-                            // El controlador ya guarda los logos en assets/images/Uploads/logos_empresa/
-                            $ruta_logo = 'assets/images/Uploads/logos_empresa/' . $e['logo_ruta'];
-                            if (file_exists(ROOT_PATH . $ruta_logo)) {
-                                $logo_url = BASE_URL . $ruta_logo;
-                            }
-                        }
-                    ?>
-                    
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                         <div class="empresa-card" onclick="seleccionarEmpresa(<?= $e['id_empresa'] ?>)">
                             <div class="empresa-logo-container">
-                                <?php if ($logo_url): ?>
-                                    <img src="<?= htmlspecialchars($logo_url) ?>" alt="Logo <?= htmlspecialchars($e['nombre_empresa']) ?>" class="empresa-logo">
-                                <?php else: ?>
-                                    <i class="fas fa-building empresa-icon-placeholder"></i>
-                                <?php endif; ?>
+                                <img src="<?= htmlspecialchars($e['logo_url']) ?>" alt="Logo <?= htmlspecialchars($e['nombre_empresa']) ?>" class="empresa-logo">
                             </div>
                             <div class="empresa-card-body">
                                 <h5 class="empresa-title"><?= htmlspecialchars($e['nombre_empresa']) ?></h5>

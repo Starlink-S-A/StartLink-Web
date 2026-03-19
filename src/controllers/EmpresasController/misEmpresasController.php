@@ -22,7 +22,27 @@ class MisEmpresasController {
         $userId = $_SESSION["user_id"];
         
         $modelo = new MisEmpresasModel();
-        $empresas = $modelo->getEmpresasUsuario($userId);
+        $empresasRaw = $modelo->getEmpresasUsuario($userId);
+        $empresas = [];
+
+        // Imagen por defecto para empresas (un edificio/compañía)
+        $defaultCompanyImage = 'https://cdn-icons-png.flaticon.com/512/3061/3061341.png';
+
+        foreach ($empresasRaw as $e) {
+            $e['logo_url'] = $defaultCompanyImage;
+            
+            if (!empty($e['logo_ruta'])) {
+                $nombreArchivo = basename($e['logo_ruta']);
+                $rutaRelativa = 'assets/images/Uploads/logos_empresa/' . $nombreArchivo;
+                $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'logos_empresa/' . $nombreArchivo;
+                $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/logos_empresa/' . $nombreArchivo;
+                
+                if (file_exists($rutaAbsoluta)) {
+                    $e['logo_url'] = $rutaPublica;
+                }
+            }
+            $empresas[] = $e;
+        }
 
         // Si se envió el formulario de selección de empresa (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['empresa_id'])) {

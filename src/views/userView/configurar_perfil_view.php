@@ -122,18 +122,46 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="changePasswordForm" action="<?= BASE_URL ?>configurar_perfil?step=personal" method="post">
+                            <form id="changePasswordForm" action="<?= BASE_URL ?>configurar_perfil?step=personal" method="post" novalidate>
                                 <input type="hidden" name="form_type" value="change_password">
+
+                                <!-- Nueva contraseña -->
                                 <div class="mb-3">
                                     <label for="new_password" class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
-                                    <small class="form-text text-muted">Debe tener al menos 8 caracteres.</small>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="new_password" name="new_password"
+                                               minlength="8" required autocomplete="new-password">
+                                        <button class="btn btn-outline-secondary" type="button" id="toggleNewPwd">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="progress mt-2" style="height:6px;">
+                                        <div id="pwdStrengthBar" class="progress-bar" role="progressbar" style="width:0%"></div>
+                                    </div>
+                                    <small id="pwdStrengthLabel" class="text-muted"></small>
+                                    <ul class="list-unstyled mt-2 small" id="pwdRequirements">
+                                        <li id="req-length"  class="text-danger"><i class="fas fa-times-circle me-1"></i>Mínimo 8 caracteres</li>
+                                        <li id="req-upper"   class="text-danger"><i class="fas fa-times-circle me-1"></i>Al menos una letra mayúscula</li>
+                                        <li id="req-lower"   class="text-danger"><i class="fas fa-times-circle me-1"></i>Al menos una letra minúscula</li>
+                                        <li id="req-number"  class="text-danger"><i class="fas fa-times-circle me-1"></i>Al menos un número</li>
+                                        <li id="req-special" class="text-danger"><i class="fas fa-times-circle me-1"></i>Al menos un símbolo (!@#$%^&*...)</li>
+                                    </ul>
                                 </div>
+
+                                <!-- Confirmar contraseña -->
                                 <div class="mb-3">
                                     <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña <span class="text-danger">*</span></label>
-                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                                               required autocomplete="new-password">
+                                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPwd">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small id="matchMsg" class="text-muted"></small>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+
+                                <button type="submit" class="btn btn-primary w-100" id="btnCambiarContrasena">Cambiar Contraseña</button>
                             </form>
                         </div>
                     </div>
