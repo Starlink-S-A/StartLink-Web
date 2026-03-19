@@ -34,13 +34,41 @@ body {
     z-index: 1050;
     display: flex;
     flex-direction: column;
-    padding: 2.5rem 1rem;
+    padding: 2rem 0.75rem; /* Slightly reduced padding */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; /* Prevent global scroll */
 }
 
-/* Sidebar Logo / Header */
+/* Scroll only for navigation section */
+.sidebar-nav-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Custom scrollbar for navigation section */
+.sidebar-nav-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 166, 128, 0.1);
+    border-radius: 10px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+    background: var(--sidebar-accent);
+}
+
+/* Reduce spacing to prioritize top content */
 .sidebar-header {
-    padding: 0 1rem 2.5rem;
+    padding: 0 1rem 2.5rem; /* Restored from 1.5rem */
     text-align: center;
 }
 
@@ -60,12 +88,11 @@ body {
     font-size: 1.8rem;
 }
 
-/* User Profile Section */
 .sidebar-user {
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 1rem; /* Restored from 1.25rem 0.75rem */
     background: #f0fdf4;
     border-radius: 20px;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2.5rem; /* Restored from 1.5rem */
     text-align: center;
     border: 1px solid #dcfce7;
     position: relative;
@@ -73,16 +100,17 @@ body {
 }
 
 .sidebar-greeting {
-    display: block;
     font-size: 0.75rem;
     color: #166534;
     font-weight: 700;
+    margin-top: 0.5rem;
     margin-bottom: 0.75rem;
     background: #dcfce7;
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 20px;
     display: inline-block;
     animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border: 1px solid #bbf7d0;
 }
 
 @keyframes bounceIn {
@@ -93,14 +121,15 @@ body {
 }
 
 .user-avatar-large {
-    width: 85px;
-    height: 85px;
+    width: 85px; /* Aumentado a 110px para que se vea claramente grande */
+    height: 85px; /* Aumentado a 110px para que se vea claramente grande */
     border-radius: 50%;
     border: 4px solid #fff;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     padding: 2px;
     margin-bottom: 0.75rem;
     transition: all 0.3s ease;
+    object-fit: cover; /* Asegura que la imagen no se deforme */
 }
 
 .sidebar-user:hover .user-avatar-large {
@@ -110,8 +139,10 @@ body {
 
 .user-name {
     display: block;
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 1.1rem;
     color: var(--sidebar-text);
+    margin-top: 0.25rem;
     margin-bottom: 0.25rem;
 }
 
@@ -123,9 +154,8 @@ body {
     letter-spacing: 1.5px;
 }
 
-/* Navigation Links */
+/* Adjust nav list to remove redundant grow */
 .sidebar-nav {
-    flex-grow: 1;
     list-style: none;
     padding: 0;
     margin: 0;

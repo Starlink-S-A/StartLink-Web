@@ -71,9 +71,6 @@
                                 <input type="file" class="d-none" id="foto_perfil" name="foto_perfil" accept="image/jpeg,image/png,image/gif">
                             </div>
                         </div>
-                        <div class="mt-2">
-                            <small class="form-text text-muted">JPG, PNG, GIF. Máximo 5MB.</small>
-                        </div>
                     </div>
                     <!-- Nombre -->
                     <div class="mb-3">
@@ -125,7 +122,7 @@
                     </div>
                     <div class="form-navigation mt-4">
                         <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
-                        <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Seguridad</button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Cambiar Contraseña</button>
                     </div>
                 </form>
             </div>
