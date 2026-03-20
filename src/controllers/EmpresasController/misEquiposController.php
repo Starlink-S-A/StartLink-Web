@@ -14,6 +14,7 @@ class MisEquiposController {
         }
 
         $userId = (int)$_SESSION['user_id'];
+        $userName = $_SESSION['user_name'] ?? 'Usuario';
         $modelo = new MisEquiposModel();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['empresa_id']) && is_numeric($_POST['empresa_id'])) {
@@ -50,18 +51,56 @@ class MisEquiposController {
             $empresas[] = $e;
         }
 
-        $defaultImage = 'https://static.thenounproject.com/png/4154905-200.png';
-        $profileImage = $defaultImage;
-        if (!empty($_SESSION['foto_perfil'])) {
-            $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . basename($_SESSION['foto_perfil']);
-            $rutaPublica = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . basename($_SESSION['foto_perfil']);
-            if (file_exists($rutaAbsoluta)) {
-                $profileImage = $rutaPublica;
+        $esAdminEmpresa = false;
+        $showPublishProfileLink = false;
+        $unreadNotificationsCount = 0;
+        $latestNotifications = [];
+
+        $conexion = getDbConnection();
+        $dbFotoPerfil = null;
+        try {
+            $stmtRolTrabajador = $conexion->prepare("SELECT id FROM rol WHERE nombre_rol = 'TRABAJADOR'");
+            $stmtRolTrabajador->execute();
+            $rolTrabajadorId = (int)$stmtRolTrabajador->fetchColumn();
+
+            $stmtUser = $conexion->prepare("SELECT id_rol, foto_perfil FROM usuario WHERE id = ?");
+            $stmtUser->execute([$userId]);
+            $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+            $currentUserGlobalRole = (int)($userRow['id_rol'] ?? $rolTrabajadorId);
+            $dbFotoPerfil = $userRow['foto_perfil'] ?? null;
+
+            if ($currentUserGlobalRole !== $rolTrabajadorId) {
+                $showPublishProfileLink = true;
+            }
+
+            $userRolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
+            if (in_array((int)$userRolEmpresa, [1, 2], true)) {
+                $esAdminEmpresa = true;
+            }
+
+            $stmtUnread = $conexion->prepare("SELECT COUNT(*) FROM notificaciones WHERE user_id = ? AND leida = 0");
+            $stmtUnread->execute([$userId]);
+            $unreadNotificationsCount = (int)$stmtUnread->fetchColumn();
+        } catch (Throwable $e) {
+            $userRolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
+            if (in_array((int)$userRolEmpresa, [1, 2], true)) {
+                $esAdminEmpresa = true;
             }
         }
 
-        $latestNotifications = [];
-        $unreadNotificationsCount = 0;
+        $profileImage = 'https://static.thenounproject.com/png/4154905-200.png';
+        $fotoPath = !empty($_SESSION['foto_perfil']) ? $_SESSION['foto_perfil'] : $dbFotoPerfil;
+        if (!empty($fotoPath)) {
+            $nombreArchivo = basename($fotoPath);
+            $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . $nombreArchivo;
+            $rutaPublica = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+            if (file_exists($rutaAbsoluta)) {
+                $profileImage = $rutaPublica;
+                if (empty($_SESSION['foto_perfil'])) {
+                    $_SESSION['foto_perfil'] = 'assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+                }
+            }
+        }
 
         require_once __DIR__ . '/../../views/EmpresasView/misEquiposView.php';
     }
