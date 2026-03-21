@@ -2,3 +2,6 @@
 ejemplo.txt
 vendor/
 .env
+.env.example
+LICENSE.md
+.agents/
