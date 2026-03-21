@@ -1,6 +1,29 @@
 <?php
 // views/dashboardView/sidebar_view.php
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+// --- Detectar acción actual para resaltar links del router ---
+$currentAction = $_GET['action'] ?? '';
+
+// --- Variables de rol con fallback a $_SESSION (seguro para todas las vistas) ---
+$rolGlobal  = $rolGlobal  ?? ($_SESSION['id_rol'] ?? null);
+$rolEmpresa = $rolEmpresa ?? ($_SESSION['id_rol_empresa'] ?? null);
+
+// Determinar permisos de sidebar según rol
+$esAdminGlobal      = ((int)$rolGlobal === 1);
+$esAdminEmpresaSB   = in_array((int)$rolEmpresa, [1, 2]);
+$esContratadorSB    = ((int)$rolEmpresa === 2);
+
+// Etiqueta de rol visible
+if ($esAdminGlobal) {
+    $rolLabel = 'Administrador';
+} elseif ((int)$rolEmpresa === 1) {
+    $rolLabel = 'Admin Empresa';
+} elseif ((int)$rolEmpresa === 2) {
+    $rolLabel = 'Contratador';
+} else {
+    $rolLabel = 'Candidato';
+}
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/sidebar_styles.css">
@@ -35,12 +58,13 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <?php endif; ?>
         </div>
         <span class="user-name"><?= htmlspecialchars($userName ?? 'Candidato') ?></span>
-        <span class="user-role"><?= isset($esAdminEmpresa) && $esAdminEmpresa ? 'PRO Admin' : 'Candidato' ?></span>
+        <span class="user-role"><?= $rolLabel ?></span>
     </div>
 
     <!-- Navigation -->
     <nav class="sidebar-nav-container">
         <ul class="sidebar-nav">
+            <!-- ═══ TODOS LOS ROLES ═══ -->
             <li>
                 <a class="sidebar-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">
                     <i class="fas fa-home"></i> <span class="sidebar-link-text">Home</span>
@@ -54,13 +78,21 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                      <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unreadNotificationsCount ?></span>
                 <?php endif; ?>
             </li>
-            <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
+            <li>
+                <a class="sidebar-link <?= $currentAction == 'capacitaciones' ? 'active' : '' ?>" href="<?= BASE_URL ?>src/index.php?action=capacitaciones">
+                    <i class="fas fa-chalkboard-teacher"></i> <span class="sidebar-link-text">Capacitaciones</span>
+                </a>
+            </li>
+            <?php if ((int)($_SESSION['id_rol'] ?? null) === 2): ?>
             <li>
                 <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos.php">
                     <i class="fas fa-paper-plane"></i> <span class="sidebar-link-text">Publicar Mi Perfil</span>
                 </a>
             </li>
             <?php endif; ?>
+
+            <!-- ═══ SOLO ADMIN GLOBAL, ADMIN EMPRESA Y CONTRATADOR ═══ -->
+            <?php if ($esAdminGlobal || $esAdminEmpresaSB): ?>
             <li>
                 <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
                     <i class="fas fa-plus-circle"></i> <span class="sidebar-link-text">Nueva Empresa</span>
@@ -71,6 +103,9 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <i class="fas fa-users"></i> <span class="sidebar-link-text">Mi Equipo</span>
                 </a>
             </li>
+            <?php endif; ?>
+
+            <!-- ═══ SOLO ADMIN EMPRESA Y CONTRATADOR ═══ -->
             <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
             <li>
                 <a class="sidebar-link <?= $currentPage == 'mis_empresas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_empresas">
@@ -81,6 +116,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             
             <div class="sidebar-divider my-4 mx-3" style="border-top: 1px solid #f1f5f9;"></div>
             
+            <!-- ═══ TODOS LOS ROLES ═══ -->
             <li>
                 <a class="sidebar-link <?= $currentPage == 'configurar_perfil_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil">
                     <i class="fas fa-user-cog"></i> <span class="sidebar-link-text">Mi Configuración</span>

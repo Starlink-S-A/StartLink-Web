@@ -114,7 +114,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
             </div>
 
             <div class="mt-4 text-end">
-                <a href="<?= BASE_URL ?>configurar_perfil" class="btn-dash-primary rounded-pill px-4">
+                <a href="<?= BASE_URL ?>src/index.php?action=configurar_perfil" class="btn-dash-primary rounded-pill px-4">
                     <i class="fas fa-rocket me-2"></i> Impulsar Perfil
                 </a>
             </div>
@@ -148,7 +148,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                 <i class="fas fa-graduation-cap"></i>
             </div>
             <div class="metric-data">
-                <h5>Cursos</h5>
+                <h5>Capacitaciones</h5>
                 <p>3</p>
             </div>
         </div>
@@ -171,7 +171,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                         <i class="fas fa-search text-primary"></i> 
                         Ofertas Recomendadas
                     </h5>
-                    <a href="#" class="text-muted"><i class="fas fa-ellipsis-v"></i></a>
+                    <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="text-muted"><i class="fas fa-ellipsis-v"></i></a>
                 </div>
                 <div class="card-body p-0">
                     <div class="event-item">
@@ -200,7 +200,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                     </div>
                 </div>
                 <div class="mt-4 text-center">
-                    <a href="#" class="btn-dash-primary w-100">Ver todas las ofertas</a>
+                    <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary w-100">Ver todas las ofertas</a>
                 </div>
             </div>
         </div>
@@ -235,7 +235,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                     </div>
                 </div>
                 <div class="mt-3 text-center">
-                    <a href="#" class="btn-dash-primary w-100">Ver historial completo</a>
+                    <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary w-100">Ver historial completo</a>
                 </div>
             </div>
         </div>
@@ -246,13 +246,13 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
             <div class="course-card h-100">
                 <span class="course-badge">Nuevo</span>
                 <div class="course-image">
-                    <img src="https://cdn-icons-png.flaticon.com/512/919/919830.png" alt="Cursos">
+                    <img src="https://cdn-icons-png.flaticon.com/512/919/919830.png" alt="Capacitaciones">
                 </div>
                 <div class="course-content">
                     <div class="course-meta">DISEÑO Y DEV</div>
                     <h5>Domina React 18</h5>
                     <p>Aprende las últimas funcionalidades de React para crear interfaces modernas.</p>
-                    <a href="<?= BASE_URL ?>capacitaciones.php" class="btn-dash-primary btn-course">Explorar Cursos</a>
+                    <a href="<?= BASE_URL ?>src/index.php?action=capacitaciones" class="btn-dash-primary btn-course">Explorar Capacitaciones</a>
                 </div>
             </div>
         </div>
@@ -272,7 +272,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                                 <i class="fas fa-folder-open text-muted"></i>
                             </div>
                             <p>Consulta tu historial de empleo y descarga tus nóminas anteriores.</p>
-                            <a href="<?= BASE_URL ?>historial_usuario.php" class="btn-dash-primary">Ver Historial Completo</a>
+                            <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary">Ver Historial Completo</a>
                         </div>
                     </div>
                 </div>
