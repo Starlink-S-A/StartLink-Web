@@ -207,7 +207,7 @@ class EmpresaInfoController {
         }
 
         $unreadNotificationsCount = 0;
-        $showPublishProfileLink = false;
+        $showPublishProfileLink = true;
 
         require_once __DIR__ . '/../../views/EmpresasView/empresa_info_view.php';
     }

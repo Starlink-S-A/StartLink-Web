@@ -117,6 +117,13 @@ switch ($action) {
         $controller->index();
         break;
 
+    case 'perfiles_candidatos':
+    case 'perfiles_candidatos.php':
+        require_once __DIR__ . '/controllers/candidatosController/perfilesCandidatosController.php';
+        $controller = new PerfilesCandidatosController();
+        $controller->index();
+        break;
+
     default:
         $authController = new AuthController();
         $authController->showWelcomePage();
