@@ -1,8 +1,6 @@
 <?php
 require_once 'configuraciónInicial.php';
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Redirigir si el usuario no está logueado
 if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
@@ -11,213 +9,361 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
 }
 
 $userId = $_SESSION["user_id"];
-$userName = $_SESSION["user_name"] ?? 'Usuario';
-$userRoleGlobal = $_SESSION["id_rol"] ?? null;
-$userEmpresaIdSession = $_SESSION["id_empresa"] ?? null; // ID de la empresa asociada en sesión
-$userRolEmpresaSession = $_SESSION["id_rol_empresa"] ?? null; // Rol dentro de la empresa asociada
-
 $link = getDbConnection();
 
-$selectedCompanyId = null;
-$companyInfo = null;
-$internalUsers = [];
+// Variables para el control de acceso y datos del perfil
+$isContractor = false; // Indica si el usuario es contratador o admin de empresa
+$contractorCompanyId = null; // Se mantendrá para compatibilidad, pero la lógica usará la empresa seleccionada
+$employeeRoleId = null; // ID del rol 'Empleado Interno'
+$userProfile = null; // Perfil de búsqueda de empleo del usuario actual
 
-$mensaje = '';
-$tipoMensaje = '';
+$errorMessage = '';
+$successMessage = '';
 
-// Roles de empresa que pueden acceder a esta sección (Admin Empresa, Contratador, Empleado Interno)
-$allowedCompanyRoles = [1, 2, 3];
-
-// Obtener el ID del rol 'ADMINISTRADOR' global
-$stmtGlobalAdminRole = $link->prepare("SELECT id FROM ROL WHERE nombre_rol = 'ADMINISTRADOR'");
-$stmtGlobalAdminRole->execute();
-$globalAdminRoleId = $stmtGlobalAdminRole->fetchColumn();
-$isGlobalAdmin = ($userRoleGlobal == $globalAdminRoleId);
-
-// Determinar el ID de la empresa a mostrar
-if (isset($_GET['id_empresa']) && is_numeric($_GET['id_empresa'])) {
-    $selectedCompanyId = (int)$_GET['id_empresa'];
-} else {
-    // Si no viene en GET, intentar usar el de la sesión para Contratadores/Empleados Internos
-    // o redirigir a seleccionar_empresa.php si es un Admin de Empresa sin selección
-    if (in_array($userRolEmpresaSession, [2, 3])) {
-        $selectedCompanyId = $userEmpresaIdSession;
-    } else {
-        // Si no es Contratador/Empleado Interno y no hay id_empresa en GET,
-        // redirigir a la página de selección de empresa.
-        header("Location: " . BASE_URL . "seleccionar_empresa.php");
-        exit();
-    }
-}
-
-// Validar que el usuario tiene permiso para ver la empresa seleccionada
-$hasPermissionToViewCompany = false;
-try {
-    if ($selectedCompanyId) {
-        if ($isGlobalAdmin) {
-            // El administrador global puede ver cualquier empresa
-            $hasPermissionToViewCompany = true;
-        } else {
-            // Verificar si el usuario está asociado a la empresa con un rol permitido
-            $stmtCheckAccess = $link->prepare("
-                SELECT COUNT(*) FROM USUARIO_EMPRESA
-                WHERE id_usuario = ? AND id_empresa = ? AND id_rol_empresa IN (" . implode(',', $allowedCompanyRoles) . ")
-            ");
-            $stmtCheckAccess->execute([$userId, $selectedCompanyId]);
-            if ($stmtCheckAccess->fetchColumn() > 0) {
-                $hasPermissionToViewCompany = true;
-            }
-        }
-    }
-} catch (PDOException $e) {
-    error_log("Error al verificar permisos de empresa: " . $e->getMessage());
-    $mensaje = "Error al verificar permisos de acceso a la empresa.";
-    $tipoMensaje = "danger";
-}
-
-
-if (!$hasPermissionToViewCompany) {
-    $_SESSION['error'] = "No tienes permiso para acceder al equipo de esta empresa.";
-    header("Location: " . BASE_URL . "dashboard.php");
-    exit();
-}
+// --- Lógica para determinar si el usuario puede publicar su perfil (basado en id_rol) ---
+$currentUserGlobalRole = null;
+$rolUsuarioId = null;
+$rolTrabajadorId = null;
+$canPublishProfile = false; // Bandera para verificar si el usuario puede publicar su perfil
 
 try {
-    // Obtener información de la empresa seleccionada/asociada
-    $stmtCompanyInfo = $link->prepare("
-        SELECT nombre_empresa, descripcion, email_contacto, telefono_contacto, url_sitio_web, logo_ruta
-        FROM EMPRESA
-        WHERE id_empresa = ?
-    ");
-    $stmtCompanyInfo->execute([$selectedCompanyId]);
-    $companyInfo = $stmtCompanyInfo->fetch(PDO::FETCH_ASSOC);
+    // Obtener el ID del rol 'USUARIO'
+    $stmtRolUsuario = $link->prepare("SELECT id FROM ROL WHERE nombre_rol = 'USUARIO'");
+    $stmtRolUsuario->execute();
+    $rolUsuarioId = $stmtRolUsuario->fetchColumn();
 
-    if ($companyInfo) {
-        // Procesar ruta del logo
-        $companyInfo['logo_url'] = BASE_URL . 'images/default_logo.png'; // Fallback
-        if (!empty($companyInfo['logo_ruta'])) {
-            $logoFullPath = ROOT_PATH . 'uploads/logos_empresa/' . basename($companyInfo['logo_ruta']);
-            $logoPublicPath = BASE_URL . 'uploads/logos_empresa/' . basename($companyInfo['logo_ruta']);
-            if (file_exists($logoFullPath)) {
-                $companyInfo['logo_url'] = $logoPublicPath;
-            }
+    // Obtener el ID del rol 'TRABAJADOR'
+    $stmtRolTrabajador = $link->prepare("SELECT id FROM ROL WHERE nombre_rol = 'TRABAJADOR'");
+    $stmtRolTrabajador->execute();
+    $rolTrabajadorId = $stmtRolTrabajador->fetchColumn();
+
+    // Obtener el rol global del usuario actual
+    $stmtUserGlobalRole = $link->prepare("SELECT id_rol FROM USUARIO WHERE id = ?");
+    $stmtUserGlobalRole->execute([$userId]);
+    $currentUserGlobalRole = $stmtUserGlobalRole->fetchColumn();
+
+    // El usuario puede publicar su perfil si su rol global es 'USUARIO'
+    if ($currentUserGlobalRole == $rolUsuarioId) {
+        $canPublishProfile = true;
+    }
+
+    // Obtener los IDs de los roles 'Administrador de Empresa' y 'Contratador'
+    $stmtAdminEmpresaRole = $link->prepare("SELECT id_rol_empresa FROM ROL_EMPRESA WHERE nombre_rol_empresa = 'Administrador de Empresa'");
+    $stmtAdminEmpresaRole->execute();
+    $adminEmpresaRoleId = $stmtAdminEmpresaRole->fetchColumn();
+
+    $stmtContratadorRole = $link->prepare("SELECT id_rol_empresa FROM ROL_EMPRESA WHERE nombre_rol_empresa = 'Contratador'");
+    $stmtContratadorRole->execute();
+    $contratadorRoleId = $stmtContratadorRole->fetchColumn();
+
+    // Obtener el ID del rol 'Empleado Interno' (usado para la afiliación a empresa)
+    $stmtEmployeeRole = $link->prepare("SELECT id_rol_empresa FROM ROL_EMPRESA WHERE nombre_rol_empresa = 'Empleado Interno'");
+    $stmtEmployeeRole->execute();
+    $employeeRoleId = $stmtEmployeeRole->fetchColumn();
+
+    // Variables para almacenar las empresas del contratador/admin
+    $userCompanies = [];
+
+    // Verificar si el usuario tiene rol de 'Administrador de Empresa' o 'Contratador' en alguna empresa
+    if ($adminEmpresaRoleId || $contratadorRoleId) {
+        $rolesToCheck = [];
+        if ($adminEmpresaRoleId) {
+            $rolesToCheck[] = $adminEmpresaRoleId;
+        }
+        if ($contratadorRoleId) {
+            $rolesToCheck[] = $contratadorRoleId;
         }
 
-        // Obtener usuarios internos de la empresa
-        $stmtInternalUsers = $link->prepare("
-            SELECT U.id, U.nombre, U.email, U.foto_perfil, RE.nombre_rol_empresa
+        $placeholders = implode(',', array_fill(0, count($rolesToCheck), '?'));
+        $stmtUserCompanyRoles = $link->prepare("
+            SELECT UE.id_empresa, E.nombre_empresa
             FROM USUARIO_EMPRESA UE
-            JOIN USUARIO U ON UE.id_usuario = U.id
-            JOIN ROL_EMPRESA RE ON UE.id_rol_empresa = RE.id_rol_empresa
-            WHERE UE.id_empresa = ?
-            ORDER BY U.nombre ASC
+            JOIN EMPRESA E ON UE.id_empresa = E.id_empresa
+            WHERE UE.id_usuario = ? AND UE.id_rol_empresa IN ($placeholders)
         ");
-        $stmtInternalUsers->execute([$selectedCompanyId]);
-        $internalUsers = $stmtInternalUsers->fetchAll(PDO::FETCH_ASSOC);
+        $stmtUserCompanyRoles->execute(array_merge([$userId], $rolesToCheck));
+        $userCompanies = $stmtUserCompanyRoles->fetchAll(PDO::FETCH_ASSOC);
 
-        // Procesar fotos de perfil de usuarios internos
-        foreach ($internalUsers as &$user) {
-            $user['profile_image_url'] = BASE_URL . 'images/default-profile.jpg';
-            if (!empty($user['foto_perfil'])) {
-                $profileFullPath = ROOT_PATH . 'uploads/profile_pictures/' . basename($user['foto_perfil']);
-                $profilePublicPath = BASE_URL . 'uploads/profile_pictures/' . basename($user['foto_perfil']);
-                if (file_exists($profileFullPath)) {
-                    $user['profile_image_url'] = $profilePublicPath;
-                }
-            }
+        if (!empty($userCompanies)) {
+            $isContractor = true;
+            // Para la lógica de afiliación POST, la empresa se enviará desde el frontend.
+            // $contractorCompanyId se mantiene para la verificación inicial si es necesario.
+            $contractorCompanyId = $userCompanies[0]['id_empresa']; // Solo para tener un valor por defecto si se usa en otro lado
         }
-        unset($user); // Romper la referencia
-
-    } else {
-        $mensaje = "No se encontró información para la empresa seleccionada.";
-        $tipoMensaje = "danger";
     }
 
-    // --- Lógica para crear chat grupal ---
-    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['create_group_chat'])) {
-        $selectedUserIds = $_POST['selected_users'] ?? [];
-        $groupChatName = trim($_POST['group_chat_name'] ?? '');
+    // Cargar el perfil de búsqueda de empleo existente del usuario para el modal
+    $stmtProfile = $link->prepare("SELECT * FROM PERFIL_BUSQUEDA_EMPLEO WHERE id_usuario = ?");
+    $stmtProfile->execute([$userId]);
+    $userProfile = $stmtProfile->fetch(PDO::FETCH_ASSOC);
 
-        if (empty($selectedUserIds)) {
-            $mensaje = "Debes seleccionar al menos un usuario para crear un chat grupal.";
-            $tipoMensaje = "danger";
-        } else {
-            // Asegurarse de que el usuario actual también esté en el chat si no está seleccionado
-            if (!in_array($userId, $selectedUserIds)) {
-                $selectedUserIds[] = $userId;
+
+    // --- Manejo de acciones AJAX (GET requests) ---
+    // Mover la lógica de 'get_profile' a un bloque GET separado
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+        if ($_GET['action'] === 'get_profile') {
+            header('Content-Type: application/json'); // Asegura que la respuesta sea JSON
+            $candidateId = $_GET['candidate_id'] ?? null;
+
+            if (!$isContractor) {
+                echo json_encode(['success' => false, 'message' => 'Solo los contratadores o administradores de empresa pueden ver el perfil completo.']);
+                exit();
             }
-
-            // Validar que los usuarios seleccionados pertenecen a la empresa actual
-            $validUserIds = [];
-            foreach ($internalUsers as $u) {
-                if (in_array($u['id'], $selectedUserIds)) {
-                    $validUserIds[] = $u['id'];
-                }
-            }
-
-            if (count($validUserIds) < 2) { // Un chat grupal necesita al menos 2 participantes (incluyendo el creador)
-                $mensaje = "Selecciona al menos otro usuario además de ti para crear un chat grupal.";
-                $tipoMensaje = "danger";
-            } else {
-                $link->beginTransaction();
+            if ($candidateId && is_numeric($candidateId)) {
                 try {
-                    // Generar un título si no se proporciona uno
-                    if (empty($groupChatName)) {
-                        $names = [];
-                        foreach ($validUserIds as $id) {
-                            foreach ($internalUsers as $u) {
-                                if ($u['id'] == $id) {
-                                    $names[] = $u['nombre'];
-                                    break;
-                                }
-                            }
-                        }
-                        $groupChatName = "Chat de equipo: " . implode(", ", array_slice($names, 0, 3)) . (count($names) > 3 ? "..." : "");
-                    }
-
-                    // Insertar nueva conversación
-                    $stmtInsertConv = $link->prepare("
-                        INSERT INTO CONVERSACION (tipo_conversacion, titulo_conversacion, fecha_creacion, id_proyecto)
-                        VALUES ('empresa_interna', ?, NOW(), ?) -- CORREGIDO: 'equipo_interno' a 'empresa_interna'
+                    $stmt = $link->prepare("
+                        SELECT U.nombre, U.email, U.foto_perfil, U.pais, U.departamento, U.ciudad,
+                               PBE.titulo_buscado, PBE.tipo_contrato_preferido, PBE.modalidad_preferida,
+                               PBE.expectativa_salarial, PBE.habilidades_clave
+                        FROM PERFIL_BUSQUEDA_EMPLEO PBE
+                        JOIN USUARIO U ON PBE.id_usuario = U.id
+                        WHERE PBE.id_usuario = ?
                     ");
-                    // id_proyecto se puede usar para almacenar el id_empresa si es un chat de equipo
-                    $stmtInsertConv->execute([$groupChatName, $selectedCompanyId]);
-                    $newChatId = $link->lastInsertId();
-
-                    // Añadir participantes a la conversación
-                    $stmtInsertParticipant = $link->prepare("
-                        INSERT INTO CONVERSACION_PARTICIPANTE (id_conversacion, id_usuario)
-                        VALUES (?, ?)
-                    ");
-                    foreach ($validUserIds as $participantId) {
-                        $stmtInsertParticipant->execute([$newChatId, $participantId]);
+                    $stmt->execute([$candidateId]);
+                    $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($profile) {
+                        // Ajustar la ruta de la foto de perfil
+                        $profile['foto_perfil'] = !empty($profile['foto_perfil'])
+                            ? BASE_URL . 'uploads/profile_pictures/' . basename($profile['foto_perfil'])
+                            : BASE_URL . 'images/default-profile.jpg';
+                        echo json_encode(['success' => true, 'profile' => $profile]);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Perfil no encontrado.']);
                     }
-
-                    $link->commit();
-                    $_SESSION['mensaje'] = "Chat grupal creado exitosamente.";
-                    $_SESSION['tipo'] = "success";
-                    header("Location: " . BASE_URL . "mis_chats.php?chat_id=" . $newChatId);
-                    exit();
-
                 } catch (PDOException $e) {
-                    $link->rollBack();
-                    error_log("Error al crear chat grupal: " . $e->getMessage());
-                    $mensaje = "Error al crear el chat grupal: " . $e->getMessage();
-                    $tipoMensaje = "danger";
+                    error_log("Error al obtener perfil completo (get_profile): " . $e->getMessage());
+                    echo json_encode(['success' => false, 'message' => 'Error de base de datos al cargar el perfil: ' . $e->getMessage()]);
                 }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'ID de candidato inválido.']);
             }
+            exit(); // Terminar el script después de la respuesta AJAX GET
         }
     }
+    // --- Fin Manejo de acciones AJAX (GET requests) ---
+
+
+    // --- Manejo de acciones AJAX (POST requests) ---
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+        header('Content-Type: application/json'); // Asegura que la respuesta sea JSON
+
+        switch ($_POST['action']) {
+            case 'send_hiring_request': // Nueva acción para enviar solicitud de contratación
+                $candidateId = $_POST['candidate_id'] ?? null;
+                $companyIdToAffiliate = $_POST['company_id'] ?? null;
+                $salarioOfrecido = filter_var($_POST['salario_ofrecido'] ?? '', FILTER_VALIDATE_FLOAT);
+                $horasSemanalesOfrecidas = filter_var($_POST['horas_semanales_ofrecidas'] ?? '', FILTER_VALIDATE_FLOAT);
+                $mensajeContratacion = trim($_POST['mensaje_contratacion'] ?? '');
+
+                // Verificar que el usuario actual ($userId) es un administrador/contratador
+                // para la empresa específica ($companyIdToAffiliate)
+                $stmtVerifyRole = $link->prepare("
+                    SELECT COUNT(*)
+                    FROM USUARIO_EMPRESA UE
+                    WHERE UE.id_usuario = ?
+                      AND UE.id_empresa = ?
+                      AND UE.id_rol_empresa IN (?, ?)
+                ");
+                $stmtVerifyRole->execute([$userId, $companyIdToAffiliate, $adminEmpresaRoleId, $contratadorRoleId]);
+                $isAuthorizedForCompany = $stmtVerifyRole->fetchColumn() > 0;
+
+                if (!$isAuthorizedForCompany) {
+                    echo json_encode(['success' => false, 'message' => 'Acceso denegado. No tienes permisos para enviar solicitudes de contratación para esta empresa.']);
+                    exit();
+                }
+
+                if ($candidateId && is_numeric($candidateId) && $companyIdToAffiliate && is_numeric($companyIdToAffiliate)) {
+                    $link->beginTransaction();
+                    try {
+                        // 1. Insertar la solicitud de contratación en la nueva tabla
+                        $stmtInsertRequest = $link->prepare("
+                            INSERT INTO SOLICITUD_CONTRATACION (id_empresa, id_contratador, id_usuario_solicitado, salario_ofrecido, horas_semanales_ofrecidas, mensaje, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, 'Pendiente')
+                        ");
+                        $stmtInsertRequest->execute([
+                            $companyIdToAffiliate,
+                            $userId, // El contratador que envía la solicitud
+                            $candidateId,
+                            $salarioOfrecido,
+                            $horasSemanalesOfrecidas,
+                            $mensajeContratacion
+                        ]);
+                        $solicitudContratacionId = $link->lastInsertId();
+
+                        // Obtener nombre de la empresa para la notificación
+                        $stmtEmpresaNombre = $link->prepare("SELECT nombre_empresa FROM EMPRESA WHERE id_empresa = ?");
+                        $stmtEmpresaNombre->execute([$companyIdToAffiliate]);
+                        $nombreEmpresa = $stmtEmpresaNombre->fetchColumn();
+
+                        // 2. Crear notificación para el usuario solicitado
+                        $notificationMessage = "¡Has recibido una solicitud de contratación de " . htmlspecialchars($nombreEmpresa) . "! Haz clic para ver los detalles y responder.";
+                        $notificationUrl = BASE_URL . "responder_solicitud_contratacion.php?solicitud_id=" . $solicitudContratacionId;
+                        $stmtInsertNotif = $link->prepare("
+                            INSERT INTO NOTIFICACIONES (user_id, mensaje, tipo, icono, url_redireccion, solicitud_contratacion_id)
+                            VALUES (?, ?, 'contratacion', 'fas fa-handshake', ?, ?)
+                        ");
+                        $stmtInsertNotif->execute([$candidateId, $notificationMessage, $notificationUrl, $solicitudContratacionId]);
+
+                        // 3. (Opcional) Insertar mensaje en un chat si ya existe o crear uno
+                        // Esto podría ser un chat de tipo 'perfil_publico' o 'solicitud_contratacion'
+                        // Por simplicidad, no crearemos un chat automáticamente aquí a menos que ya exista.
+                        // La notificación es el medio principal para esta solicitud.
+
+                        $link->commit();
+                        echo json_encode(['success' => true, 'message' => 'Solicitud de contratación enviada correctamente. El perfil del candidato seguirá siendo visible hasta que acepte.']);
+                    } catch (PDOException $e) {
+                        $link->rollBack();
+                        error_log("Error al enviar solicitud de contratación: " . $e->getMessage());
+                        echo json_encode(['success' => false, 'message' => 'Error al enviar la solicitud de contratación: ' . $e->getMessage()]);
+                    } catch (Exception $e) {
+                        $link->rollBack();
+                        error_log("Error general al enviar solicitud de contratación: " . $e->getMessage());
+                        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                    }
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Datos de solicitud de contratación inválidos.']);
+                }
+                break;
+
+            case 'submit_profile': // Para el formulario del modal de Publicar Perfil
+                // ... (la lógica existente para publicar/actualizar perfil) ...
+                // Verificar si el usuario tiene permiso para publicar (rol de USUARIO)
+                if (!$canPublishProfile) {
+                    echo json_encode(['success' => false, 'message' => "No puedes publicar o actualizar tu perfil de búsqueda de empleo porque tu rol no es 'USUARIO'."]);
+                    exit();
+                }
+
+                $tituloBuscado = trim($_POST['titulo_buscado'] ?? '');
+                $tipoContratoPreferido = trim($_POST['tipo_contrato_preferido'] ?? '');
+                $modalidadPreferida = trim($_POST['modalidad_preferida'] ?? '');
+                $expectativaSalarial = filter_var($_POST['expectativa_salarial'] ?? '', FILTER_VALIDATE_FLOAT);
+                $habilidadesClave = trim($_POST['habilidades_clave'] ?? '');
+
+                // Validaciones básicas
+                if (empty($tituloBuscado) || empty($tipoContratoPreferido) || empty($modalidadPreferida)) {
+                    echo json_encode(['success' => false, 'message' => "Por favor, completa todos los campos obligatorios (Título Buscado, Tipo de Contrato, Modalidad Preferida)."]);
+                } elseif ($expectativaSalarial !== false && $expectativaSalarial < 0) {
+                    echo json_encode(['success' => false, 'message' => "La expectativa salarial no puede ser negativa."]);
+                } else {
+                    $link->beginTransaction();
+                    try {
+                        if ($userProfile) {
+                            // Actualizar perfil existente
+                            $stmtUpdate = $link->prepare("
+                                UPDATE PERFIL_BUSQUEDA_EMPLEO
+                                SET titulo_buscado = ?, tipo_contrato_preferido = ?, modalidad_preferida = ?,
+                                    expectativa_salarial = ?, habilidades_clave = ?, esta_disponible = TRUE, fecha_activacion = NOW()
+                                WHERE id_usuario = ?
+                            ");
+                            $stmtUpdate->execute([
+                                $tituloBuscado, $tipoContratoPreferido, $modalidadPreferida,
+                                $expectativaSalarial, $habilidadesClave, $userId
+                            ]);
+                            echo json_encode(['success' => true, 'message' => "Tu perfil de búsqueda de empleo ha sido actualizado y publicado correctamente."]);
+                        } else {
+                            // Insertar nuevo perfil
+                            $stmtInsert = $link->prepare("
+                                INSERT INTO PERFIL_BUSQUEDA_EMPLEO
+                                (id_usuario, titulo_buscado, tipo_contrato_preferido, modalidad_preferida,
+                                 expectativa_salarial, habilidades_clave, fecha_activacion, esta_disponible)
+                                VALUES (?, ?, ?, ?, ?, ?, NOW(), TRUE)
+                            ");
+                            $stmtInsert->execute([
+                                $userId, $tituloBuscado, $tipoContratoPreferido, $modalidadPreferida,
+                                $expectativaSalarial, $habilidadesClave
+                            ]);
+                            echo json_encode(['success' => true, 'message' => "Tu perfil de búsqueda de empleo ha sido publicado correctamente."]);
+                        }
+                        $link->commit();
+
+                    } catch (PDOException $e) {
+                        $link->rollBack();
+                        error_log("Error al publicar/actualizar perfil: " . $e->getMessage());
+                        echo json_encode(['success' => false, 'message' => 'Error al guardar tu perfil: ' . $e->getMessage()]);
+                    }
+                }
+                break;
+
+            default:
+                echo json_encode(['success' => false, 'message' => 'Acción no reconocida.']);
+                break;
+        }
+        exit(); // Terminar el script después de la respuesta AJAX POST
+    }
+    // --- Fin Manejo de acciones AJAX (POST requests) ---
+
+
+    // --- Lógica para cargar perfiles para la visualización (GET request) ---
+    $profiles = [];
+    $searchName = $_GET['search_name'] ?? '';
+    $searchTitle = $_GET['search_title'] ?? '';
+    $searchSkill = $_GET['search_skill'] ?? '';
+    $isAvailableFilter = $_GET['is_available'] ?? ''; // Renombrado para evitar conflicto con $isAvailable
+
+    $sql = "
+        SELECT
+            PBE.id_usuario,
+            U.nombre,
+            U.email,
+            U.foto_perfil,
+            PBE.titulo_buscado,
+            PBE.esta_disponible,
+            PBE.expectativa_salarial,
+            PBE.habilidades_clave,
+            U.pais,
+            U.departamento,
+            U.ciudad
+        FROM PERFIL_BUSQUEDA_EMPLEO PBE
+        JOIN USUARIO U ON PBE.id_usuario = U.id
+        WHERE PBE.esta_disponible = TRUE -- Solo mostrar perfiles disponibles por defecto
+    ";
+    $params = [];
+
+    // Filtro por nombre de usuario
+    if (!empty($searchName)) {
+        $sql .= " AND U.nombre LIKE ?";
+        $params[] = '%' . $searchName . '%';
+    }
+
+    // Filtro por título buscado
+    if (!empty($searchTitle)) {
+        $sql .= " AND PBE.titulo_buscado LIKE ?";
+        $params[] = '%' . $searchTitle . '%';
+    }
+
+    // Filtro por disponibilidad (si se especifica, sobrescribe el filtro por defecto)
+    if ($isAvailableFilter === 'true') {
+        $sql = str_replace("WHERE PBE.esta_disponible = TRUE", "WHERE PBE.esta_disponible = 1", $sql);
+    } elseif ($isAvailableFilter === 'false') {
+        $sql = str_replace("WHERE PBE.esta_disponible = TRUE", "WHERE PBE.esta_disponible = 0", $sql);
+    }
+
+    // Filtro por habilidad (busca en habilidades_clave)
+    if (!empty($searchSkill)) {
+        $sql .= " AND PBE.habilidades_clave LIKE ?";
+        $params[] = '%' . $searchSkill . '%';
+    }
+
+    $sql .= " ORDER BY PBE.fecha_activacion DESC";
+
+    $stmt = $link->prepare($sql);
+    $stmt->execute($params);
+    $profiles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
-    error_log("Error PDO en mi_equipo.php: " . $e->getMessage());
-    $mensaje = "Error de base de datos al cargar la página.";
-    $tipoMensaje = "danger";
-} catch (Exception $e) {
-    error_log("Error general en mi_equipo.php: " . $e->getMessage());
-    $mensaje = "Ocurrió un error inesperado.";
-    $tipoMensaje = "danger";
+    error_log("Error al cargar perfiles de candidatos: " . $e->getMessage());
+    $profiles = [];
+    $errorMessage = "Error al cargar los perfiles. Inténtalo de nuevo más tarde.";
 }
+
+// Valores predeterminados para el formulario del modal (basados en $userProfile)
+$modalTituloBuscado = $userProfile['titulo_buscado'] ?? '';
+$modalTipoContrato = $userProfile['tipo_contrato_preferido'] ?? '';
+$modalModalidad = $userProfile['modalidad_preferida'] ?? '';
+$modalExpectativaSalarial = $userProfile['expectativa_salarial'] ?? '';
+$modalHabilidadesClave = $userProfile['habilidades_clave'] ?? '';
+$modalEstaDisponible = $userProfile['esta_disponible'] ?? false;
+
 ?>
 
 <!DOCTYPE html>
@@ -225,186 +371,590 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $companyInfo ? htmlspecialchars($companyInfo['nombre_empresa']) : 'Mi Equipo' ?> - TalentLink</title>
+    <title>Perfiles de Candidatos - TalentLink</title>
+    <!-- Incluye el CSS principal de Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Tu archivo de estilos de navbar personalizado -->
     <link rel="stylesheet" href="<?= BASE_URL ?>styles/navbar_styles.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>styles/mi_equipo.css">
+    <!-- Iconos de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Tu archivo de estilos personalizado para esta página -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>styles/perfiles_candidatos_styles.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-<?php include 'navbar.php'; ?>
+    <?php include 'navbar.php'; ?>
+    <div class="container my-4">
+        <h1 class="text-center my-4 fw-bold text-dark">Perfiles de Candidatos</h1>
 
-<div class="container mt-4">
-    <?php if (!empty($mensaje)): ?>
-        <div class="alert alert-<?= $tipoMensaje ?> alert-dismissible fade show" role="alert">
-            <?= htmlspecialchars($mensaje) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
+        <?php if (!empty($errorMessage)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error:</strong> <?= htmlspecialchars($errorMessage) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
 
-    <h2 class="mb-4 text-center">
-        <?= $companyInfo ? 'Equipo de ' . htmlspecialchars($companyInfo['nombre_empresa']) : 'Mi Equipo' ?>
-    </h2>
+        <?php if (!empty($successMessage)): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>Éxito:</strong> <?= htmlspecialchars($successMessage) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
 
-    <?php if ($companyInfo): ?>
-        <div class="card company-info-card mb-4">
-            <div class="card-body text-center">
-                <img src="<?= htmlspecialchars($companyInfo['logo_url']) ?>" alt="Logo de la empresa" class="company-logo mb-3">
-                <h3><?= htmlspecialchars($companyInfo['nombre_empresa']) ?></h3>
-                <p class="text-muted"><?= htmlspecialchars($companyInfo['descripcion'] ?? 'Sin descripción.') ?></p>
-                <p><i class="fas fa-envelope me-2"></i><?= htmlspecialchars($companyInfo['email_contacto']) ?></p>
-                <p><i class="fas fa-phone me-2"></i><?= htmlspecialchars($companyInfo['telefono_contacto']) ?></p>
-                <?php if (!empty($companyInfo['url_sitio_web'])): ?>
-                    <p><i class="fas fa-globe me-2"></i><a href="<?= htmlspecialchars($companyInfo['url_sitio_web']) ?>" target="_blank"><?= htmlspecialchars($companyInfo['url_sitio_web']) ?></a></p>
-                <?php endif; ?>
+        <!-- Sección de Filtros -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title h4 text-secondary mb-3">Filtrar Perfiles</h2>
+                <form method="GET" action="perfiles_candidatos.php" class="row g-3 align-items-end">
+                    <div class="col-md-6 col-lg-3">
+                        <label for="search_name" class="form-label">Nombre del Candidato</label>
+                        <input type="text" id="search_name" name="search_name" value="<?= htmlspecialchars($searchName) ?>"
+                            class="form-control rounded-pill">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="search_title" class="form-label">Título Buscado</label>
+                        <input type="text" id="search_title" name="search_title" value="<?= htmlspecialchars($searchTitle) ?>"
+                            class="form-control rounded-pill">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="search_skill" class="form-label">Habilidad Clave</label>
+                        <input type="text" id="search_skill" name="search_skill" value="<?= htmlspecialchars($searchSkill) ?>"
+                            class="form-control rounded-pill">
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <label for="is_available" class="form-label">Disponibilidad</label>
+                        <select class="form-select rounded-pill" id="is_available" name="is_available">
+                            <option value="">Todos</option>
+                            <option value="true" <?= $isAvailableFilter === 'true' ? 'selected' : '' ?>>Disponible</option>
+                            <option value="false" <?= $isAvailableFilter === 'false' ? 'selected' : '' ?>>No Disponible</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex justify-content-center gap-3 mt-4">
+                        <button type="submit" class="btn btn-primary rounded-pill shadow-sm">
+                            <i class="bi bi-funnel me-2"></i>Aplicar Filtros
+                        </button>
+                        <a href="perfiles_candidatos.php" class="btn btn-secondary rounded-pill shadow-sm">
+                            <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <h3 class="mb-3">Miembros del Equipo</h3>
-
-        <?php if (empty($internalUsers)): ?>
-            <div class="alert alert-info text-center">No hay miembros en el equipo de esta empresa.</div>
+        <!-- Botón para Publicar/Actualizar Perfil (Visible solo si el rol global es 'USUARIO') -->
+        <?php if ($canPublishProfile): ?>
+            <div class="text-center mb-4">
+                <button type="button" class="btn btn-success btn-lg rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#publishProfileModal" id="openPublishProfileModalBtn">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    <?= $userProfile ? 'Actualizar Mi Perfil' : 'Publicar Mi Perfil' ?>
+                </button>
+            </div>
         <?php else: ?>
-            <form id="groupChatForm" method="POST">
-                <input type="hidden" name="create_group_chat" value="1">
-                
-                <div class="d-flex justify-content-end mb-3">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupChatModal">
-                        Crear Chat Grupal con Seleccionados
-                    </button>
-                </div>
+            <div id="roleWarningAlert" class="alert alert-warning text-center mb-4" role="alert">
+                Actualmente tu rol no te permite publicar o actualizar tu perfil de búsqueda de empleo.
+            </div>
+        <?php endif; ?>
 
-                <div class="row">
-                    <?php foreach ($internalUsers as $user): ?>
-                        <div class="col-md-4 mb-4">
-                            <div class="card user-card h-100">
-                                <img src="<?= htmlspecialchars($user['profile_image_url']) ?>" alt="Foto de perfil" class="user-avatar">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title"><?= htmlspecialchars($user['nombre']) ?></h5>
-                                    <p class="card-text text-muted"><?= htmlspecialchars($user['email']) ?></p>
-                                    <p class="card-text">
-                                        <span class="badge bg-secondary"><?= htmlspecialchars($user['nombre_rol_empresa']) ?></span>
-                                    </p>
-                                    <div class="d-flex justify-content-center gap-2 mt-3">
-                                        <?php if ($user['id'] != $userId): // No mostrar chat privado consigo mismo ?>
-                                            <a href="<?= BASE_URL ?>mis_chats.php?candidate_id=<?= htmlspecialchars($user['id']) ?>" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-comment"></i> Chat Privado
-                                            </a>
+        <!-- Lista de Perfiles -->
+        <?php if (empty($profiles)): ?>
+            <div class="alert alert-info text-center" role="alert">
+                No se encontraron perfiles que coincidan con los criterios de búsqueda.
+            </div>
+        <?php else: ?>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <?php foreach ($profiles as $profile): ?>
+                    <div class="col">
+                        <div class="card h-100 shadow-sm profile-card text-center">
+                            <div class="card-body d-flex flex-column align-items-center">
+                                <img src="<?= htmlspecialchars(!empty($profile['foto_perfil']) ? BASE_URL . 'uploads/profile_pictures/' . basename($profile['foto_perfil']) : BASE_URL . 'images/default-profile.jpg') ?>"
+                                    alt="Foto de perfil" class="profile-avatar rounded-circle mb-3 border border-2 border-secondary">
+                                <h3 class="card-title h5 fw-semibold text-dark mb-1"><?= htmlspecialchars($profile['nombre']) ?></h3>
+                                <p class="card-text text-primary fw-medium mb-2 small"><?= htmlspecialchars($profile['titulo_buscado'] ?? 'No especificado') ?></p>
+                                <p class="card-text text-muted mb-2 small">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                    <?= htmlspecialchars($profile['ciudad'] ?? '') ?><?= !empty($profile['ciudad']) && !empty($profile['departamento']) ? ', ' : '' ?><?= htmlspecialchars($profile['departamento'] ?? '') ?><?= (!empty($profile['ciudad']) || !empty($profile['departamento'])) && !empty($profile['pais']) ? ', ' : '' ?><?= htmlspecialchars($profile['pais'] ?? 'N/A') ?>
+                                </p>
+                                <p class="card-text mb-2 small">
+                                    Disponibilidad:
+                                    <span class="<?= $profile['esta_disponible'] ? 'status-available' : 'status-unavailable' ?>">
+                                        <?= $profile['esta_disponible'] ? 'Disponible' : 'No Disponible' ?>
+                                    </span>
+                                </p>
+                                <p class="card-text text-dark mb-2 small">
+                                    Expectativa Salarial:
+                                    <span class="fw-semibold">
+                                        <?= !empty($profile['expectativa_salarial']) ? '$' . number_format($profile['expectativa_salarial'], 0, ',', '.') : 'No especificado' ?>
+                                    </span>
+                                </p>
+                                <p class="card-text text-muted mb-4 small">
+                                    Habilidades Clave: <span class="fw-normal text-dark"><?= htmlspecialchars($profile['habilidades_clave'] ?? 'No especificadas') ?></span>
+                                </p>
+                                <div class="d-flex flex-column gap-2 mt-auto">
+                                    <?php if ($isContractor): ?>
+                                        <button type="button"
+                                                class="btn btn-info btn-sm rounded-pill view-profile-btn"
+                                                data-candidate-id="<?= htmlspecialchars($profile['id_usuario']) ?>">
+                                            <i class="bi bi-person-lines-fill me-2"></i>Ver Perfil Completo
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-warning btn-sm rounded-pill start-chat-btn"
+                                                data-candidate-id="<?= htmlspecialchars($profile['id_usuario']) ?>"
+                                                data-candidate-name="<?= htmlspecialchars($profile['nombre']) ?>">
+                                            <i class="bi bi-chat-dots-fill me-2"></i>Iniciar Chat Privado
+                                        </button>
+                                        <?php if ($profile['esta_disponible']): ?>
+                                            <button type="button"
+                                                    class="btn btn-success btn-sm rounded-pill send-hiring-request-btn"
+                                                    data-candidate-id="<?= htmlspecialchars($profile['id_usuario']) ?>"
+                                                    data-candidate-name="<?= htmlspecialchars($profile['nombre']) ?>">
+                                                <i class="bi bi-person-check-fill me-2"></i>Enviar Solicitud de Contratación
+                                            </button>
                                         <?php endif; ?>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input user-checkbox" type="checkbox" name="selected_users[]" value="<?= htmlspecialchars($user['id']) ?>" id="user_<?= htmlspecialchars($user['id']) ?>" <?= ($user['id'] == $userId) ? 'checked disabled' : '' ?>>
-                                            <label class="form-check-label" for="user_<?= htmlspecialchars($user['id']) ?>">
-                                                Seleccionar
-                                            </label>
-                                        </div>
-                                    </div>
+                                    <?php endif; ?>
                                 </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Modal para Crear Chat Grupal -->
-                <div class="modal fade" id="createGroupChatModal" tabindex="-1" aria-labelledby="createGroupChatModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="createGroupChatModalLabel">Crear Chat Grupal</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="groupChatName" class="form-label">Nombre del Chat Grupal (opcional):</label>
-                                    <input type="text" class="form-control" id="groupChatName" name="group_chat_name" placeholder="Ej: Equipo de Proyecto X">
-                                    <small class="text-muted">Si lo dejas vacío, se generará un nombre automáticamente.</small>
-                                </div>
-                                <p>Usuarios seleccionados:</p>
-                                <ul id="selectedUsersList" class="list-group">
-                                    <!-- Los usuarios seleccionados se listarán aquí dinámicamente -->
-                                </ul>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary" id="confirmCreateGroupChatBtn">Crear Chat</button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </form>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
-    <?php else: ?>
-        <div class="alert alert-warning text-center">
-            No se pudo cargar la información de la empresa o no tienes permiso para verla.
+    </div>
+
+    <!-- Modal para Publicar/Actualizar Perfil -->
+    <div class="modal fade" id="publishProfileModal" tabindex="-1" aria-labelledby="publishProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-primary text-white p-3 border-bottom-0 rounded-top-3">
+                    <h5 class="modal-title fs-5" id="publishProfileModalLabel">
+                        <?= $userProfile ? 'Actualizar tu Perfil de Búsqueda' : 'Publicar tu Perfil de Búsqueda' ?>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="publishProfileForm">
+                        <input type="hidden" name="action" value="submit_profile">
+
+                        <div class="mb-3">
+                            <label for="modal_titulo_buscado" class="form-label">Título Buscado <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control rounded-pill" id="modal_titulo_buscado" name="titulo_buscado"
+                                value="<?= htmlspecialchars($modalTituloBuscado) ?>" required
+                                placeholder="Ej: Desarrollador Web Junior, Diseñador Gráfico">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_tipo_contrato_preferido" class="form-label">Tipo de Contrato Preferido <span class="text-danger">*</span></label>
+                            <select class="form-select rounded-pill" id="modal_tipo_contrato_preferido" name="tipo_contrato_preferido" required>
+                                <option value="">Selecciona...</option>
+                                <option value="Tiempo Completo" <?= $modalTipoContrato === 'Tiempo Completo' ? 'selected' : '' ?>>Tiempo Completo</option>
+                                <option value="Medio Tiempo" <?= $modalTipoContrato === 'Medio Tiempo' ? 'selected' : '' ?>>Medio Tiempo</option>
+                                <option value="Contrato por Obra" <?= $modalTipoContrato === 'Contrato por Obra' ? 'selected' : '' ?>>Contrato por Obra</option>
+                                <option value="Freelance" <?= $modalTipoContrato === 'Freelance' ? 'selected' : '' ?>>Freelance</option>
+                                <option value="Temporal" <?= $modalTipoContrato === 'Temporal' ? 'selected' : '' ?>>Temporal</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_modalidad_preferida" class="form-label">Modalidad Preferida <span class="text-danger">*</span></label>
+                            <select class="form-select rounded-pill" id="modal_modalidad_preferida" name="modalidad_preferida" required>
+                                <option value="">Selecciona...</option>
+                                <option value="Presencial" <?= $modalModalidad === 'Presencial' ? 'selected' : '' ?>>Presencial</option>
+                                <option value="Remoto" <?= $modalModalidad === 'Remoto' ? 'selected' : '' ?>>Remoto</option>
+                                <option value="Híbrido" <?= $modalModalidad === 'Híbrido' ? 'selected' : '' ?>>Híbrido</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_expectativa_salarial" class="form-label">Expectativa Salarial (USD)</label>
+                            <input type="number" class="form-control rounded-pill" id="modal_expectativa_salarial" name="expectativa_salarial"
+                                value="<?= htmlspecialchars($modalExpectativaSalarial) ?>" step="0.01" min="0"
+                                placeholder="Ej: 1500.00 (opcional)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_habilidades_clave" class="form-label">Habilidades Clave (separadas por coma)</label>
+                            <textarea class="form-control rounded" id="modal_habilidades_clave" name="habilidades_clave" rows="3"
+                                    placeholder="Ej: HTML, CSS, JavaScript, React, SQL, Photoshop"><?= htmlspecialchars($modalHabilidadesClave) ?></textarea>
+                            <small class="form-text text-muted">Menciona las habilidades más relevantes para tu búsqueda.</small>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">
+                                <i class="bi bi-cloud-upload me-2"></i>
+                                <?= $userProfile ? 'Actualizar Perfil' : 'Publicar Perfil' ?>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <?php if ($userProfile): // Mostrar el estado actual del perfil si ya existe ?>
+                    <div class="modal-footer justify-content-center border-top-0 pt-0">
+                        <span class="text-muted small">Estado actual: </span>
+                        <span class="fw-bold <?= $modalEstaDisponible ? 'status-available' : 'status-unavailable' ?>">
+                            <?= $modalEstaDisponible ? 'PÚBLICO' : 'NO DISPONIBLE' ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-    <?php endif; ?>
-</div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const createGroupChatModal = document.getElementById('createGroupChatModal');
-    const selectedUsersList = document.getElementById('selectedUsersList');
-    const userCheckboxes = document.querySelectorAll('.user-checkbox');
-    const confirmCreateGroupChatBtn = document.getElementById('confirmCreateGroupChatBtn');
-    const groupChatForm = document.getElementById('groupChatForm');
+    <!-- Modal para Enviar Solicitud de Contratación -->
+    <div class="modal fade" id="sendHiringRequestModal" tabindex="-1" aria-labelledby="sendHiringRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-success text-white p-3 border-bottom-0 rounded-top-3">
+                    <h5 class="modal-title fs-5" id="sendHiringRequestModalLabel">Enviar Solicitud de Contratación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="hiringRequestForm">
+                        <input type="hidden" name="action" value="send_hiring_request">
+                        <input type="hidden" name="candidate_id" id="hiringRequestCandidateId">
+                        <p>Estás enviando una solicitud de contratación a <strong id="hiringRequestCandidateName"></strong>.</p>
+                        
+                        <div class="mb-3">
+                            <label for="hiringRequestCompanySelect" class="form-label">Seleccionar Empresa <span class="text-danger">*</span></label>
+                            <select class="form-select rounded-pill" id="hiringRequestCompanySelect" name="company_id" required>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
 
-    // Función para actualizar la lista de usuarios seleccionados en el modal
-    function updateSelectedUsersInModal() {
-        selectedUsersList.innerHTML = '';
-        let selectedCount = 0;
-        const currentUserId = <?= json_encode($userId) ?>; // Obtener el ID del usuario actual de PHP
+                        <div class="mb-3">
+                            <label for="salarioOfrecido" class="form-label">Salario Ofrecido (USD)</label>
+                            <input type="number" step="0.01" class="form-control rounded-pill" id="salarioOfrecido" name="salario_ofrecido"
+                                placeholder="Ej: 1800.00 (opcional)">
+                        </div>
 
-        userCheckboxes.forEach(checkbox => {
-            const userId = checkbox.value;
-            const userName = checkbox.closest('.user-card').querySelector('.card-title').textContent;
+                        <div class="mb-3">
+                            <label for="horasSemanalesOfrecidas" class="form-label">Horas Semanales Ofrecidas</label>
+                            <input type="number" step="0.01" class="form-control rounded-pill" id="horasSemanalesOfrecidas" name="horas_semanales_ofrecidas"
+                                placeholder="Ej: 40 (opcional)">
+                        </div>
 
-            // Asegurarse de que el usuario actual siempre esté en la lista del modal, incluso si su checkbox está deshabilitado
-            if (checkbox.checked || userId == currentUserId) {
-                const listItem = document.createElement('li');
-                listItem.classList.add('list-group-item');
-                listItem.textContent = userName + ((userId == currentUserId) ? ' (Tú)' : '');
-                selectedUsersList.appendChild(listItem);
-                selectedCount++;
+                        <div class="mb-3">
+                            <label for="mensajeContratacion" class="form-label">Mensaje para el Candidato</label>
+                            <textarea class="form-control rounded" id="mensajeContratacion" name="mensaje_contratacion" rows="3"
+                                placeholder="Ej: Nos gustaría ofrecerte un puesto en nuestro equipo... (opcional)"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg rounded-pill shadow">
+                                <i class="bi bi-send-fill me-2"></i>Enviar Solicitud
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modales de Confirmación y Alerta (reutilizados) -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-light p-3 border-bottom-0">
+                    <h5 class="modal-title fs-5 text-dark" id="confirmModalLabel">Confirmar Acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4 text-secondary" id="confirmModalBody">
+                    <!-- El mensaje de confirmación se insertará aquí -->
+                </div>
+                <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="confirmActionButton">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="alertDialog" tabindex="-1" aria-labelledby="alertDialogLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-light p-3 border-bottom-0">
+                    <h5 class="modal-title fs-5 text-dark" id="alertDialogLabel">Mensaje</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4 text-secondary" id="alertDialogBody">
+                    <!-- El mensaje de alerta se insertará aquí -->
+                </div>
+                <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ver Perfil Completo -->
+    <div class="modal fade" id="viewProfileModal" tabindex="-1" aria-labelledby="viewProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-info text-white p-3 border-bottom-0 rounded-top-3">
+                    <h5 class="modal-title fs-5" id="viewProfileModalLabel">Perfil Completo del Candidato</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4" id="viewProfileModalBody">
+                    <!-- Aquí se cargará el perfil completo vía AJAX -->
+                    <div class="text-center">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Funciones de modales personalizados
+        function customAlert(message) {
+            const alertDialogBody = document.getElementById('alertDialogBody');
+            if (alertDialogBody) {
+                alertDialogBody.textContent = message;
+                const alertDialog = new bootstrap.Modal(document.getElementById('alertDialog'));
+                alertDialog.show();
+            }
+        }
+
+        let confirmCallback = null;
+        function customConfirm(message, callback) {
+            const confirmModalBody = document.getElementById('confirmModalBody');
+            const confirmActionButton = document.getElementById('confirmActionButton');
+            if (confirmModalBody && confirmActionButton) {
+                confirmModalBody.textContent = message;
+                confirmCallback = callback;
+                const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                confirmModal.show();
+
+                confirmActionButton.onclick = () => {
+                    if (confirmCallback) {
+                        confirmCallback();
+                    }
+                    confirmModal.hide();
+                };
+            }
+        }
+
+        // Global variables to store candidate info for the modal
+        let currentCandidateIdToSendRequest = null;
+        let currentCandidateNameToSendRequest = null;
+        // This variable will be populated by PHP
+        const phpUserCompanies = <?= json_encode($userCompanies); ?>;
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejador para el botón "Enviar Solicitud de Contratación"
+            document.querySelectorAll('.send-hiring-request-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    currentCandidateIdToSendRequest = this.dataset.candidateId;
+                    currentCandidateNameToSendRequest = this.dataset.candidateName;
+
+                    // Populate the candidate name in the modal
+                    document.getElementById('hiringRequestCandidateName').textContent = currentCandidateNameToSendRequest;
+                    document.getElementById('hiringRequestCandidateId').value = currentCandidateIdToSendRequest;
+
+                    // Populate the company select dropdown
+                    const companySelect = document.getElementById('hiringRequestCompanySelect');
+                    companySelect.innerHTML = ''; // Clear previous options
+
+                    if (phpUserCompanies.length === 0) {
+                        companySelect.innerHTML = '<option value="">No hay empresas disponibles para enviar solicitud.</option>';
+                        document.getElementById('hiringRequestForm').querySelector('button[type="submit"]').disabled = true;
+                    } else {
+                        // Add a default "Select" option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Selecciona una empresa...';
+                        companySelect.appendChild(defaultOption);
+
+                        phpUserCompanies.forEach(company => {
+                            const option = document.createElement('option');
+                            option.value = company.id_empresa;
+                            option.textContent = company.nombre_empresa;
+                            companySelect.appendChild(option);
+                        });
+                        document.getElementById('hiringRequestForm').querySelector('button[type="submit"]').disabled = false;
+                    }
+
+                    const sendHiringRequestModal = new bootstrap.Modal(document.getElementById('sendHiringRequestModal'));
+                    sendHiringRequestModal.show();
+                });
+            });
+
+            // Handle the submission of the hiring request form
+            const hiringRequestForm = document.getElementById('hiringRequestForm');
+            if (hiringRequestForm) {
+                hiringRequestForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent default form submission
+
+                    const selectedCompanyId = document.getElementById('hiringRequestCompanySelect').value;
+                    if (!selectedCompanyId) {
+                        customAlert('Por favor, selecciona una empresa para enviar la solicitud.');
+                        return;
+                    }
+
+                    const formData = new URLSearchParams(new FormData(this));
+
+                    // Confirm before sending
+                    customConfirm(`¿Estás seguro de que deseas enviar esta solicitud de contratación a ${currentCandidateNameToSendRequest}?`, () => {
+                        fetch('perfiles_candidatos.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: formData.toString()
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                customAlert(data.message);
+                                const sendHiringRequestModalInstance = bootstrap.Modal.getInstance(document.getElementById('sendHiringRequestModal'));
+                                if (sendHiringRequestModalInstance) {
+                                    sendHiringRequestModalInstance.hide();
+                                }
+                                // No recargamos la página aquí, ya que el perfil sigue siendo visible
+                                // y la interacción principal es a través de la notificación del candidato.
+                            } else {
+                                customAlert(`Error: ${data.message}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al enviar solicitud de contratación:', error);
+                            customAlert('Hubo un error al intentar enviar la solicitud. Inténtalo de nuevo.');
+                        });
+                    });
+                });
+            }
+
+
+            // Manejador para el envío del formulario del modal de Publicar Perfil
+            const publishProfileForm = document.getElementById('publishProfileForm');
+            if (publishProfileForm) {
+                publishProfileForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevenir el envío normal del formulario
+
+                    const formData = new URLSearchParams(new FormData(this));
+
+                    fetch('perfiles_candidatos.php', { // Enviar al mismo archivo PHP
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData.toString()
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            customAlert(data.message);
+                            const publishProfileModal = bootstrap.Modal.getInstance(document.getElementById('publishProfileModal'));
+                            if (publishProfileModal) {
+                                publishProfileModal.hide(); // Cerrar el modal
+                            }
+                            window.location.reload(); // Recargar la página para actualizar la lista y el estado del botón
+                        } else {
+                            customAlert(`Error: ${data.message}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al enviar el perfil:', error);
+                        customAlert('Hubo un error al intentar guardar el perfil. Inténtalo de nuevo.');
+                    });
+                });
+            }
+
+            // Llenar el formulario del modal cuando se abre
+            const publishProfileModalElement = document.getElementById('publishProfileModal');
+            if (publishProfileModalElement) {
+                publishProfileModalElement.addEventListener('show.bs.modal', function() {
+                    document.getElementById('modal_titulo_buscado').value = '<?= htmlspecialchars($modalTituloBuscado) ?>';
+                    document.getElementById('modal_tipo_contrato_preferido').value = '<?= htmlspecialchars($modalTipoContrato) ?>';
+                    document.getElementById('modal_modalidad_preferida').value = '<?= htmlspecialchars($modalModalidad) ?>';
+                    document.getElementById('modal_expectativa_salarial').value = '<?= htmlspecialchars($modalExpectativaSalarial) ?>';
+                    document.getElementById('modal_habilidades_clave').value = '<?= htmlspecialchars($modalHabilidadesClave) ?>';
+                });
+            }
+
+            // Ver Perfil Completo (solo contratador o administrador de empresa)
+            document.querySelectorAll('.view-profile-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const candidateId = this.dataset.candidateId;
+                    const modal = new bootstrap.Modal(document.getElementById('viewProfileModal'));
+                    const modalBody = document.getElementById('viewProfileModalBody');
+                    // Mostrar spinner de carga
+                    modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2 text-muted">Cargando perfil...</p></div>';
+                    modal.show();
+
+                    fetch('perfiles_candidatos.php?action=get_profile&candidate_id=' + candidateId)
+                        .then(response => {
+                            if (!response.ok) {
+                                // Si la respuesta HTTP no es 2xx, lanza un error
+                                return response.text().then(text => { throw new Error('Network response was not ok: ' + response.status + ' ' + response.statusText + ' - ' + text); });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Renderiza los datos del perfil completo
+                                modalBody.innerHTML = `
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 text-center mb-3 mb-md-0">
+                                            <img src="${data.profile.foto_perfil}" class="img-fluid rounded-circle mb-3 border border-3 border-primary" style="max-width: 150px; height: 150px; object-fit: cover;">
+                                            <h4 class="fw-bold text-dark">${data.profile.nombre}</h4>
+                                            <p class="text-muted mb-0"><i class="bi bi-envelope-fill me-1"></i>${data.profile.email}</p>
+                                        </div>
+                                        <div class="col-md-8 text-start">
+                                            <p class="mb-2"><strong>Título Buscado:</strong> <span class="text-primary fw-medium">${data.profile.titulo_buscado}</span></p>
+                                            <p class="mb-2"><strong>Tipo de Contrato:</strong> ${data.profile.tipo_contrato_preferido}</p>
+                                            <p class="mb-2"><strong>Modalidad:</strong> ${data.profile.modalidad_preferida}</p>
+                                            <p class="mb-2"><strong>Expectativa Salarial:</strong> <span class="fw-semibold">${data.profile.expectativa_salarial ? '$' + Number(data.profile.expectativa_salarial).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : 'No especificada'}</span></p>
+                                            <p class="mb-2"><strong>Habilidades Clave:</strong> ${data.profile.habilidades_clave}</p>
+                                            <p class="mb-0"><strong>Ubicación:</strong> ${data.profile.ciudad}, ${data.profile.departamento}, ${data.profile.pais}</p>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                modalBody.innerHTML = `<div class="alert alert-danger text-center">${data.message}</div>`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar el perfil completo (fetch):', error);
+                            modalBody.innerHTML = '<div class="alert alert-danger text-center">Hubo un error al cargar el perfil completo. Por favor, inténtalo de nuevo.</div>';
+                        });
+                });
+            });
+
+            // Iniciar Chat Privado (solo contratador o administrador de empresa)
+            document.querySelectorAll('.start-chat-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const candidateId = this.dataset.candidateId;
+                    // Redirige a la página de chats, pasando el id del candidato
+                    window.location.href = 'mis_chats.php?candidate_id=' + candidateId;
+                });
+            });
+
+            // Auto-hide the role warning alert
+            const roleWarningAlert = document.getElementById('roleWarningAlert');
+            if (roleWarningAlert) {
+                setTimeout(() => {
+                    // Usa la clase 'fade' de Bootstrap para una transición suave
+                    roleWarningAlert.classList.add('fade');
+                    roleWarningAlert.classList.remove('show');
+                    // Elimina el elemento del DOM después de que la transición termine
+                    roleWarningAlert.addEventListener('transitionend', function() {
+                        roleWarningAlert.remove();
+                    });
+                }, 5000); // Ocultar después de 5 segundos
             }
         });
-
-        // Deshabilitar el botón de crear chat si no hay al menos 2 usuarios seleccionados (incluyendo el actual)
-        if (selectedCount < 2) {
-            confirmCreateGroupChatBtn.disabled = true;
-            const warningItem = document.createElement('li');
-            warningItem.classList.add('list-group-item', 'list-group-item-warning');
-            warningItem.textContent = 'Selecciona al menos otro usuario para crear un chat grupal.';
-            selectedUsersList.appendChild(warningItem);
-        } else {
-            confirmCreateGroupChatBtn.disabled = false;
-        }
-    }
-
-    // Event listener para abrir el modal
-    if (createGroupChatModal) {
-        createGroupChatModal.addEventListener('show.bs.modal', function() {
-            updateSelectedUsersInModal();
-        });
-    }
-
-    // Event listener para cambios en los checkboxes
-    userCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            // No es necesario actualizar el modal aquí, solo cuando se abre
-            // La función updateSelectedUsersInModal se encarga de eso.
-        });
-    });
-
-    // Asegurarse de que el checkbox del usuario actual esté marcado y deshabilitado al cargar
-    userCheckboxes.forEach(checkbox => {
-        const userId = checkbox.value;
-        const currentUserId = <?= json_encode($userId) ?>;
-        if (userId == currentUserId) {
-            checkbox.checked = true;
-            checkbox.disabled = true;
-        }
-    });
-});
-</script>
+    </script>
 </body>
 </html>

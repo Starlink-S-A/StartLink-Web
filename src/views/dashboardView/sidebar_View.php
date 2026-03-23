@@ -1,6 +1,21 @@
 <?php
 // views/dashboardView/sidebar_view.php
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+$userName = $userName ?? ($_SESSION['user_name'] ?? 'Usuario');
+
+if (!isset($esAdminEmpresa)) {
+    $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
+    $esAdminEmpresa = in_array((int)$rolEmpresa, [1, 2], true);
+}
+
+if (!isset($showPublishProfileLink)) {
+    $showPublishProfileLink = isset($_SESSION['user_id']) && (($_SESSION['loggedin'] ?? false) === true);
+}
+
+if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
+    $profileImage = rtrim(BASE_URL, '/') . '/' . ltrim((string)$_SESSION['foto_perfil'], '/');
+}
 ?>
 
 <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/sidebar_styles.css">
@@ -56,7 +71,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             </li>
             <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
             <li>
-                <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos.php">
+                <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos">
                     <i class="fas fa-paper-plane"></i> <span class="sidebar-link-text">Publicar Mi Perfil</span>
                 </a>
             </li>
