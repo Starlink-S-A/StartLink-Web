@@ -5,3 +5,7 @@ vendor/
 .env.example
 LICENSE.md
 .agents/
+viejo-project/
+.gitignore
+.htaccess
+.DS_Store    

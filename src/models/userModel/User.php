@@ -14,7 +14,7 @@ class User {
     public function getUserByEmail($email) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, nombre, email, contrasena_hash, id_rol, intentos_fallidos, bloqueado_hasta 
+                SELECT id, nombre, email, contrasena_hash, id_rol, intentos_fallidos, bloqueado_hasta, id_empresa, id_rol_empresa
                 FROM usuario 
                 WHERE email = :email
             ");
@@ -32,7 +32,7 @@ class User {
     public function getUserById($id) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT id, nombre, email, id_rol, fecha_registro, intentos_fallidos, bloqueado_hasta 
+                SELECT id, nombre, email, id_rol, fecha_registro, intentos_fallidos, bloqueado_hasta, id_empresa, id_rol_empresa
                 FROM usuario 
                 WHERE id = :id
             ");

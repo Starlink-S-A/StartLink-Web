@@ -161,6 +161,25 @@ switch ($action) {
         $capacitacionController->obtenerInscritos();
         break;
 
+    // ─── Nóminas ──────────────────────────────────────────────
+    case 'nominas':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->showNominas();
+        break;
+
+    case 'generar_nomina':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->generarNomina();
+        break;
+
+    case 'descargar_nomina':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->descargarPDF();
+        break;
+
     default:
         $authController = new AuthController();
         $authController->showWelcomePage();
