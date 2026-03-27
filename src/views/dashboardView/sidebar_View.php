@@ -63,10 +63,6 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
     <!-- Navigation -->
     <nav class="sidebar-nav-container">
         <ul class="sidebar-nav">
-<<<<<<< HEAD
-=======
-            <!-- ═══ TODOS LOS MÓDULOS VISIBLES PARA TODOS LOS ROLES ═══ -->
->>>>>>> 7af304b (Refactorización de módulo nóminas a historial y ajustes de UI)
             <li>
                 <a class="sidebar-link <?= $currentPage == 'dashboard_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>dashboard">
                     <i class="fas fa-home"></i> <span class="sidebar-link-text">Home</span>
@@ -86,11 +82,7 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                 </a>
             </li>
             <li>
-<<<<<<< HEAD
-                <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
-=======
                 <a class="sidebar-link <?= $currentAction == 'crearEmpresa' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
->>>>>>> 7af304b (Refactorización de módulo nóminas a historial y ajustes de UI)
                     <i class="fas fa-plus-circle"></i> <span class="sidebar-link-text">Nueva Empresa</span>
                 </a>
             </li>
