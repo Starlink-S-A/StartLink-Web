@@ -270,10 +270,21 @@ class MisChatsModel {
 
         try {
             $this->link->beginTransaction();
-            $stmtDeleteConv = $this->link->prepare("DELETE FROM conversacion WHERE id_conversacion = ?");
-            $stmtDeleteConv->execute([$chatId]);
+            // Feature 2: Only remove the current user from the conversation
+            $stmtDeletePart = $this->link->prepare("DELETE FROM conversacion_participante WHERE id_conversacion = ? AND id_usuario = ?");
+            $stmtDeletePart->execute([$chatId, $userId]);
+            
+            // Check if there are any participants left
+            $stmtCount = $this->link->prepare("SELECT COUNT(*) FROM conversacion_participante WHERE id_conversacion = ?");
+            $stmtCount->execute([$chatId]);
+            if ($stmtCount->fetchColumn() == 0) {
+                // If nobody is left, completely delete the conversation
+                $stmtDelConv = $this->link->prepare("DELETE FROM conversacion WHERE id_conversacion = ?");
+                $stmtDelConv->execute([$chatId]);
+            }
+            
             $this->link->commit();
-            return ['success' => true, 'message' => 'Chat eliminado correctamente.'];
+            return ['success' => true, 'message' => 'Chat eliminado correctamente para ti.'];
         } catch (PDOException $e) {
             $this->link->rollBack();
             error_log("Error al eliminar chat: " . $e->getMessage());

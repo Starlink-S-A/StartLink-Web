@@ -234,7 +234,7 @@ class PerfilesCandidatosController {
 
         try {
             $this->model->hireCandidateToCompany($candidateId, $companyId, $salaryBase, $hoursWeekly);
-            $this->json(['success' => true, 'message' => 'Contratación registrada. El perfil quedó oculto automáticamente.']);
+            $this->json(['success' => true, 'message' => 'Solicitud de contratación enviada al candidato exitosamente.']);
         } catch (RuntimeException $e) {
             $this->json(['success' => false, 'message' => $e->getMessage()], 409);
         } catch (Throwable $e) {

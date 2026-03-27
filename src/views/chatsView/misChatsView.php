@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Estilos específicos -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/navbar_styles.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/dashboard_styles.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/chats.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
@@ -22,6 +22,7 @@
 <body>
 <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
+<div class="main-content">
 <div class="container chat-container">
     <div class="conversations-sidebar">
         <h4>Chats Activos</h4>
@@ -134,6 +135,7 @@
             </div>
         <?php endif; ?>
     </div>
+</div>
 </div>
 
 <!-- Modal de Confirmación -->

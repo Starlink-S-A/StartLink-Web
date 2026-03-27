@@ -136,6 +136,18 @@ switch ($action) {
         $controller->index();
         break;
 
+    case 'ver_solicitud_contrato':
+        require_once __DIR__ . '/controllers/candidatosController/solicitudController.php';
+        $controller = new SolicitudController();
+        $controller->verSolicitud();
+        break;
+
+    case 'responder_solicitud':
+        require_once __DIR__ . '/controllers/candidatosController/solicitudController.php';
+        $controller = new SolicitudController();
+        $controller->responderSolicitud();
+        break;
+
     // ─── Capacitaciones ───────────────────────────────────────
     case 'capacitaciones':
         require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';

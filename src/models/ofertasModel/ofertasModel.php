@@ -201,7 +201,27 @@ class OfertasModel {
                 $data['id_creador_oferta']
             ]);
 
-            return $this->conexion->lastInsertId();
+            $ofertaId = $this->conexion->lastInsertId();
+
+            // Feature 4: Notificar a los dueños de la empresa sobre la nueva oferta
+            $stmtOwners = $this->conexion->prepare("
+                SELECT id_usuario FROM usuario_empresa WHERE id_empresa = ? AND id_rol_empresa = 1 AND id_usuario != ?
+            ");
+            $stmtOwners->execute([$data['id_empresa'], $data['id_creador_oferta']]);
+            $owners = $stmtOwners->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($owners)) {
+                $mensaje = "Se ha publicado una nueva oferta: '{$data['titulo']}' en tu empresa.";
+                $stmtNotif = $this->conexion->prepare("
+                    INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                    VALUES (?, ?, 'info', 'fas fa-bullhorn', 'index.php?action=ofertas', NOW(), 0)
+                ");
+                foreach ($owners as $ownerId) {
+                    $stmtNotif->execute([$ownerId, $mensaje]);
+                }
+            }
+
+            return $ofertaId;
 
         } catch (PDOException $e) {
             error_log("Error al crear oferta: " . $e->getMessage());

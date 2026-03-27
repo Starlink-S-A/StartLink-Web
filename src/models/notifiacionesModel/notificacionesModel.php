@@ -80,9 +80,13 @@ class NotificacionesModel {
     public function crearNotificacion($userId, $mensaje, $tipo, $icono, $url = null, $extraData = []) {
         // HU-Chat-01: Silenciado inteligente
         if ($tipo === 'chat' && isset($extraData['chat_id'])) {
+            /* 
+            Removido por causar falsos positivos cuando el usuario cierra el navegador 
+            sin que el JS limpie current_chat_id:
             if ($this->isUserInChat($userId, $extraData['chat_id'])) {
-                return false; // No crear notificación si el usuario está en el chat
+                return false; 
             }
+            */
 
             // Agrupación de mensajes del mismo remitente (HU-Chat-03)
             if (isset($extraData['sender_id'], $extraData['sender_name'])) {
@@ -103,8 +107,6 @@ class NotificacionesModel {
     }
 
     private function isUserInChat($userId, $chatId) {
-        // Verifica si el usuario tiene ese chat como 'activo' actualmente
-        // Necesitamos una forma de rastrear esto. Por ahora, consultaremos una columna hipotética 'current_chat_id'
         $stmt = $this->link->prepare("SELECT current_chat_id FROM usuario WHERE id = ?");
         $stmt->execute([$userId]);
         $currentChat = $stmt->fetchColumn();

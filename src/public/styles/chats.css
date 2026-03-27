@@ -9,7 +9,7 @@
     --msg-received: #e4e6eb;
     --msg-text-sent: #ffffff;
     --msg-text-received: #050505;
-    --sidebar-width: 350px;
+    --chat-sidebar-width: 350px;
 }
 
 .chat-container {
@@ -25,7 +25,7 @@
 
 /* Sidebar de conversaciones */
 .conversations-sidebar {
-    width: var(--sidebar-width);
+    width: var(--chat-sidebar-width);
     border-right: 1px solid #eee;
     display: flex;
     flex-direction: column;
