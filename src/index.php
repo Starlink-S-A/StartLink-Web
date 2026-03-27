@@ -117,6 +117,18 @@ switch ($action) {
         $controller->index();
         break;
 
+    case 'mis_chats':
+        require_once __DIR__ . '/controllers/chatsController/misChatsController.php';
+        $controller = new MisChatsController();
+        $controller->index();
+        break;
+
+    case 'notificaciones':
+        require_once __DIR__ . '/controllers/notificacionesController/notificacionesController.php';
+        $controller = new NotificacionesController();
+        $controller->index();
+        break;
+
     case 'perfiles_candidatos':
     case 'perfiles_candidatos.php':
         require_once __DIR__ . '/controllers/candidatosController/perfilesCandidatosController.php';

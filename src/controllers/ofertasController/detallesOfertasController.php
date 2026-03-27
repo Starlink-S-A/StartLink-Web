@@ -144,12 +144,36 @@ class DetallesOfertasController {
                 try {
                     $rolTrabajadorId = $this->model->getRolTrabajadorId();
                     $this->model->contratarPostulante($ofertaId, $idPostulante, $oferta['id_empresa'], $salario, $horasSemanales, $rolTrabajadorId);
+                    
+                    // HU-10: Envío de solicitud de contrato / HU-13: Cambio de estado (Seleccionado)
+                    require_once ROOT_PATH . 'src/models/notifiacionesModel/notificacionesModel.php';
+                    $notifModel = new NotificacionesModel();
+                    $notifModel->crearNotificacion(
+                        $idPostulante,
+                        "¡Felicidades! Has sido seleccionado para la oferta: " . $oferta['titulo_oferta'],
+                        'Candidatos',
+                        'fas fa-handshake',
+                        BASE_URL . "index.php?action=ofertas" // O ruta a mis empleos/contratos
+                    );
+                    
                     $_SESSION['mensaje'] = "Usuario contratado con éxito.";
                 } catch (Exception $e) {
                     $_SESSION['error'] = "Error al contratar: " . $e->getMessage();
                 }
             } elseif ($accion === 'Rechazado') {
                 $this->model->rechazarPostulante($ofertaId, $idPostulante);
+                
+                // HU-13: Cambio de estado (Rechazado)
+                require_once ROOT_PATH . 'src/models/notifiacionesModel/notificacionesModel.php';
+                $notifModel = new NotificacionesModel();
+                $notifModel->crearNotificacion(
+                    $idPostulante,
+                    "Tu postulación para " . $oferta['titulo_oferta'] . " ha sido rechazada.",
+                    'Candidatos',
+                    'fas fa-times-circle',
+                    BASE_URL . "index.php?action=ofertas"
+                );
+                
                 $_SESSION['mensaje'] = "Usuario rechazado permanentemente.";
             }
 

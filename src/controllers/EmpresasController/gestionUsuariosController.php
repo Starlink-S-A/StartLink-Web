@@ -159,6 +159,17 @@ class GestionUsuariosController {
 
         $ok = $this->model->updateRolUsuarioEmpresa($usuarioId, $empresaId, $nuevoRol);
         if ($ok) {
+            // HU-21: Cambio de rol o permiso -> Notificar al usuario afectado
+            require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
+            $notifModel = new NotificacionesModel();
+            $notifModel->crearNotificacion(
+                $usuarioId,
+                "Tu rol en la empresa ha sido actualizado.",
+                'Sistema',
+                'fas fa-user-shield',
+                BASE_URL . "mi_empresa"
+            );
+
             $_SESSION['mensaje'] = 'Rol actualizado correctamente.';
             $_SESSION['tipo'] = 'success';
         } else {
@@ -236,6 +247,17 @@ class GestionUsuariosController {
         );
 
         if ($ok) {
+            // HU-29: Registro de Evaluación -> Notificar al Trabajador
+            require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
+            $notifModel = new NotificacionesModel();
+            $notifModel->crearNotificacion(
+                $usuarioId,
+                "Se ha registrado una nueva evaluación de desempeño para ti.",
+                'Capacitación',
+                'fas fa-chart-line',
+                BASE_URL . "mi_empresa"
+            );
+
             $_SESSION['mensaje'] = 'Seguimiento de desempeño guardado correctamente.';
             $_SESSION['tipo'] = 'success';
         } else {

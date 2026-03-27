@@ -45,7 +45,7 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
         <div class="position-relative d-inline-block">
             <img src="<?= isset($profileImage) ? $profileImage : 'https://static.thenounproject.com/png/4154905-200.png' ?>" 
                  alt="Profile" class="user-avatar-large">
-            <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
+            <?php if (isset($unread_notifications_count) && $unread_notifications_count > 0): ?>
                 <div class="notif-dot"></div>
             <?php endif; ?>
         </div>
@@ -65,8 +65,8 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                 <a class="sidebar-link <?= $currentPage == 'ofertas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>ofertas">
                     <i class="fas fa-briefcase"></i> <span class="sidebar-link-text">Ofertas</span>
                 </a>
-                <?php if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0): ?>
-                     <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unreadNotificationsCount ?></span>
+                <?php if (isset($unread_notifications_count) && $unread_notifications_count > 0): ?>
+                     <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unread_notifications_count ?></span>
                 <?php endif; ?>
             </li>
             <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
@@ -94,6 +94,16 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
             </li>
             <?php endif; ?>
             
+            <li>
+                <a class="sidebar-link <?= $currentPage == 'mis_chats_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_chats">
+                    <i class="fas fa-comments"></i> <span class="sidebar-link-text">Mensajes</span>
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link <?= $currentPage == 'NotifiacacionesView.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=notificaciones">
+                    <i class="fas fa-bell"></i> <span class="sidebar-link-text">Notificaciones</span>
+                </a>
+            </li>
             <div class="sidebar-divider my-4 mx-3" style="border-top: 1px solid #f1f5f9;"></div>
             
             <li>

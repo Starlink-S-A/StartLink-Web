@@ -127,7 +127,7 @@
                                         <i class="fas fa-user-check me-1"></i> Contratado
                                     </span>
                                 <?php else: ?>
-                                    <a href="<?= BASE_URL ?>index.php?action=chat&id_oferta=<?= $oferta['id_oferta'] ?>" 
+                                    <a href="<?= BASE_URL ?>index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" 
                                        class="btn btn-sm btn-outline-success flex-grow-1">
                                         <i class="fas fa-comments me-1"></i> Chat
                                     </a>

@@ -120,12 +120,12 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
                             <?php endif; ?>
 
                             <div class="d-flex gap-2 mt-3">
-                                <a href="chat_oferta.php?id_oferta=<?= $oferta['id_oferta'] ?>" class="btn btn-primary btn-sm">
+                                <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" class="btn btn-primary btn-sm">
                                     <i class="fas fa-comments"></i> Chat de la Oferta
                                 </a>
 
                                 <?php if ($esCreador): ?>
-                                    <a href="chat_oferta.php?id_oferta=<?= $oferta['id_oferta'] ?>&id_usuario_privado=<?= $u['id'] ?>&tipo_chat=privado" class="btn btn-sm btn-outline-secondary">
+                                    <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>&id_usuario_privado=<?= $u['id'] ?>" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-comment-dots"></i> Chat Privado con Postulante
                                     </a>
                                 <?php endif; ?>
