@@ -92,22 +92,31 @@ class PerfilesCandidatosModel {
                 throw new RuntimeException('El usuario ya pertenece a esta empresa y no puede ser contratado nuevamente.');
             }
 
+            // Feature 3: Registrar solicitud en lugar de contratación directa
             $stmtInsert = $this->pdo->prepare("
-                INSERT INTO usuario_empresa (id_usuario, id_empresa, id_rol_empresa, horas_semanales_estandar)
-                VALUES (?, ?, 3, ?)
+                INSERT INTO solicitud_contratacion (id_candidato, id_empresa, salario_base, horas_semanales_estandar, estado, fecha_creacion)
+                VALUES (?, ?, ?, ?, 'pendiente', NOW())
             ");
-            $stmtInsert->execute([$candidateId, $companyId, $hoursWeekly]);
+            $stmtInsert->execute([$candidateId, $companyId, $salaryBase, $hoursWeekly]);
+            $solicitudId = $this->pdo->lastInsertId();
 
-            if ($salaryBase !== null) {
-                $stmtSalary = $this->pdo->prepare("UPDATE usuario SET salario_base = ? WHERE id = ?");
-                $stmtSalary->execute([$salaryBase, $candidateId]);
-            }
+            // Enviar notificación al candidato
+            $stmtComp = $this->pdo->prepare("SELECT nombre_empresa FROM empresa WHERE id_empresa = ?");
+            $stmtComp->execute([$companyId]);
+            $companyName = $stmtComp->fetchColumn();
 
-            $stmtStart = $this->pdo->prepare("UPDATE usuario SET fecha_ingreso = COALESCE(fecha_ingreso, CURDATE()) WHERE id = ?");
-            $stmtStart->execute([$candidateId]);
+            $mensaje = "Has recibido una solicitud de contratación de la empresa {$companyName}.";
+            $urlRedireccion = "index.php?action=ver_solicitud_contrato&id=" . $solicitudId;
 
-            $stmtHide = $this->pdo->prepare("UPDATE perfil_busqueda_empleo SET esta_disponible = 0 WHERE id_usuario = ?");
-            $stmtHide->execute([$candidateId]);
+            // Importar notificacionesModel manualmente si es necesario, o hacer insert directo para mayor seguridad si no está cargado
+            $stmtNotif = $this->pdo->prepare("
+                INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, solicitud_contratacion_id, fecha_creacion, leida)
+                VALUES (?, ?, 'contratacion', 'fas fa-briefcase', ?, ?, NOW(), 0)
+            ");
+            $stmtNotif->execute([$candidateId, $mensaje, $urlRedireccion, $solicitudId]);
+
+            // Nota: Ya NO ocultamos el perfil automáticamente (porque no ha aceptado aún).
+            // $stmtHide = $this->pdo->prepare("UPDATE perfil_busqueda_empleo SET esta_disponible = 0 WHERE id_usuario = ?");
 
             $this->pdo->commit();
         } catch (Throwable $e) {

@@ -100,7 +100,7 @@ class GestionUsuariosModel {
                 objetivos_logrados
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
-        return $stmt->execute([
+        if ($stmt->execute([
             $usuarioId,
             $evaluadorId,
             $fechaEvaluacion,
@@ -108,6 +108,20 @@ class GestionUsuariosModel {
             $puntuacion,
             $comentarios,
             $objetivosLogrados,
-        ]);
+        ])) {
+            // Feature 5: Notificar al usuario sobre el nuevo reporte de desempeño
+            try {
+                $mensaje = "Se ha registrado una nueva evaluación de desempeño para ti.";
+                $stmtNotif = $this->pdo->prepare("
+                    INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                    VALUES (?, ?, 'info', 'fas fa-chart-line', 'index.php?action=configurar_perfil', NOW(), 0)
+                ");
+                $stmtNotif->execute([$usuarioId, $mensaje]);
+            } catch (PDOException $e) {
+                error_log("Error al notificar evaluación: " . $e->getMessage());
+            }
+            return true;
+        }
+        return false;
     }
 }

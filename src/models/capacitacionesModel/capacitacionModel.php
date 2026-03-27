@@ -111,6 +111,27 @@ class CapacitacionModel
             if ($stmt->execute()) {
                 // Notificar a todos los usuarios sobre la nueva capacitación
                 $this->notificarNuevaCapacitacion($data['nombre_capacitacion'], $data['creador_id']);
+
+                // Feature 4: Notificar a los dueños de la empresa
+                if (!empty($idEmpresa)) {
+                    $stmtOwners = $this->conexion->prepare("
+                        SELECT id_usuario FROM usuario_empresa WHERE id_empresa = ? AND id_rol_empresa = 1 AND id_usuario != ?
+                    ");
+                    $stmtOwners->execute([$idEmpresa, $data['creador_id']]);
+                    $owners = $stmtOwners->fetchAll(PDO::FETCH_COLUMN);
+
+                    if (!empty($owners)) {
+                        $mensajeOwner = "Se ha creado una nueva capacitación: '{$data['nombre_capacitacion']}' en tu empresa.";
+                        $stmtNotif = $this->conexion->prepare("
+                            INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                            VALUES (?, ?, 'info', 'fas fa-chalkboard-teacher', 'index.php?action=capacitaciones', NOW(), 0)
+                        ");
+                        foreach ($owners as $ownerId) {
+                            $stmtNotif->execute([$ownerId, $mensajeOwner]);
+                        }
+                    }
+                }
+
                 $this->conexion->commit();
                 return true;
             }

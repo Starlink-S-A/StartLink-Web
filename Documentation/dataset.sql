@@ -52,7 +52,9 @@ CREATE TABLE usuario (
     reset_expire DATETIME NULL,
     id_empresa INT NULL, -- Para compatibilidad con tu controlador
     id_rol_empresa INT NULL,
-    FOREIGN KEY (id_rol) REFERENCES rol(id)
+    current_chat_id INT NULL, -- Seguimiento del chat activo para silenciado inteligente
+    FOREIGN KEY (id_rol) REFERENCES rol(id),
+    FOREIGN KEY (current_chat_id) REFERENCES conversacion(id_conversacion) ON DELETE SET NULL
 );
 
 CREATE TABLE usuario_empresa (
@@ -284,3 +286,17 @@ INSERT INTO rol_empresa (id_rol_empresa, nombre_rol_empresa) VALUES
 (1, 'Dueño'), 
 (2, 'Reclutador'), 
 (3, 'Empleado');
+
+CREATE TABLE IF NOT EXISTS notificaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    mensaje TEXT NOT NULL,
+    tipo ENUM('info', 'success', 'warning', 'error', 'contratacion', 'danger', 'chat') DEFAULT 'info',
+    icono VARCHAR(100) DEFAULT 'fas fa-info-circle',
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    leida TINYINT(1) DEFAULT 0,
+    url_redireccion VARCHAR(255) DEFAULT NULL,
+    postulacion_id INT DEFAULT NULL,
+    solicitud_contratacion_id INT DEFAULT NULL,
+    FOREIGN KEY (user_id) REFERENCES usuario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
