@@ -202,30 +202,16 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
                                             </a>
                                         <?php endif; ?>
 
-                                        <button class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-600 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalRechazar<?= $u['id'] ?>">
-                                            <i class="fas fa-times me-1"></i> Rechazar
-                                        </button>
-                                        <button class="btn btn-success btn-sm rounded-pill px-4 fw-600 shadow-sm" style="background:var(--primary-color); border:none;" data-bs-toggle="modal" data-bs-target="#modalContratar<?= $u['id'] ?>">
-                                            <i class="fas fa-check-circle me-1"></i> Contratar
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-comments"></i> Chat de la Oferta
+                                </a>
 
-                                <!-- SECCIONES DE DETALLE (Grid 3 columnas) -->
-                                <div class="row g-4 mt-1 border-top pt-4">
-                                    <?php if (!empty($u['habilidades'])): ?>
-                                    <div class="col-md-4">
-                                        <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing:1px;">Habilidades</h6>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <?php 
-                                            $skills = explode(', ', $u['habilidades']);
-                                            foreach($skills as $skill) {
-                                                echo '<span class="skill-badge bg-light text-secondary border">' . htmlspecialchars($skill) . '</span>';
-                                            }
-                                            ?>
-                                        </div>
-                                    </div>
-                                    <?php endif; ?>
+                                <?php if ($esCreador): ?>
+                                    <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>&id_usuario_privado=<?= $u['id'] ?>" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-comment-dots"></i> Chat Privado con Postulante
+                                    </a>
+                                <?php endif; ?>
 
                                     <?php if (!empty($u['experiencias'])): ?>
                                     <div class="col-md-4">

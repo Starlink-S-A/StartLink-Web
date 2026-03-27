@@ -503,6 +503,19 @@ class OfertasController {
             $resultado = $this->ofertasModel->postular($userId, $ofertaId);
 
             if ($resultado) {
+                // HU-12: Nueva postulación enviada -> Notificar al contratador/admin
+                $oferta = $this->ofertasModel->getOfertaById($ofertaId);
+                if ($oferta && isset($oferta['id_creador_oferta'])) {
+                    require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
+                    $notifModel = new NotificacionesModel();
+                    $notifModel->crearNotificacion(
+                        $oferta['id_creador_oferta'],
+                        "Nueva postulación para: " . $oferta['titulo_oferta'],
+                        'Candidatos',
+                        'fas fa-user-tie',
+                        BASE_URL . "index.php?action=detalle_oferta&id=" . $ofertaId
+                    );
+                }
                 $_SESSION['mensaje'] = "¡Postulación exitosa! Ya formas parte de esta oferta.";
             } else {
                 $_SESSION['mensaje'] = "No se pudo realizar la postulación o ya estás postulado.";

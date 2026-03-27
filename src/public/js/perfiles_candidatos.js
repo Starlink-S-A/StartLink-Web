@@ -206,12 +206,17 @@
       ? `<a class="btn btn-sm btn-outline-secondary mt-2" href="${escapeHtml(profile.cv_url)}" target="_blank" rel="noopener noreferrer">Ver CV</a>`
       : '';
 
-    const hireSection = canViewDetails && userCompanies.length
+    const hireSection = canViewDetails
       ? `
-        <div class="mt-4 d-flex justify-content-end">
-          <button type="button" class="btn btn-success btn-sm" id="openHireModalBtn" data-candidate-id="${escapeHtml(profile.id)}" data-candidate-name="${escapeHtml(profile.nombre || '')}">
-            Contratar
-          </button>
+        <div class="mt-4 d-flex justify-content-end gap-2">
+          <a href="index.php?action=mis_chats&candidate_id=${escapeHtml(profile.id)}" class="btn btn-primary btn-sm">
+            <i class="fas fa-comment-dots me-1"></i> Contactar
+          </a>
+          ${userCompanies.length ? `
+            <button type="button" class="btn btn-success btn-sm" id="openHireModalBtn" data-candidate-id="${escapeHtml(profile.id)}" data-candidate-name="${escapeHtml(profile.nombre || '')}">
+              <i class="fas fa-handshake me-1"></i> Contratar
+            </button>
+          ` : ''}
         </div>
       `
       : '';

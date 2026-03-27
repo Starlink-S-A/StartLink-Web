@@ -127,16 +127,44 @@
                         ?>
                         <?php if ($showBottomActions): ?>
                         <div class="d-flex gap-2 pt-3 border-top mt-auto">
-                            <?php if ($oferta['yaPostulado'] && ($oferta['estadoPostulacion'] ?? '') !== 'Contratado'): ?>
-                                <a href="<?= BASE_URL ?>index.php?action=chat&id_oferta=<?= $oferta['id_oferta'] ?>" 
-                                   class="btn btn-sm btn-outline-success flex-grow-1">
-                                    <i class="fas fa-comments me-1"></i> Chat
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
-                                    Abandonar
-                                </button>
-                            <?php elseif ($esUsuario && !$oferta['yaPostulado']): ?>
+                            <?php if ($oferta['yaPostulado']): ?>
+                                <?php if (($oferta['estadoPostulacion'] ?? '') === 'Contratado'): ?>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                        <i class="fas fa-user-check me-1"></i> Contratado
+                                    </span>
+                                <?php else: ?>
+                                    <a href="<?= BASE_URL ?>index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" 
+                                       class="btn btn-sm btn-outline-success flex-grow-1">
+                                        <i class="fas fa-comments me-1"></i> Chat
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
+                                        Abandonar
+                                    </button>
+                                    
+                                    <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg">
+                                                <form action="<?= BASE_URL ?>index.php?action=salir_oferta" method="POST">
+                                                    <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-700">¿Retirar postulación?</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body py-4">
+                                                        Si abandonas esta oferta, perderás tu lugar en el proceso de selección de <strong><?= htmlspecialchars($oferta['nombre_empresa']) ?></strong>.
+                                                    </div>
+                                                    <div class="modal-footer border-0">
+                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, retirar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                            <?php elseif ($esUsuario): ?>
                                 <form action="<?= BASE_URL ?>index.php?action=postular" method="POST" class="flex-grow-1">
                                     <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
                                     <button type="submit" class="btn btn-sm btn-dash-primary w-100">

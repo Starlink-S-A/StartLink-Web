@@ -100,6 +100,17 @@ class EmpresasController {
                         $_SESSION['id_rol'] = 3;
                         $_SESSION['mensaje_empresa'] = 'Empresa registrada exitosamente.';
 
+                        // HU-17: Registro exitoso de Empresa -> Notificar al Usuario Creador
+                        require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
+                        $notifModel = new NotificacionesModel();
+                        $notifModel->crearNotificacion(
+                            $userId,
+                            "¡Empresa " . $data['nombre_empresa'] . " registrada con éxito!",
+                            'Sistema',
+                            'fas fa-building',
+                            BASE_URL . "index.php?action=dashboard"
+                        );
+
                         header('Location: ' . BASE_URL . 'index.php?action=dashboard&empresa_creada=1');
                         exit();
                     } else {
