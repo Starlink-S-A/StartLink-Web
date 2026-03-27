@@ -13,18 +13,33 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
 
 // Variables ya definidas por el controlador:
 // $nominas, $trabajadores, $puedeGenerar, $esAdminEmpresa, $esAdminGlobal
-// $esTrabajador, $mensaje, $tipoMensaje, $rolGlobal, $rolEmpresa
+// $esTrabajador, $mensaje, $tipoMensaje, $rolGlobal, $rolEmpresa, $desempenos
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nóminas - StartLink</title>
+    <title>Historial - StartLink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/dashboard_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .nav-tabs-historial { border: none; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .nav-tabs-historial .nav-link {
+            border: none; border-radius: 12px; padding: 0.6rem 1.5rem;
+            font-weight: 600; font-size: 0.88rem; color: #64748b;
+            background: #f1f5f9; transition: all 0.2s ease;
+        }
+        .nav-tabs-historial .nav-link:hover { background: #e2e8f0; color: #334155; }
+        .nav-tabs-historial .nav-link.active {
+            background: linear-gradient(135deg, #10b981, #059669); color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .star-rating { color: #f59e0b; }
+        .star-rating .empty { color: #e2e8f0; }
+    </style>
 </head>
 <body>
 <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
@@ -35,13 +50,13 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
             <h2 class="fw-700 mb-1" style="font-size:1.6rem;">
-                <i class="fas fa-file-invoice-dollar me-2 text-success"></i>Nóminas
+                <i class="fas fa-history me-2 text-success"></i>Historial
             </h2>
             <p class="text-muted mb-0 small">
                 <?php if ($puedeGenerar): ?>
-                    Gestiona y genera los recibos de pago de tus trabajadores.
+                    Gestiona nóminas y desempeño de tus trabajadores.
                 <?php else: ?>
-                    Consulta y descarga tus recibos de nómina.
+                    Consulta tus nóminas y evaluaciones de desempeño.
                 <?php endif; ?>
             </p>
         </div>
@@ -61,96 +76,215 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["loggedin"] !== true) {
     </div>
     <?php endif; ?>
 
-    <!-- ─── Tabla de Nóminas ─────────────────────────────── -->
-    <div class="dash-card p-0 overflow-hidden">
-        <div class="dash-card-header px-4 py-3">
-            <h5 class="dash-card-title mb-0">
-                <i class="fas fa-list-alt text-success me-2"></i>
-                <?= $puedeGenerar ? 'Historial de Nóminas' : 'Mis Nóminas' ?>
-            </h5>
-            <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                <?= count($nominas) ?> registro<?= count($nominas) !== 1 ? 's' : '' ?>
-            </span>
+    <!-- ─── Pestañas ─────────────────────────────────────── -->
+    <ul class="nav nav-tabs-historial" id="historialTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-nominas" data-bs-toggle="tab" data-bs-target="#panel-nominas" type="button" role="tab">
+                <i class="fas fa-file-invoice-dollar me-2"></i>Nóminas
+                <span class="badge bg-white bg-opacity-25 ms-1 rounded-pill"><?= count($nominas) ?></span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-desempeno" data-bs-toggle="tab" data-bs-target="#panel-desempeno" type="button" role="tab">
+                <i class="fas fa-chart-line me-2"></i>Desempeño
+                <span class="badge bg-white bg-opacity-25 ms-1 rounded-pill"><?= count($desempenos ?? []) ?></span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="historialTabContent">
+
+        <!-- ═══════════ TAB: NÓMINAS ═══════════ -->
+        <div class="tab-pane fade show active" id="panel-nominas" role="tabpanel">
+            <div class="dash-card p-0 overflow-hidden">
+                <div class="dash-card-header px-4 py-3">
+                    <h5 class="dash-card-title mb-0">
+                        <i class="fas fa-list-alt text-success me-2"></i>
+                        <?= $puedeGenerar ? 'Nóminas de Trabajadores' : 'Mis Nóminas' ?>
+                    </h5>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                        <?= count($nominas) ?> registro<?= count($nominas) !== 1 ? 's' : '' ?>
+                    </span>
+                </div>
+
+                <?php if (empty($nominas)): ?>
+                <div class="text-center py-5 px-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm border border-success-subtle"
+                         style="width:64px;height:64px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+                        <i class="fas fa-file-invoice-dollar text-success fs-4"></i>
+                    </div>
+                    <h6 class="fw-600 text-muted mb-1">Sin nóminas registradas</h6>
+                    <p class="text-muted small mb-0">
+                        <?= $puedeGenerar ? 'Genera la primera nómina usando el botón de arriba.' : 'Aún no tienes nóminas generadas.' ?>
+                    </p>
+                </div>
+                <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
+                        <thead style="background:#f8fafc;">
+                            <tr>
+                                <?php if ($puedeGenerar): ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Trabajador</th>
+                                <?php endif; ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Período</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Horas</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Salario Bruto</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Deducciones</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Bonificaciones</th>
+                                <th class="px-4 py-3 fw-600 text-muted text-success fw-700">Salario Neto</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Generado</th>
+                                <th class="px-4 py-3 fw-600 text-muted text-center">PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($nominas as $nomina): ?>
+                            <tr>
+                                <?php if ($puedeGenerar): ?>
+                                <td class="px-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                                             style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:0.75rem;font-weight:700;">
+                                            <?= strtoupper(substr($nomina['nombre_trabajador'], 0, 2)) ?>
+                                        </div>
+                                        <div>
+                                            <div class="fw-600"><?= htmlspecialchars($nomina['nombre_trabajador']) ?></div>
+                                            <div class="text-muted" style="font-size:0.75rem;"><?= htmlspecialchars($nomina['email']) ?></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <?php endif; ?>
+                                <td class="px-4">
+                                    <span class="badge bg-light text-dark fw-500 border">
+                                        <?= date('d/m/Y', strtotime($nomina['fecha_inicio_periodo'])) ?> – <?= date('d/m/Y', strtotime($nomina['fecha_fin_periodo'])) ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 fw-600"><?= number_format($nomina['horas_trabajadas'], 1) ?> h</td>
+                                <td class="px-4">$<?= number_format($nomina['salario_bruto'], 2) ?></td>
+                                <td class="px-4 text-danger">-$<?= number_format($nomina['deducciones'], 2) ?></td>
+                                <td class="px-4 text-success">+$<?= number_format($nomina['bonificaciones'], 2) ?></td>
+                                <td class="px-4">
+                                    <span class="fw-700 text-success">$<?= number_format($nomina['salario_neto'], 2) ?></span>
+                                </td>
+                                <td class="px-4 text-muted small"><?= date('d/m/Y', strtotime($nomina['fecha_generacion'])) ?></td>
+                                <td class="px-4 text-center">
+                                    <a href="<?= BASE_URL ?>src/index.php?action=descargar_nomina&id=<?= $nomina['id'] ?>"
+                                       class="btn btn-sm btn-outline-success rounded-pill px-3"
+                                       target="_blank"
+                                       title="Descargar recibo PDF">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                    </a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
 
-        <?php if (empty($nominas)): ?>
-        <div class="text-center py-5 px-4">
-            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm border border-success-subtle"
-                 style="width:64px;height:64px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
-                <i class="fas fa-file-invoice-dollar text-success fs-4"></i>
+        <!-- ═══════════ TAB: DESEMPEÑO ═══════════ -->
+        <div class="tab-pane fade" id="panel-desempeno" role="tabpanel">
+            <div class="dash-card p-0 overflow-hidden">
+                <div class="dash-card-header px-4 py-3">
+                    <h5 class="dash-card-title mb-0">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        <?= $puedeGenerar ? 'Desempeño de Trabajadores' : 'Mi Desempeño' ?>
+                    </h5>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                        <?= count($desempenos ?? []) ?> evaluación<?= count($desempenos ?? []) !== 1 ? 'es' : '' ?>
+                    </span>
+                </div>
+
+                <?php if (empty($desempenos)): ?>
+                <div class="text-center py-5 px-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm border border-primary-subtle"
+                         style="width:64px;height:64px;background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+                        <i class="fas fa-chart-line text-primary fs-4"></i>
+                    </div>
+                    <h6 class="fw-600 text-muted mb-1">Sin evaluaciones registradas</h6>
+                    <p class="text-muted small mb-0">
+                        <?= $puedeGenerar ? 'Registra evaluaciones de desempeño desde Gestionar Empresas → Usuarios.' : 'Aún no tienes evaluaciones de desempeño.' ?>
+                    </p>
+                </div>
+                <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
+                        <thead style="background:#f8fafc;">
+                            <tr>
+                                <?php if ($puedeGenerar): ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Trabajador</th>
+                                <?php endif; ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Fecha</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Tipo</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Puntuación</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Evaluador</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Comentarios</th>
+                                <th class="px-4 py-3 fw-600 text-muted">Objetivos Logrados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($desempenos as $d): ?>
+                            <tr>
+                                <?php if ($puedeGenerar): ?>
+                                <td class="px-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
+                                             style="width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:0.75rem;font-weight:700;">
+                                            <?= strtoupper(substr($d['nombre_trabajador'] ?? '?', 0, 2)) ?>
+                                        </div>
+                                        <div>
+                                            <div class="fw-600"><?= htmlspecialchars($d['nombre_trabajador'] ?? '') ?></div>
+                                            <div class="text-muted" style="font-size:0.75rem;"><?= htmlspecialchars($d['email'] ?? '') ?></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <?php endif; ?>
+                                <td class="px-4">
+                                    <span class="badge bg-light text-dark fw-500 border">
+                                        <?= date('d/m/Y', strtotime($d['fecha_evaluacion'])) ?>
+                                    </span>
+                                </td>
+                                <td class="px-4">
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                                        <?= htmlspecialchars($d['tipo_evaluacion']) ?>
+                                    </span>
+                                </td>
+                                <td class="px-4">
+                                    <?php if ($d['puntuacion'] !== null): ?>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="fw-700" style="color:#f59e0b;"><?= number_format((float)$d['puntuacion'], 1) ?></span>
+                                        <span class="star-rating">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <i class="fas fa-star <?= $i <= round((float)$d['puntuacion']) ? '' : 'empty' ?>" style="font-size:0.7rem;"></i>
+                                            <?php endfor; ?>
+                                        </span>
+                                    </div>
+                                    <?php else: ?>
+                                    <span class="text-muted small">N/A</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-4 text-muted small"><?= htmlspecialchars($d['nombre_evaluador'] ?? 'Sistema') ?></td>
+                                <td class="px-4 small" style="max-width:200px;">
+                                    <?= !empty($d['comentarios']) ? htmlspecialchars(mb_strimwidth($d['comentarios'], 0, 80, '...')) : '<span class="text-muted">—</span>' ?>
+                                </td>
+                                <td class="px-4 small" style="max-width:200px;">
+                                    <?= !empty($d['objetivos_logrados']) ? htmlspecialchars(mb_strimwidth($d['objetivos_logrados'], 0, 80, '...')) : '<span class="text-muted">—</span>' ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
             </div>
-            <h6 class="fw-600 text-muted mb-1">Sin nóminas registradas</h6>
-            <p class="text-muted small mb-0">
-                <?= $puedeGenerar ? 'Genera la primera nómina usando el botón de arriba.' : 'Aún no tienes nóminas generadas.' ?>
-            </p>
         </div>
-        <?php else: ?>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
-                <thead style="background:#f8fafc;">
-                    <tr>
-                        <?php if ($puedeGenerar): ?>
-                        <th class="px-4 py-3 fw-600 text-muted">Trabajador</th>
-                        <?php endif; ?>
-                        <th class="px-4 py-3 fw-600 text-muted">Período</th>
-                        <th class="px-4 py-3 fw-600 text-muted">Horas</th>
-                        <th class="px-4 py-3 fw-600 text-muted">Salario Bruto</th>
-                        <th class="px-4 py-3 fw-600 text-muted">Deducciones</th>
-                        <th class="px-4 py-3 fw-600 text-muted">Bonificaciones</th>
-                        <th class="px-4 py-3 fw-600 text-muted text-success fw-700">Salario Neto</th>
-                        <th class="px-4 py-3 fw-600 text-muted">Generado</th>
-                        <th class="px-4 py-3 fw-600 text-muted text-center">PDF</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($nominas as $nomina): ?>
-                    <tr>
-                        <?php if ($puedeGenerar): ?>
-                        <td class="px-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm"
-                                     style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:0.75rem;font-weight:700;">
-                                    <?= strtoupper(substr($nomina['nombre_trabajador'], 0, 2)) ?>
-                                </div>
-                                <div>
-                                    <div class="fw-600"><?= htmlspecialchars($nomina['nombre_trabajador']) ?></div>
-                                    <div class="text-muted" style="font-size:0.75rem;"><?= htmlspecialchars($nomina['email']) ?></div>
-                                </div>
-                            </div>
-                        </td>
-                        <?php endif; ?>
-                        <td class="px-4">
-                            <span class="badge bg-light text-dark fw-500 border">
-                                <?= date('d/m/Y', strtotime($nomina['fecha_inicio_periodo'])) ?> – <?= date('d/m/Y', strtotime($nomina['fecha_fin_periodo'])) ?>
-                            </span>
-                        </td>
-                        <td class="px-4 fw-600"><?= number_format($nomina['horas_trabajadas'], 1) ?> h</td>
-                        <td class="px-4">$<?= number_format($nomina['salario_bruto'], 2) ?></td>
-                        <td class="px-4 text-danger">-$<?= number_format($nomina['deducciones'], 2) ?></td>
-                        <td class="px-4 text-success">+$<?= number_format($nomina['bonificaciones'], 2) ?></td>
-                        <td class="px-4">
-                            <span class="fw-700 text-success">$<?= number_format($nomina['salario_neto'], 2) ?></span>
-                        </td>
-                        <td class="px-4 text-muted small"><?= date('d/m/Y', strtotime($nomina['fecha_generacion'])) ?></td>
-                        <td class="px-4 text-center">
-                            <a href="<?= BASE_URL ?>src/index.php?action=descargar_nomina&id=<?= $nomina['id'] ?>"
-                               class="btn btn-sm btn-outline-success rounded-pill px-3"
-                               target="_blank"
-                               title="Descargar recibo PDF">
-                                <i class="fas fa-file-pdf me-1"></i>PDF
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
-    </div>
+
+    </div><!-- /tab-content -->
 
 </div><!-- /main-content -->
 
-<!-- ─── Modal: Generar Nómina (HU-25) ─────────────────── -->
+<!-- ─── Modal: Generar Nómina ─────────────────── -->
 <?php if ($puedeGenerar && !empty($trabajadores)): ?>
 <div class="modal fade" id="modalGenerarNomina" tabindex="-1" aria-labelledby="modalGenerarNominaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">

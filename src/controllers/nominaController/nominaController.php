@@ -71,6 +71,7 @@ class NominaController
         // Obtener nóminas según rol
         $nominas      = [];
         $trabajadores = [];
+        $desempenos   = [];
 
         try {
             if ($esAdminGlobal) {
@@ -78,13 +79,15 @@ class NominaController
             } elseif ($esAdminEmpresa && $s['idEmpresa']) {
                 $nominas      = $this->nominaModel->getNominasByEmpresa($s['idEmpresa']);
                 $trabajadores = $this->nominaModel->getTrabajadoresDeEmpresa($s['idEmpresa']);
+                $desempenos   = $this->nominaModel->getDesempenoByEmpresa($s['idEmpresa']);
             } else {
-                // Trabajador: solo sus propias nóminas
-                $nominas = $this->nominaModel->getNominasByUsuario($s['userId']);
+                // Trabajador: solo sus propias nóminas y desempeño
+                $nominas    = $this->nominaModel->getNominasByUsuario($s['userId']);
+                $desempenos = $this->nominaModel->getDesempenoByUsuario($s['userId']);
             }
         } catch (Exception $e) {
-            error_log("Error al cargar nóminas: " . $e->getMessage());
-            $mensaje     = "Error al cargar las nóminas. Inténtalo de nuevo.";
+            error_log("Error al cargar historial: " . $e->getMessage());
+            $mensaje     = "Error al cargar el historial. Inténtalo de nuevo.";
             $tipoMensaje = "danger";
         }
 
@@ -130,6 +133,14 @@ class NominaController
         $horasExtras      = filter_input(INPUT_POST, 'horas_extras',        FILTER_VALIDATE_FLOAT) ?? 0.0;
         $fechaInicio      = filter_input(INPUT_POST, 'fecha_inicio_periodo', FILTER_SANITIZE_SPECIAL_CHARS);
         $fechaFin         = filter_input(INPUT_POST, 'fecha_fin_periodo',    FILTER_SANITIZE_SPECIAL_CHARS);
+
+        // El admin no puede enviarse nómina a sí mismo
+        if ($idUsuario === $s['userId']) {
+            $_SESSION['mensaje_nomina']      = "No puedes generar una nómina para ti mismo.";
+            $_SESSION['tipo_mensaje_nomina'] = "warning";
+            header("Location: " . BASE_URL . "src/index.php?action=nominas");
+            exit();
+        }
 
         if (!$idUsuario || !$horasTrabajadas || !$tarifaHora || $deducciones === false || !$fechaInicio || !$fechaFin) {
             $_SESSION['mensaje_nomina']      = "Por favor completa todos los campos requeridos.";

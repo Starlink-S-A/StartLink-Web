@@ -218,5 +218,46 @@ class NominaModel
             return false;
         }
     }
+    /**
+     * Obtener historial de desempeño de un usuario específico
+     */
+    public function getDesempenoByUsuario(int $idUsuario): array
+    {
+        try {
+            $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
+                    FROM seguimiento_desempeno sd
+                    LEFT JOIN usuario u ON sd.evaluador_id = u.id
+                    WHERE sd.id_usuario = ?
+                    ORDER BY sd.fecha_evaluacion DESC";
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->execute([$idUsuario]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error al obtener desempeño del usuario: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtener historial de desempeño de todos los empleados de una empresa
+     */
+    public function getDesempenoByEmpresa(int $idEmpresa): array
+    {
+        try {
+            $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email,
+                           ev.nombre AS nombre_evaluador
+                    FROM seguimiento_desempeno sd
+                    JOIN usuario u ON sd.id_usuario = u.id
+                    JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
+                    LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
+                    ORDER BY sd.fecha_evaluacion DESC";
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->execute([$idEmpresa]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error al obtener desempeño de empresa: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 ?>

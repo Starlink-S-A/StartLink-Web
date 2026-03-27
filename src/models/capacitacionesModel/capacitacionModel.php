@@ -28,10 +28,12 @@ class CapacitacionModel
     public function getAllActiveCapacitaciones()
     {
         try {
-            $sql = "SELECT id, nombre_capacitacion, descripcion, fecha_inicio, fecha_fin, costo, creador_id 
-                    FROM capacitacion 
-                    WHERE fecha_fin >= CURDATE()
-                    ORDER BY fecha_inicio DESC";
+            $sql = "SELECT c.id, c.nombre_capacitacion, c.descripcion, c.fecha_inicio, c.fecha_fin, c.costo, c.creador_id, c.id_empresa,
+                           COALESCE(e.nombre_empresa, 'Sin empresa') AS nombre_empresa
+                    FROM capacitacion c
+                    LEFT JOIN empresa e ON c.id_empresa = e.id_empresa
+                    WHERE c.fecha_fin >= CURDATE()
+                    ORDER BY c.fecha_inicio DESC";
             $stmt = $this->conexion->query($sql);
 
             if (!$stmt) {
@@ -93,8 +95,8 @@ class CapacitacionModel
         try {
             $this->conexion->beginTransaction();
 
-            $sql = "INSERT INTO capacitacion (nombre_capacitacion, descripcion, fecha_inicio, fecha_fin, costo, creador_id) 
-                    VALUES (:nombre_capacitacion, :descripcion, :fecha_inicio, :fecha_fin, :costo, :creador_id)";
+            $sql = "INSERT INTO capacitacion (nombre_capacitacion, descripcion, fecha_inicio, fecha_fin, costo, creador_id, id_empresa) 
+                    VALUES (:nombre_capacitacion, :descripcion, :fecha_inicio, :fecha_fin, :costo, :creador_id, :id_empresa)";
             $stmt = $this->conexion->prepare($sql);
 
             $stmt->bindParam(':nombre_capacitacion', $data['nombre_capacitacion']);
@@ -103,8 +105,12 @@ class CapacitacionModel
             $stmt->bindParam(':fecha_fin', $data['fecha_fin']);
             $stmt->bindParam(':costo', $data['costo']);
             $stmt->bindParam(':creador_id', $data['creador_id']);
+            $idEmpresa = $data['id_empresa'] ?? null;
+            $stmt->bindParam(':id_empresa', $idEmpresa, $idEmpresa ? PDO::PARAM_INT : PDO::PARAM_NULL);
 
             if ($stmt->execute()) {
+                // Notificar a todos los usuarios sobre la nueva capacitación
+                $this->notificarNuevaCapacitacion($data['nombre_capacitacion'], $data['creador_id']);
                 $this->conexion->commit();
                 return true;
             }
@@ -127,6 +133,26 @@ class CapacitacionModel
             }
             error_log("Error general al crear capacitación: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Notificar a todos los usuarios sobre una nueva capacitación
+     * @param string $nombreCapacitacion
+     * @param int $creadorId
+     */
+    private function notificarNuevaCapacitacion($nombreCapacitacion, $creadorId)
+    {
+        try {
+            $nombre = htmlspecialchars($nombreCapacitacion, ENT_QUOTES, 'UTF-8');
+            $mensaje = "Nueva capacitación disponible: \"{$nombre}\". ¡Inscríbete ahora!";
+            $sql = "INSERT INTO notificaciones (user_id, mensaje, tipo, icono)
+                    SELECT id, ?, 'info', 'fas fa-chalkboard-teacher text-primary'
+                    FROM usuario WHERE id != ?";
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->execute([$mensaje, $creadorId]);
+        } catch (PDOException $e) {
+            error_log("Error al notificar nueva capacitación: " . $e->getMessage());
         }
     }
 

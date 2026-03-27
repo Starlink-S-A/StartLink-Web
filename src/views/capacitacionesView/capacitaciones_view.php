@@ -61,6 +61,9 @@
                             </div>
                             <div class="flex-grow-1">
                                 <h5 class="fw-700 mb-1"><?= $capacitacion['nombre_capacitacion'] ?></h5>
+                                <span class="badge bg-light text-dark border mb-1" style="font-size: 0.7rem;">
+                                    <i class="fas fa-building me-1"></i><?= htmlspecialchars($capacitacion['nombre_empresa'] ?? 'Sin empresa') ?>
+                                </span>
                                 <p class="text-muted small mb-0 line-clamp-2"><?= $capacitacion['descripcion'] ?></p>
                             </div>
                             <?php if ($capacitacion['yaInscrito']): ?>
@@ -259,6 +262,23 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Selector de Empresa -->
+                    <?php if (!empty($empresasUsuario)): ?>
+                    <div class="mb-3">
+                        <label class="form-label">Empresa:</label>
+                        <?php if (count($empresasUsuario) === 1): ?>
+                            <input type="hidden" name="id_empresa" value="<?= $empresasUsuario[0]['id_empresa'] ?>">
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($empresasUsuario[0]['nombre_empresa']) ?>" readonly>
+                        <?php else: ?>
+                            <select name="id_empresa" class="form-select" required>
+                                <option value="">Selecciona una empresa...</option>
+                                <?php foreach ($empresasUsuario as $emp): ?>
+                                    <option value="<?= $emp['id_empresa'] ?>"><?= htmlspecialchars($emp['nombre_empresa']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label">Nombre de la Capacitación:</label>
                         <input type="text" name="nombre_capacitacion" class="form-control" required minlength="5" maxlength="100">

@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 require_once __DIR__ . '/../../models/capacitacionesModel/capacitacionModel.php';
+require_once __DIR__ . '/../../models/empresasModel/MisEmpresasModel.php';
 
 class CapacitacionController {
     private $capacitacionModel;
@@ -76,6 +77,15 @@ class CapacitacionController {
         // Variables para el navbar (consistente con ofertasController)
         $userName = $_SESSION['user_name'] ?? 'Usuario';
         $esAdminEmpresa = in_array($rolEmpresa, [1, 2]);
+
+        // Cargar empresas del usuario para el selector de crear capacitación
+        $empresasUsuario = [];
+        try {
+            $misEmpresasModel = new MisEmpresasModel();
+            $empresasUsuario = $misEmpresasModel->getEmpresasUsuario($userId);
+        } catch (Exception $e) {
+            error_log("Error al cargar empresas del usuario: " . $e->getMessage());
+        }
         $dbFotoPerfil = null;
         $latestNotifications = [];
         $unreadNotificationsCount = 0;
@@ -212,7 +222,8 @@ class CapacitacionController {
                     'fecha_inicio' => $fecha_inicio,
                     'fecha_fin' => $fecha_fin,
                     'costo' => $costo,
-                    'creador_id' => $userId
+                    'creador_id' => $userId,
+                    'id_empresa' => filter_input(INPUT_POST, 'id_empresa', FILTER_VALIDATE_INT) ?: null
                 ];
 
                 $resultado = $this->capacitacionModel->crearCapacitacion($data);
