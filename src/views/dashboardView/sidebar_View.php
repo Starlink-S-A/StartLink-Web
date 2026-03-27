@@ -1,16 +1,23 @@
 <?php
 // views/dashboardView/sidebar_view.php
 $currentPage = basename($_SERVER['PHP_SELF']);
+$currentAction = $_GET['action'] ?? '';
 
+// --- Variables de rol y configuración principal ---
 $userName = $userName ?? ($_SESSION['user_name'] ?? 'Usuario');
+$rolGlobal  = $rolGlobal  ?? ($_SESSION['id_rol'] ?? null);
+$rolEmpresa = $rolEmpresa ?? ($_SESSION['id_rol_empresa'] ?? null);
 
-if (!isset($esAdminEmpresa)) {
-    $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
-    $esAdminEmpresa = in_array((int)$rolEmpresa, [1, 2], true);
-}
-
-if (!isset($showPublishProfileLink)) {
-    $showPublishProfileLink = isset($_SESSION['user_id']) && (($_SESSION['loggedin'] ?? false) === true);
+// Etiqueta de rol visible
+$esAdminGlobal = ((int)$rolGlobal === 1);
+if ($esAdminGlobal) {
+    $rolLabel = 'Administrador';
+} elseif ((int)$rolEmpresa === 1) {
+    $rolLabel = 'Admin Empresa';
+} elseif ((int)$rolEmpresa === 2) {
+    $rolLabel = 'Contratador';
+} else {
+    $rolLabel = 'Candidato';
 }
 
 if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
@@ -49,8 +56,8 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                 <div class="notif-dot"></div>
             <?php endif; ?>
         </div>
-        <span class="user-name"><?= htmlspecialchars($userName ?? 'Candidato') ?></span>
-        <span class="user-role"><?= isset($esAdminEmpresa) && $esAdminEmpresa ? 'PRO Admin' : 'Candidato' ?></span>
+        <span class="user-name"><?= htmlspecialchars($userName) ?></span>
+        <span class="user-role"><?= $rolLabel ?></span>
     </div>
 
     <!-- Navigation -->
@@ -69,30 +76,31 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                      <span class="badge bg-danger rounded-pill position-absolute" style="top: 15px; right: 15px; font-size: 0.6rem;"><?= $unread_notifications_count ?></span>
                 <?php endif; ?>
             </li>
-            <?php if (isset($showPublishProfileLink) && $showPublishProfileLink): ?>
             <li>
-                <a class="sidebar-link" href="<?= BASE_URL ?>perfiles_candidatos">
-                    <i class="fas fa-paper-plane"></i> <span class="sidebar-link-text">Publicar Mi Perfil</span>
+                <a class="sidebar-link <?= $currentAction == 'capacitaciones' ? 'active' : '' ?>" href="<?= BASE_URL ?>src/index.php?action=capacitaciones">
+                    <i class="fas fa-chalkboard-teacher"></i> <span class="sidebar-link-text">Capacitaciones</span>
                 </a>
             </li>
-            <?php endif; ?>
             <li>
-                <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
+                <a class="sidebar-link <?= $currentAction == 'crearEmpresa' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=crearEmpresa">
                     <i class="fas fa-plus-circle"></i> <span class="sidebar-link-text">Nueva Empresa</span>
                 </a>
             </li>
             <li>
-                <a class="sidebar-link" href="<?= BASE_URL ?>index.php?action=mis_equipos">
+                <a class="sidebar-link <?= $currentAction == 'mis_equipos' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_equipos">
                     <i class="fas fa-users"></i> <span class="sidebar-link-text">Mi Equipo</span>
                 </a>
             </li>
-            <?php if (isset($esAdminEmpresa) && $esAdminEmpresa): ?>
+            <li>
+                <a class="sidebar-link <?= $currentAction == 'nominas' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=nominas">
+                    <i class="fas fa-history"></i> <span class="sidebar-link-text">Historial</span>
+                </a>
+            </li>
             <li>
                 <a class="sidebar-link <?= $currentPage == 'mis_empresas_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_empresas">
                     <i class="fas fa-building"></i> <span class="sidebar-link-text">Gestionar Empresas</span>
                 </a>
             </li>
-            <?php endif; ?>
             
             <li>
                 <a class="sidebar-link <?= $currentPage == 'mis_chats_view.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_chats">

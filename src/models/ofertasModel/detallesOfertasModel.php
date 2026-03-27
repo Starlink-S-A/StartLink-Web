@@ -49,6 +49,7 @@ class DetallesOfertasModel {
                 LEFT JOIN estudio es ON u.id = es.id_usuario
                 WHERE p.id_oferta = ?
                   AND (p.rechazo_permanente IS NULL OR p.rechazo_permanente = 0)
+                  AND p.estado_postulacion != 'Contratado'
                 GROUP BY u.id, u.nombre, u.email, u.foto_perfil, u.dni, u.cargo, u.fecha_ingreso, u.ruta_hdv, u.salario_base, 
                          p.estado_postulacion, p.rechazo_permanente, ue.horas_semanales_estandar";
         $stmt = $this->db->prepare($sql);
@@ -81,10 +82,15 @@ class DetallesOfertasModel {
                 $stmt->execute([$idPostulante, $idEmpresa, $horasSemanales]);
             }
 
-            // 4. Actualizar el rol global del usuario
+            // 4. Actualizar el rol global del usuario y asignarle su empresa
             if ($rolTrabajadorId) {
-                $stmt = $this->db->prepare("UPDATE usuario SET id_rol = ? WHERE id = ?");
-                $stmt->execute([$rolTrabajadorId, $idPostulante]);
+                // Se setea id_rol = 3 (Trabajador), id_empresa a la que lo contrata, id_rol_empresa = 3 (Empleado)
+                $stmt = $this->db->prepare("UPDATE usuario SET id_rol = ?, id_empresa = ?, id_rol_empresa = 3 WHERE id = ?");
+                $stmt->execute([$rolTrabajadorId, $idEmpresa, $idPostulante]);
+            } else {
+                // Si no hay $rolTrabajadorId (raro), solo asegurar empresa
+                $stmt = $this->db->prepare("UPDATE usuario SET id_empresa = ?, id_rol_empresa = 3 WHERE id = ?");
+                $stmt->execute([$idEmpresa, $idPostulante]);
             }
 
             // 5. Marcar el perfil de búsqueda de empleo como no disponible

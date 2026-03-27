@@ -120,6 +120,12 @@
                             </div>
                         </div>
 
+                        <?php 
+                        $showBottomActions = ($oferta['yaPostulado'] && ($oferta['estadoPostulacion'] ?? '') !== 'Contratado') 
+                            || ($esUsuario && !$oferta['yaPostulado']) 
+                            || ($oferta['esCreador'] && $esContratador); 
+                        ?>
+                        <?php if ($showBottomActions): ?>
                         <div class="d-flex gap-2 pt-3 border-top mt-auto">
                             <?php if ($oferta['yaPostulado']): ?>
                                 <?php if (($oferta['estadoPostulacion'] ?? '') === 'Contratado'): ?>
@@ -195,33 +201,64 @@
                                 </button>
                             <?php endif; ?>
                         </div>
-                    </div>
-                </div>
-
-                <div class="modal fade" id="modalEliminarOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <form method="POST" action="<?= BASE_URL ?>index.php?action=eliminar_oferta">
-                                <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">¿Eliminar esta oferta?</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    ¿Estás seguro de que deseas eliminar esta oferta? <strong>Esta acción no se puede deshacer.</strong>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                </div>
-                            </form>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!empty($ofertas)): ?>
+    <!-- Modales extraídos fuera del loop de tarjetas para evitar bugs de z-index -->
+    <?php foreach ($ofertas as $oferta): ?>
+        <?php if ($oferta['yaPostulado'] && ($oferta['estadoPostulacion'] ?? '') !== 'Contratado'): ?>
+            <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg">
+                        <form action="<?= BASE_URL ?>index.php?action=salir_oferta" method="POST">
+                            <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-700">¿Retirar postulación?</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body py-4">
+                                Si abandonas esta oferta, perderás tu lugar en el proceso de selección de <strong><?= htmlspecialchars($oferta['nombre_empresa']) ?></strong>.
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, retirar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($oferta['esCreador'] && $esContratador): ?>
+            <div class="modal fade" id="modalEliminarOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST" action="<?= BASE_URL ?>index.php?action=eliminar_oferta">
+                            <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                            <div class="modal-header">
+                                <h5 class="modal-title">¿Eliminar esta oferta?</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ¿Estás seguro de que deseas eliminar esta oferta? <strong>Esta acción no se puede deshacer.</strong>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
+<?php endif; ?>
 
 <!-- Modal para crear nueva oferta -->
 <div class="modal fade" id="modalCrearOferta" tabindex="-1">

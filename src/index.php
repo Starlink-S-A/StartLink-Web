@@ -136,6 +136,62 @@ switch ($action) {
         $controller->index();
         break;
 
+    // ─── Capacitaciones ───────────────────────────────────────
+    case 'capacitaciones':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->showCapacitaciones();
+        break;
+
+    case 'crear_capacitacion':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->crearCapacitacion();
+        break;
+
+    case 'editar_capacitacion':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->editarCapacitacion();
+        break;
+
+    case 'eliminar_capacitacion':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->eliminarCapacitacion();
+        break;
+
+    case 'inscribir_capacitacion':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->gestionarInscripcion();
+        break;
+
+    case 'obtener_inscritos':
+        require_once __DIR__ . '/controllers/capacitacionesController/capacitacionController.php';
+        $capacitacionController = new CapacitacionController();
+        $capacitacionController->obtenerInscritos();
+        break;
+
+    // ─── Nóminas ──────────────────────────────────────────────
+    case 'nominas':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->showNominas();
+        break;
+
+    case 'generar_nomina':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->generarNomina();
+        break;
+
+    case 'descargar_nomina':
+        require_once __DIR__ . '/controllers/nominaController/nominaController.php';
+        $nominaController = new NominaController();
+        $nominaController->descargarPDF();
+        break;
+
     default:
         $authController = new AuthController();
         $authController->showWelcomePage();

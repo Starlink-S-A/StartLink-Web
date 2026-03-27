@@ -109,9 +109,14 @@ foreach ($rolesEmpresa as $r) {
                                     </form>
                                 <?php endif; ?>
 
+                                <?php
+                                $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+                                if ($idUsuario !== $currentUserId): 
+                                ?>
                                 <button type="button" class="btn btn-sm btn-outline-secondary px-2" data-bs-toggle="modal" data-bs-target="#modalNomina<?= $idUsuario ?>" title="Enviar nómina" aria-label="Enviar nómina" data-tooltip="true">
                                     <i class="fas fa-file-invoice"></i>
                                 </button>
+                                <?php endif; ?>
 
                                 <button type="button" class="btn btn-sm btn-outline-success px-2" data-bs-toggle="modal" data-bs-target="#modalSeguimiento<?= $idUsuario ?>" title="Desempeño" aria-label="Desempeño" data-tooltip="true">
                                     <i class="fas fa-chart-line"></i>
@@ -174,27 +179,80 @@ foreach ($rolesEmpresa as $r) {
                                 </div>
                             </div>
 
+                            <?php if ($idUsuario !== $currentUserId): ?>
                             <div class="modal fade" id="modalNomina<?= $idUsuario ?>" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Enviar nómina</h5>
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                    <div class="modal-content border-0 shadow-lg">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-700">
+                                                <i class="fas fa-file-invoice-dollar me-2 text-success"></i>Enviar Nómina — <?= htmlspecialchars($nombre) ?>
+                                            </h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body">
-                                            <div class="alert alert-info border-0 shadow-sm mb-0">
-                                                Funcionalidad pendiente. Este modal es solo visual por ahora.
+                                        <form method="POST" action="<?= BASE_URL ?>src/index.php?action=generar_nomina">
+                                            <input type="hidden" name="id_usuario" value="<?= $idUsuario ?>">
+                                            <div class="modal-body py-3">
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Inicio Período <span class="text-danger">*</span></label>
+                                                        <input type="date" name="fecha_inicio_periodo" class="form-control bg-light border-0 shadow-sm" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Fin Período <span class="text-danger">*</span></label>
+                                                        <input type="date" name="fecha_fin_periodo" class="form-control bg-light border-0 shadow-sm" required>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Horas Trabajadas <span class="text-danger">*</span></label>
+                                                        <div class="input-group shadow-sm rounded">
+                                                            <input type="number" step="0.5" min="0" name="horas_trabajadas" class="form-control bg-light border-0 nomina-horas" placeholder="160" required>
+                                                            <span class="input-group-text bg-light border-0 text-muted">h</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Tarifa por Hora <span class="text-danger">*</span></label>
+                                                        <div class="input-group shadow-sm rounded">
+                                                            <span class="input-group-text bg-light border-0 text-muted">$</span>
+                                                            <input type="number" step="0.01" min="0" name="tarifa_hora" class="form-control bg-light border-0 nomina-tarifa" placeholder="15.00" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold text-uppercase text-secondary">Horas Extras</label>
+                                                    <div class="input-group shadow-sm rounded">
+                                                        <input type="number" step="0.5" min="0" name="horas_extras" class="form-control bg-light border-0" value="0">
+                                                        <span class="input-group-text bg-light border-0 text-muted">h</span>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Bonificaciones</label>
+                                                        <div class="input-group shadow-sm rounded">
+                                                            <span class="input-group-text bg-light border-0 text-success"><i class="fas fa-plus-circle"></i></span>
+                                                            <input type="number" step="0.01" min="0" name="bonificaciones" class="form-control bg-light border-0 text-success fw-bold nomina-bonif" value="0.00">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold text-uppercase text-secondary">Deducciones <span class="text-danger">*</span></label>
+                                                        <div class="input-group shadow-sm rounded">
+                                                            <span class="input-group-text bg-light border-0 text-danger"><i class="fas fa-minus-circle"></i></span>
+                                                            <input type="number" step="0.01" min="0" name="deducciones" class="form-control bg-light border-0 text-danger fw-bold nomina-deduc" value="0.00" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                                            <button type="button" class="btn-premium" disabled>
-                                                <i class="fas fa-paper-plane"></i> Enviar
-                                            </button>
-                                        </div>
+                                            <div class="modal-footer border-0">
+                                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success px-4 rounded-pill shadow-sm" style="background:#10b981; border:none;">
+                                                    <i class="fas fa-paper-plane me-2"></i>Enviar Nómina
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
