@@ -259,5 +259,99 @@ class NominaModel
             return [];
         }
     }
+    // ═══════════════════════════════════════════
+    // MÉTODOS PAGINADOS
+    // ═══════════════════════════════════════════
+
+    public function countNominasByUsuario(int $idUsuario): int
+    {
+        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM nomina WHERE id_usuario = ?");
+        $stmt->execute([$idUsuario]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function countNominasByEmpresa(int $idEmpresa): int
+    {
+        $stmt = $this->conexion->prepare(
+            "SELECT COUNT(*) FROM nomina n JOIN usuario_empresa ue ON ue.id_usuario = n.id_usuario AND ue.id_empresa = ?"
+        );
+        $stmt->execute([$idEmpresa]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function countAllNominas(): int
+    {
+        return (int)$this->conexion->query("SELECT COUNT(*) FROM nomina")->fetchColumn();
+    }
+
+    public function getNominasByUsuarioPag(int $idUsuario, int $limit, int $offset): array
+    {
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email
+                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
+                WHERE n.id_usuario = ? ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute([$idUsuario, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getNominasByEmpresaPag(int $idEmpresa, int $limit, int $offset): array
+    {
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
+                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
+                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
+                ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute([$idEmpresa, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getAllNominasPag(int $limit, int $offset): array
+    {
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
+                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
+                ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute([$limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countDesempenoByUsuario(int $idUsuario): int
+    {
+        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM seguimiento_desempeno WHERE id_usuario = ?");
+        $stmt->execute([$idUsuario]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function countDesempenoByEmpresa(int $idEmpresa): int
+    {
+        $stmt = $this->conexion->prepare(
+            "SELECT COUNT(*) FROM seguimiento_desempeno sd JOIN usuario_empresa ue ON ue.id_usuario = sd.id_usuario AND ue.id_empresa = ?"
+        );
+        $stmt->execute([$idEmpresa]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function getDesempenoByUsuarioPag(int $idUsuario, int $limit, int $offset): array
+    {
+        $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
+                FROM seguimiento_desempeno sd LEFT JOIN usuario u ON sd.evaluador_id = u.id
+                WHERE sd.id_usuario = ? ORDER BY sd.fecha_evaluacion DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute([$idUsuario, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getDesempenoByEmpresaPag(int $idEmpresa, int $limit, int $offset): array
+    {
+        $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email, ev.nombre AS nombre_evaluador
+                FROM seguimiento_desempeno sd
+                JOIN usuario u ON sd.id_usuario = u.id
+                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
+                LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
+                ORDER BY sd.fecha_evaluacion DESC LIMIT ? OFFSET ?";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute([$idEmpresa, $limit, $offset]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>
