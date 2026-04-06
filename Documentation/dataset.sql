@@ -112,7 +112,9 @@ CREATE TABLE capacitacion (
     fecha_fin DATE NOT NULL,
     costo DOUBLE NOT NULL,
     creador_id INT NULL,
-    FOREIGN KEY (creador_id) REFERENCES usuario(id) ON DELETE SET NULL
+    id_empresa INT NULL,
+    FOREIGN KEY (creador_id) REFERENCES usuario(id) ON DELETE SET NULL,
+    FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa) ON DELETE SET NULL
 );
 
 CREATE TABLE inscripcion (

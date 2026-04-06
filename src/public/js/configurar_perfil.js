@@ -110,15 +110,21 @@ document.querySelectorAll('.skill-delete-btn').forEach(button => {
         }
     });
 
-    // Guardia final al enviar el formulario
+// Guardia final al enviar el formulario
     const form = document.getElementById('changePasswordForm');
     if (form) {
+        // Inicializar validación global para este formulario
+        StartLink.setupValidation('changePasswordForm', {
+            'new_password': ['required', 'password'],
+            'confirm_password': ['required', { name: 'match', params: ['new_password'] }]
+        });
+
         form.addEventListener('submit', function (e) {
             const allPass  = Object.values(rules).every(r => r.test(newPwd.value));
             const matching = newPwd.value === confirmPwd.value;
             if (!allPass || !matching) {
                 e.preventDefault();
-                alert('Por favor corrige los errores antes de continuar.');
+                StartLink.notify('Por favor corrige los errores antes de continuar.', 'danger');
             }
         });
     }

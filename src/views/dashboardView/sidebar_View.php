@@ -53,11 +53,13 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
             <img src="<?= isset($profileImage) ? $profileImage : 'https://static.thenounproject.com/png/4154905-200.png' ?>" 
                  alt="Profile" class="user-avatar-large">
             <?php if (isset($unread_notifications_count) && $unread_notifications_count > 0): ?>
-                <div class="notif-dot"></div>
+                <div class="notif-dot" style="top: -2px; right: -2px;"></div>
             <?php endif; ?>
         </div>
-        <span class="user-name"><?= htmlspecialchars($userName) ?></span>
-        <span class="user-role"><?= $rolLabel ?></span>
+        <div class="user-info-text">
+            <span class="user-name"><?= htmlspecialchars($userName) ?></span>
+            <span class="user-role"><?= $rolLabel ?></span>
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -133,4 +135,5 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
     </div>
 </aside>
 
+<script src="<?= BASE_URL ?>src/public/js/main.js"></script>
 <script src="<?= BASE_URL ?>src/public/js/sideBar.js"></script>

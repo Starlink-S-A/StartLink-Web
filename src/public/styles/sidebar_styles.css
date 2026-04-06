@@ -121,14 +121,17 @@ body.sidebar-collapsed {
 }
 
 .sidebar-user {
-    padding: 1.5rem 1rem; /* Restored from 1.25rem 0.75rem */
+    padding: 0.85rem 1rem; /* Reducido sustancialmente */
     background: #f0fdf4;
-    border-radius: 20px;
-    margin-bottom: 2.5rem; /* Restored from 1.5rem */
-    text-align: center;
+    border-radius: 16px; /* Bordes ligeramente menos redondeados para mayor eficiencia */
+    margin-bottom: 1.5rem; /* Reducido de 2.5rem */
+    display: flex;
+    align-items: center;
+    gap: 12px;
     border: 1px solid #dcfce7;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Permitir que elementos como el dot se vean bien */
+    transition: all 0.3s ease;
 }
 
 .sidebar-premium.is-collapsed .sidebar-user {
@@ -136,58 +139,65 @@ body.sidebar-collapsed {
 }
 
 .sidebar-greeting {
-    font-size: 0.75rem;
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
     color: #166534;
     font-weight: 700;
-    margin-top: 0.5rem;
-    margin-bottom: 0.75rem;
     background: #dcfce7;
-    padding: 4px 12px;
+    padding: 2px 8px;
     border-radius: 20px;
-    display: inline-block;
-    animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    white-space: nowrap;
+    z-index: 10;
     border: 1px solid #bbf7d0;
-}
-
-@keyframes bounceIn {
-    0% { opacity: 0; transform: scale(0.3); }
-    50% { opacity: 1; transform: scale(1.05); }
-    70% { transform: scale(0.9); }
-    100% { transform: scale(1); }
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .user-avatar-large {
-    width: 85px; /* Aumentado a 110px para que se vea claramente grande */
-    height: 85px; /* Aumentado a 110px para que se vea claramente grande */
-    border-radius: 50%;
-    border: 4px solid #fff;
+    width: 48px; /* Reducido de 85px */
+    height: 48px; /* Reducido de 85px */
+    border-radius: 12px; /* Cambiado a rounded square moderno */
+    border: 2px solid #fff;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 2px;
-    margin-bottom: 0.75rem;
+    padding: 1px;
+    margin-bottom: 0; /* Eliminado margen inferior */
     transition: all 0.3s ease;
-    object-fit: cover; /* Asegura que la imagen no se deforme */
+    object-fit: cover;
+    flex-shrink: 0;
 }
 
 .sidebar-user:hover .user-avatar-large {
-    transform: scale(1.08) rotate(3deg);
+    transform: scale(1.1);
     border-color: var(--sidebar-accent);
+}
+
+.user-info-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Evitar que nombres largos rompan el layout */
+    text-align: left;
 }
 
 .user-name {
     display: block;
-    font-weight: 800;
-    font-size: 1.1rem;
+    font-weight: 700;
+    font-size: 0.95rem; /* Reducido de 1.1rem */
     color: var(--sidebar-text);
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Añadido puntos suspensivos para nombres largos */
 }
 
 .user-role {
-    font-size: 0.7rem;
+    font-size: 0.6rem; /* Reducido de 0.7rem */
     color: var(--sidebar-accent);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.5px;
+    margin: 0;
 }
 
 /* Adjust nav list to remove redundant grow */

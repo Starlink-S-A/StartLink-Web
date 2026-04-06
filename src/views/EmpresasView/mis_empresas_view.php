@@ -20,6 +20,7 @@ $empresas = $empresas ?? [];
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Custom Styles -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/dashboard_styles.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>src/public/styles/mi_empresa.css">
     <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
