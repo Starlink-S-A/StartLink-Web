@@ -105,7 +105,7 @@ $miembros = $miembros ?? [];
                                     <i class="fas fa-id-badge"></i>
                                     <?= htmlspecialchars($m['nombre_rol_empresa'] ?? 'Miembro') ?>
                                 </div>
-                                <a href="<?= BASE_URL ?>src/index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $m['id_usuario'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto w-100" style="color: #00a680; border-color: #00a680;">
+                                <a href="<?= BASE_URL ?>src/index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $m['id'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto w-100" style="color: #00a680; border-color: #00a680;">
                                     <i class="fas fa-comment-dots me-1"></i> Chat Privado
                                 </a>
                             </div>

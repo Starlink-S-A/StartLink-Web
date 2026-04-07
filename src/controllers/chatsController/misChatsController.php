@@ -347,6 +347,13 @@ class MisChatsController {
             } elseif ($conv['tipo_conversacion'] === 'empresa_interna') { 
                 $chatTitle = $conv['titulo_conversacion'];
                 $chatAvatar = BASE_URL . 'assets/images/icon_group_chat.png'; 
+                if (!empty($conv['empresa_logo'])) {
+                    $nombreArchivo = basename($conv['empresa_logo']);
+                    $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'logos_empresa' . DIRECTORY_SEPARATOR . $nombreArchivo;
+                    if (file_exists($rutaAbsoluta)) {
+                        $chatAvatar = BASE_URL . 'assets/images/Uploads/logos_empresa/' . $nombreArchivo;
+                    }
+                }
             }
 
             $conversations[] = [

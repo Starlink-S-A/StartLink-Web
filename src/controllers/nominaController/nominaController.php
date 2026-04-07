@@ -68,12 +68,13 @@ class NominaController
         $tipoMensaje = $_SESSION['tipo_mensaje_nomina'] ?? 'success';
         unset($_SESSION['mensaje_nomina'], $_SESSION['tipo_mensaje_nomina']);
 
-        // Paginación: 10 registros por página
-        $perPage   = 10;
+        // Paginación: 5 registros nóminas, 15 registros desempeño
+        $perPageNom = 5;
+        $perPageDes = 15;
         $pageNom   = max(1, (int)($_GET['page_nom'] ?? 1));
         $pageDes   = max(1, (int)($_GET['page_des'] ?? 1));
-        $offsetNom = ($pageNom - 1) * $perPage;
-        $offsetDes = ($pageDes - 1) * $perPage;
+        $offsetNom = ($pageNom - 1) * $perPageNom;
+        $offsetDes = ($pageDes - 1) * $perPageDes;
 
         // Obtener nóminas según rol (paginado)
         $nominas      = [];
@@ -85,15 +86,15 @@ class NominaController
         try {
             if ($esAdminGlobal) {
                 $totalNominas = $this->nominaModel->countAllNominas();
-                $nominas      = $this->nominaModel->getAllNominasPag($perPage, $offsetNom);
+                $nominas      = $this->nominaModel->getAllNominasPag($perPageNom, $offsetNom);
             } elseif ($esAdminEmpresa && $s['idEmpresa']) {
                 $totalNominas   = $this->nominaModel->countNominasByEmpresa($s['idEmpresa']);
-                $nominas        = $this->nominaModel->getNominasByEmpresaPag($s['idEmpresa'], $perPage, $offsetNom);
+                $nominas        = $this->nominaModel->getNominasByEmpresaPag($s['idEmpresa'], $perPageNom, $offsetNom);
                 $trabajadores   = $this->nominaModel->getTrabajadoresDeEmpresa($s['idEmpresa']);
             } else {
                 // Trabajador: solo sus propias nóminas
                 $totalNominas   = $this->nominaModel->countNominasByUsuario($s['userId']);
-                $nominas        = $this->nominaModel->getNominasByUsuarioPag($s['userId'], $perPage, $offsetNom);
+                $nominas        = $this->nominaModel->getNominasByUsuarioPag($s['userId'], $perPageNom, $offsetNom);
             }
         } catch (Exception $e) {
             error_log("Error al cargar historial de nominas: " . $e->getMessage());
@@ -104,19 +105,19 @@ class NominaController
         try {
             if ($esAdminEmpresa && $s['idEmpresa']) {
                 $totalDesempenos = $this->nominaModel->countDesempenoByEmpresa($s['idEmpresa']);
-                $desempenos     = $this->nominaModel->getDesempenoByEmpresaPag($s['idEmpresa'], $perPage, $offsetDes);
+                $desempenos     = $this->nominaModel->getDesempenoByEmpresaPag($s['idEmpresa'], $perPageDes, $offsetDes);
             } elseif (!$esAdminGlobal) {
                 // Trabajador: solo su desempeño
                 $totalDesempenos = $this->nominaModel->countDesempenoByUsuario($s['userId']);
-                $desempenos     = $this->nominaModel->getDesempenoByUsuarioPag($s['userId'], $perPage, $offsetDes);
+                $desempenos     = $this->nominaModel->getDesempenoByUsuarioPag($s['userId'], $perPageDes, $offsetDes);
             }
         } catch (Exception $e) {
             error_log("Error al cargar historial de desempeno: " . $e->getMessage());
         }
 
         // Variables de paginación para la vista
-        $totalPagesNom = max(1, (int)ceil($totalNominas / $perPage));
-        $totalPagesDes = max(1, (int)ceil($totalDesempenos / $perPage));
+        $totalPagesNom = max(1, (int)ceil($totalNominas / $perPageNom));
+        $totalPagesDes = max(1, (int)ceil($totalDesempenos / $perPageDes));
 
         // Pasar variables a la vista
         $rolGlobal    = $s['rolGlobal'];

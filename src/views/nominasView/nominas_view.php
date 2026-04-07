@@ -188,97 +188,101 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                                 </td>
                             </tr>
 
-                            <!-- Modal Detalle Nómina -->
-                            <div class="modal fade" id="modalDetalle<?= $nomina['id'] ?>" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow-lg rounded-4">
-                                        <div class="modal-header border-0 pb-0">
-                                            <h5 class="modal-title fw-700">
-                                                <i class="fas fa-receipt me-2 text-success"></i>Detalle de Nómina #<?= str_pad($nomina['id'], 6, '0', STR_PAD_LEFT) ?>
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body pt-3">
-                                            <!-- Info del trabajador -->
-                                            <div class="row g-3 mb-4">
-                                                <div class="col-md-6">
-                                                    <div class="detail-box">
-                                                        <div class="detail-label">Trabajador</div>
-                                                        <div class="detail-value"><?= htmlspecialchars($nomina['nombre_trabajador']) ?></div>
-                                                        <div class="text-muted small"><?= htmlspecialchars($nomina['email']) ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <div class="detail-box">
-                                                        <div class="detail-label">Empresa</div>
-                                                        <div class="detail-value" style="font-size:0.85rem;"><?= !empty($nomina['nombre_empresa']) ? htmlspecialchars($nomina['nombre_empresa']) : '—' ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <div class="detail-box">
-                                                        <div class="detail-label">Fecha Generación</div>
-                                                        <div class="detail-value"><?= date('d/m/Y', strtotime($nomina['fecha_generacion'])) ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <div class="detail-box">
-                                                        <div class="detail-label">Período</div>
-                                                        <div class="detail-value" style="font-size:0.82rem;">
-                                                            <?= date('d/m/Y', strtotime($nomina['fecha_inicio_periodo'])) ?><br>
-                                                            <?= date('d/m/Y', strtotime($nomina['fecha_fin_periodo'])) ?>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <!-- Desglose de pago -->
-                                            <table class="table table-sm mb-3" style="font-size:0.88rem;">
-                                                <thead><tr style="background:#f8fafc;"><th>Concepto</th><th class="text-end">Monto</th></tr></thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td><i class="fas fa-clock text-primary me-2"></i>Horas trabajadas (<?= number_format($nomina['horas_trabajadas'], 1) ?> h)</td>
-                                                        <td class="text-end fw-600">$<?= number_format($nomina['salario_bruto'] - $nomina['bonificaciones'], 2) ?></td>
-                                                    </tr>
-                                                    <?php if ($nomina['horas_extras'] > 0): ?>
-                                                    <tr>
-                                                        <td><i class="fas fa-plus-circle text-info me-2"></i>Horas extras (<?= number_format($nomina['horas_extras'], 1) ?> h)</td>
-                                                        <td class="text-end fw-600 text-info">Incluido</td>
-                                                    </tr>
-                                                    <?php endif; ?>
-                                                    <?php if ($nomina['bonificaciones'] > 0): ?>
-                                                    <tr>
-                                                        <td><i class="fas fa-gift text-success me-2"></i>Bonificaciones</td>
-                                                        <td class="text-end fw-600 text-success">+$<?= number_format($nomina['bonificaciones'], 2) ?></td>
-                                                    </tr>
-                                                    <?php endif; ?>
-                                                    <tr>
-                                                        <td><i class="fas fa-minus-circle text-danger me-2"></i>Deducciones</td>
-                                                        <td class="text-end fw-600 text-danger">-$<?= number_format($nomina['deducciones'], 2) ?></td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            <!-- Total -->
-                                            <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;">
-                                                <span class="fw-700 text-success" style="font-size:1rem;"><i class="fas fa-wallet me-2"></i>Salario Neto</span>
-                                                <span class="fw-700 text-success" style="font-size:1.4rem;">$<?= number_format($nomina['salario_neto'], 2) ?></span>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0">
-                                            <a href="<?= BASE_URL ?>src/index.php?action=descargar_nomina&id=<?= $nomina['id'] ?>"
-                                               class="btn btn-success rounded-pill px-4 shadow-sm" target="_blank" style="background:#10b981;border:none;">
-                                                <i class="fas fa-file-pdf me-2"></i>Descargar / Imprimir
-                                            </a>
-                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Paginación Nóminas -->
-                <?php if ($totalPagesNom > 1): ?>
+                <!-- Modales Detalle Nómina -->
+                <?php foreach ($nominas as $nomina): ?>
+                <div class="modal fade" id="modalDetalle<?= $nomina['id'] ?>" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-700">
+                                    <i class="fas fa-receipt me-2 text-success"></i>Detalle de Nómina #<?= str_pad($nomina['id'], 6, '0', STR_PAD_LEFT) ?>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body pt-3">
+                                <!-- Info del trabajador -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="detail-box">
+                                            <div class="detail-label">Trabajador</div>
+                                            <div class="detail-value"><?= htmlspecialchars($nomina['nombre_trabajador']) ?></div>
+                                            <div class="text-muted small"><?= htmlspecialchars($nomina['email']) ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="detail-box">
+                                            <div class="detail-label">Empresa</div>
+                                            <div class="detail-value" style="font-size:0.85rem;"><?= !empty($nomina['nombre_empresa']) ? htmlspecialchars($nomina['nombre_empresa']) : '—' ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="detail-box">
+                                            <div class="detail-label">Fecha Generación</div>
+                                            <div class="detail-value"><?= date('d/m/Y', strtotime($nomina['fecha_generacion'])) ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="detail-box">
+                                            <div class="detail-label">Período</div>
+                                            <div class="detail-value" style="font-size:0.82rem;">
+                                                <?= date('d/m/Y', strtotime($nomina['fecha_inicio_periodo'])) ?><br>
+                                                <?= date('d/m/Y', strtotime($nomina['fecha_fin_periodo'])) ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Desglose de pago -->
+                                <table class="table table-sm mb-3" style="font-size:0.88rem;">
+                                    <thead><tr style="background:#f8fafc;"><th>Concepto</th><th class="text-end">Monto</th></tr></thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><i class="fas fa-clock text-primary me-2"></i>Horas trabajadas (<?= number_format($nomina['horas_trabajadas'], 1) ?> h)</td>
+                                            <td class="text-end fw-600">$<?= number_format($nomina['salario_bruto'] - $nomina['bonificaciones'], 2) ?></td>
+                                        </tr>
+                                        <?php if ($nomina['horas_extras'] > 0): ?>
+                                        <tr>
+                                            <td><i class="fas fa-plus-circle text-info me-2"></i>Horas extras (<?= number_format($nomina['horas_extras'], 1) ?> h)</td>
+                                            <td class="text-end fw-600 text-info">Incluido</td>
+                                        </tr>
+                                        <?php endif; ?>
+                                        <?php if ($nomina['bonificaciones'] > 0): ?>
+                                        <tr>
+                                            <td><i class="fas fa-gift text-success me-2"></i>Bonificaciones</td>
+                                            <td class="text-end fw-600 text-success">+$<?= number_format($nomina['bonificaciones'], 2) ?></td>
+                                        </tr>
+                                        <?php endif; ?>
+                                        <tr>
+                                            <td><i class="fas fa-minus-circle text-danger me-2"></i>Deducciones</td>
+                                            <td class="text-end fw-600 text-danger">-$<?= number_format($nomina['deducciones'], 2) ?></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <!-- Total -->
+                                <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;">
+                                    <span class="fw-700 text-success" style="font-size:1rem;"><i class="fas fa-wallet me-2"></i>Salario Neto</span>
+                                    <span class="fw-700 text-success" style="font-size:1.4rem;">$<?= number_format($nomina['salario_neto'], 2) ?></span>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <a href="<?= BASE_URL ?>src/index.php?action=descargar_nomina&id=<?= $nomina['id'] ?>"
+                                   class="btn btn-success rounded-pill px-4 shadow-sm" target="_blank" style="background:#10b981;border:none;">
+                                    <i class="fas fa-file-pdf me-2"></i>Descargar / Imprimir
+                                </a>
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Paginación Nóminas -->
+            <?php if ($totalPagesNom > 1): ?>
                 <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background:#f8fafc;border-top:1px solid #e2e8f0;">
                     <span class="text-muted small">Página <?= $pageNom ?> de <?= $totalPagesNom ?></span>
                     <nav>

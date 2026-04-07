@@ -30,6 +30,7 @@ class MisChatsModel {
                 CP.id_conversacion,
                 C.tipo_conversacion,
                 C.id_proyecto,
+                C.id_empresa,
                 C.titulo_conversacion,
                 C.fecha_creacion,
                 C.ultimo_mensaje,
@@ -37,9 +38,11 @@ class MisChatsModel {
                 M.fecha_envio AS ultimo_mensaje_fecha_envio,
                 U_REM.nombre AS ultimo_mensaje_remitente_nombre,
                 U_REM.foto_perfil AS ultimo_mensaje_remitente_foto,
-                CP.es_favorito
+                CP.es_favorito,
+                E.logo_ruta AS empresa_logo
             FROM conversacion_participante CP
             JOIN conversacion C ON CP.id_conversacion = C.id_conversacion
+            LEFT JOIN empresa E ON C.id_empresa = E.id_empresa
             LEFT JOIN (
                 SELECT m1.*
                 FROM mensaje m1
@@ -271,7 +274,7 @@ class MisChatsModel {
     public function getOrCreateEmpresaChat($empresaId, $userId) {
         try {
             // Buscar si ya existe la conversación grupal para esta empresa
-            $stmtFind = $this->link->prepare("SELECT id_conversacion FROM conversacion WHERE id_proyecto = ? AND tipo_conversacion = 'empresa_interna' LIMIT 1");
+            $stmtFind = $this->link->prepare("SELECT id_conversacion FROM conversacion WHERE id_empresa = ? AND tipo_conversacion = 'empresa_interna' LIMIT 1");
             $stmtFind->execute([$empresaId]);
             $chatId = $stmtFind->fetchColumn();
 
@@ -282,7 +285,7 @@ class MisChatsModel {
                 $empresaTitle = $stmtEmpresa->fetchColumn();
 
                 $this->link->beginTransaction();
-                $stmtInsert = $this->link->prepare("INSERT INTO conversacion (tipo_conversacion, id_proyecto, titulo_conversacion, fecha_creacion) VALUES ('empresa_interna', ?, ?, NOW())");
+                $stmtInsert = $this->link->prepare("INSERT INTO conversacion (tipo_conversacion, id_empresa, titulo_conversacion, fecha_creacion) VALUES ('empresa_interna', ?, ?, NOW())");
                 $stmtInsert->execute([$empresaId, "Equipo: " . $empresaTitle]);
                 $chatId = $this->link->lastInsertId();
                 
