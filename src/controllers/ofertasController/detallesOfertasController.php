@@ -151,7 +151,7 @@ class DetallesOfertasController {
                     $notifModel->crearNotificacion(
                         $idPostulante,
                         "¡Felicidades! Has sido seleccionado para la oferta: " . $oferta['titulo_oferta'],
-                        'Candidatos',
+                        'info',
                         'fas fa-handshake',
                         BASE_URL . "index.php?action=ofertas" // O ruta a mis empleos/contratos
                     );
@@ -169,7 +169,7 @@ class DetallesOfertasController {
                 $notifModel->crearNotificacion(
                     $idPostulante,
                     "Tu postulación para " . $oferta['titulo_oferta'] . " ha sido rechazada.",
-                    'Candidatos',
+                    'info',
                     'fas fa-times-circle',
                     BASE_URL . "index.php?action=ofertas"
                 );

@@ -16,6 +16,8 @@ if ($esAdminGlobal) {
     $rolLabel = 'Admin Empresa';
 } elseif ((int)$rolEmpresa === 2) {
     $rolLabel = 'Contratador';
+} elseif ((int)$rolEmpresa === 3) {
+    $rolLabel = 'Empleado';
 } else {
     $rolLabel = 'Candidato';
 }
@@ -76,8 +78,18 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                 </a>
             </li>
             <li>
+                <a class="sidebar-link <?= ($currentAction == 'perfiles_candidatos' || $currentPage == 'perfilesCandidatosView.php') ? 'active' : '' ?>" href="<?= BASE_URL ?>perfiles_candidatos">
+                    <i class="fas fa-user-tie"></i> <span class="sidebar-link-text">Candidatos</span>
+                </a>
+            </li>
+            <li>
                 <a class="sidebar-link <?= $currentAction == 'capacitaciones' ? 'active' : '' ?>" href="<?= BASE_URL ?>src/index.php?action=capacitaciones">
                     <i class="fas fa-chalkboard-teacher"></i> <span class="sidebar-link-text">Capacitaciones</span>
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link <?= $currentAction == 'mis_empresas' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=mis_empresas">
+                    <i class="fas fa-building"></i> <span class="sidebar-link-text">Mis Empresas</span>
                 </a>
             </li>
             <li>

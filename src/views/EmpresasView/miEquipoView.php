@@ -67,7 +67,10 @@ $miembros = $miembros ?? [];
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="ms-auto">
+                    <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
+                        <a href="<?= BASE_URL ?>index.php?action=mis_chats&sub_action=create_company_chat&empresa_id=<?= $empresa['id_empresa'] ?>" class="btn btn-primary" style="background: linear-gradient(135deg, #00a680 0%, #059669 100%); border: none;">
+                            <i class="fas fa-comments me-2"></i> Chat Grupal
+                        </a>
                         <a href="<?= BASE_URL ?>index.php?action=mis_equipos" class="btn btn-outline-secondary">
                             Cambiar empresa
                         </a>
@@ -98,10 +101,13 @@ $miembros = $miembros ?? [];
                                 <img class="team-user-avatar mb-3" src="<?= htmlspecialchars($m['profile_image_url']) ?>" alt="Foto de <?= htmlspecialchars($m['nombre']) ?>">
                                 <h5 class="fw-700 mb-1"><?= htmlspecialchars($m['nombre']) ?></h5>
                                 <div class="text-muted small mb-3"><?= htmlspecialchars($m['email']) ?></div>
-                                <div class="team-user-role mx-auto">
+                                <div class="team-user-role mx-auto mb-3">
                                     <i class="fas fa-id-badge"></i>
                                     <?= htmlspecialchars($m['nombre_rol_empresa'] ?? 'Miembro') ?>
                                 </div>
+                                <a href="<?= BASE_URL ?>index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $m['id_usuario'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto w-100" style="color: #00a680; border-color: #00a680;">
+                                    <i class="fas fa-comment-dots me-1"></i> Chat Privado
+                                </a>
                             </div>
                         </div>
                     <?php endforeach; ?>

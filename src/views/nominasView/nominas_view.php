@@ -73,18 +73,7 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
 
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-            <h2 class="fw-700 mb-1" style="font-size:1.6rem;">
-                <i class="fas fa-history me-2 text-success"></i>Historial
-            </h2>
-            <p class="text-muted mb-0 small">
-                <?php if ($puedeGenerar): ?>
-                    Gestiona nóminas y desempeño de tus trabajadores.
-                <?php else: ?>
-                    Consulta tus nóminas y evaluaciones de desempeño.
-                <?php endif; ?>
-            </p>
-        </div>
+        <div></div>
         <?php if ($puedeGenerar && !empty($trabajadores)): ?>
         <button class="btn btn-dash-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalGenerarNomina">
             <i class="fas fa-plus me-2"></i>Generar Nómina

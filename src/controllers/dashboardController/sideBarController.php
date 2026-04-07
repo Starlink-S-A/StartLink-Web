@@ -54,40 +54,40 @@ class DashboardController {
             $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
             $currentUserGlobalRole = $userRow['id_rol'] ?? $rolTrabajadorId;
             $dbFotoPerfil = $userRow['foto_perfil'] ?? null;
+            
+            // [Sincronización] Actualizar rol global en sesión
+            $_SESSION['id_rol'] = (int)$currentUserGlobalRole;
 
             if ($currentUserGlobalRole != $rolTrabajadorId) {
                 $showPublishProfileLink = true;
             }
 
-            if (isset($_SESSION['id_empresa']) && isset($_SESSION['id_rol_empresa'])) {
-                $userCompanyRole = $_SESSION['id_rol_empresa'];
+            // [Sincronización] Siempre obtener el rol más reciente de la empresa desde la BD
+            $stmtCompanyAssociation = $conexion->prepare("
+                SELECT id_empresa, id_rol_empresa 
+                FROM usuario_empresa 
+                WHERE id_usuario = ? 
+                AND (id_empresa = ? OR ? IS NULL)
+                ORDER BY id_rol_empresa ASC 
+                LIMIT 1
+            ");
+            $stmtCompanyAssociation->execute([$userId, $_SESSION['id_empresa'] ?? null, $_SESSION['id_empresa'] ?? null]);
+            $userCompanyAssociation = $stmtCompanyAssociation->fetch(PDO::FETCH_ASSOC);
+
+            if ($userCompanyAssociation) {
+                $_SESSION['id_empresa'] = (int)$userCompanyAssociation['id_empresa'];
+                $_SESSION['id_rol_empresa'] = (int)$userCompanyAssociation['id_rol_empresa'];
+                $userCompanyRole = (int)$userCompanyAssociation['id_rol_empresa'];
+            } else {
+                $userCompanyRole = null;
+            }
+
+            if ($userCompanyRole !== null) {
                 if (in_array($userCompanyRole, [1, 2])) {
                     $esAdminEmpresa = true;
                 }
                 if (in_array($userCompanyRole, [2, 3])) {
                     $esTrabajadorActivo = true;
-                }
-            } else {
-                $stmtCompanyAssociation = $conexion->prepare("
-                    SELECT id_empresa, id_rol_empresa 
-                    FROM usuario_empresa 
-                    WHERE id_usuario = ? 
-                    ORDER BY id_rol_empresa ASC 
-                    LIMIT 1
-                ");
-                $stmtCompanyAssociation->execute([$userId]);
-                $userCompanyAssociation = $stmtCompanyAssociation->fetch(PDO::FETCH_ASSOC);
-
-                if ($userCompanyAssociation) {
-                    $_SESSION['id_empresa'] = $userCompanyAssociation['id_empresa'];
-                    $_SESSION['id_rol_empresa'] = $userCompanyAssociation['id_rol_empresa'];
-                    $userCompanyRole = $userCompanyAssociation['id_rol_empresa'];
-                    if (in_array($userCompanyRole, [1, 2])) {
-                        $esAdminEmpresa = true;
-                    }
-                    if (in_array($userCompanyRole, [2, 3])) {
-                        $esTrabajadorActivo = true;
-                    }
                 }
             }
 
@@ -127,7 +127,7 @@ class DashboardController {
             if ($userRoleGlobal == 1) $rolDisplay = "Administrador del Sistema";
             elseif ($userRolEmpresa == 1) $rolDisplay = "Administrador de Empresa";
             elseif ($userRolEmpresa == 2) $rolDisplay = "Contratador";
-            elseif ($userRolEmpresa == 3) $rolDisplay = "Empleado Interno";
+            elseif ($userRolEmpresa == 3) $rolDisplay = "Empleado";
             else $rolDisplay = "Usuario General";
 
         } catch (PDOException $e) {

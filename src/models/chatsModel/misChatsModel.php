@@ -96,7 +96,7 @@ class MisChatsModel {
 
     public function getMessages($chatId) {
         $stmt = $this->link->prepare("
-            SELECT M.contenido, M.fecha_envio, M.id_remitente, U.nombre AS remitente_nombre, U.foto_perfil AS remitente_foto
+            SELECT M.contenido, M.fecha_envio, M.id_remitente, M.metadata, U.nombre AS remitente_nombre, U.foto_perfil AS remitente_foto
             FROM mensaje M
             JOIN usuario U ON M.id_remitente = U.id
             WHERE M.id_conversacion = ?
@@ -115,16 +115,15 @@ class MisChatsModel {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    public function sendMessage($chatId, $userId, $messageContent, $notificationUrl, $currentUserName) {
+    public function sendMessage($chatId, $userId, $messageContent, $notificationUrl, $currentUserName, $metadata = null) {
         try {
             $this->link->beginTransaction();
 
-            // El campo se llama 'id_mensaje' (PK), 'id_conversacion', 'id_remitente', 'contenido', 'fecha_envio'
             $stmtInsertMessage = $this->link->prepare("
-                INSERT INTO mensaje (id_conversacion, id_remitente, contenido, fecha_envio, tipo_mensaje)
-                VALUES (?, ?, ?, NOW(), 'normal')
+                INSERT INTO mensaje (id_conversacion, id_remitente, contenido, fecha_envio, metadata, tipo_mensaje)
+                VALUES (?, ?, ?, NOW(), ?, 'normal')
             ");
-            if (!$stmtInsertMessage->execute([$chatId, $userId, $messageContent])) {
+            if (!$stmtInsertMessage->execute([$chatId, $userId, $messageContent, $metadata])) {
                 throw new Exception("Error al insertar mensaje en la base de datos.");
             }
 
@@ -257,6 +256,51 @@ class MisChatsModel {
         } catch (PDOException $e) {
             if ($this->link->inTransaction()) $this->link->rollBack();
             error_log("Error en getOrCreateOfferChat: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getOrCreateEmpresaChat($empresaId, $userId) {
+        try {
+            // Buscar si ya existe la conversación grupal para esta empresa
+            $stmtFind = $this->link->prepare("SELECT id_conversacion FROM conversacion WHERE id_proyecto = ? AND tipo_conversacion = 'empresa_interna' LIMIT 1");
+            $stmtFind->execute([$empresaId]);
+            $chatId = $stmtFind->fetchColumn();
+
+            if (!$chatId) {
+                // Crear la conversación si no existe
+                $stmtEmpresa = $this->link->prepare("SELECT nombre_empresa FROM empresa WHERE id_empresa = ?");
+                $stmtEmpresa->execute([$empresaId]);
+                $empresaTitle = $stmtEmpresa->fetchColumn();
+
+                $this->link->beginTransaction();
+                $stmtInsert = $this->link->prepare("INSERT INTO conversacion (tipo_conversacion, id_proyecto, titulo_conversacion, fecha_creacion) VALUES ('empresa_interna', ?, ?, NOW())");
+                $stmtInsert->execute([$empresaId, "Equipo: " . $empresaTitle]);
+                $chatId = $this->link->lastInsertId();
+                
+                // Add all existing company members to the chat initially
+                $stmtMembers = $this->link->prepare("SELECT id_usuario FROM usuario_empresa WHERE id_empresa = ?");
+                $stmtMembers->execute([$empresaId]);
+                $members = $stmtMembers->fetchAll(PDO::FETCH_COLUMN);
+                
+                $stmtJoin = $this->link->prepare("INSERT IGNORE INTO conversacion_participante (id_conversacion, id_usuario, fecha_union) VALUES (?, ?, NOW())");
+                foreach ($members as $memberId) {
+                    $stmtJoin->execute([$chatId, $memberId]);
+                }
+                
+                $this->link->commit();
+            } else {
+                // Check if current user is participant, if not add them
+                if (!$this->isParticipant($chatId, $userId)) {
+                    $stmtJoin = $this->link->prepare("INSERT IGNORE INTO conversacion_participante (id_conversacion, id_usuario, fecha_union) VALUES (?, ?, NOW())");
+                    $stmtJoin->execute([$chatId, $userId]);
+                }
+            }
+
+            return $chatId;
+        } catch (PDOException $e) {
+            if ($this->link->inTransaction()) $this->link->rollBack();
+            error_log("Error en getOrCreateEmpresaChat: " . $e->getMessage());
             return false;
         }
     }

@@ -165,7 +165,7 @@ class GestionUsuariosController {
             $notifModel->crearNotificacion(
                 $usuarioId,
                 "Tu rol en la empresa ha sido actualizado.",
-                'Sistema',
+                'info',
                 'fas fa-user-shield',
                 BASE_URL . "mi_empresa"
             );
@@ -247,13 +247,12 @@ class GestionUsuariosController {
         );
 
         if ($ok) {
-            // HU-29: Registro de Evaluación -> Notificar al Trabajador
             require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
             $notifModel = new NotificacionesModel();
             $notifModel->crearNotificacion(
                 $usuarioId,
                 "Se ha registrado una nueva evaluación de desempeño para ti.",
-                'Capacitación',
+                'info',
                 'fas fa-chart-line',
                 BASE_URL . "mi_empresa"
             );

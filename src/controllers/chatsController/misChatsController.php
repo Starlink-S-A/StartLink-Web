@@ -44,11 +44,43 @@ class MisChatsController {
             case 'fetch_chats_ajax':
                 $this->fetchChatsAjax();
                 break;
+            case 'create_company_chat':
+                $this->createCompanyChat();
+                break;
+            case 'create_private_chat':
+                $this->createPrivateChat();
+                break;
             case 'list':
             default:
                 $this->showList();
                 break;
         }
+    }
+
+    private function createCompanyChat() {
+        $empresaId = $_GET['empresa_id'] ?? null;
+        if ($empresaId && is_numeric($empresaId)) {
+            $chatId = $this->model->getOrCreateEmpresaChat((int)$empresaId, $this->userId);
+            if ($chatId) {
+                header("Location: " . BASE_URL . "index.php?action=mis_chats&chat_id=" . $chatId);
+                exit();
+            }
+        }
+        header("Location: " . BASE_URL . "index.php?action=mis_equipos");
+        exit();
+    }
+
+    private function createPrivateChat() {
+        $candidateId = $_GET['candidate_id'] ?? null;
+        if ($candidateId && is_numeric($candidateId)) {
+            $chatId = $this->model->createPrivateChat($this->userId, (int)$candidateId);
+            if ($chatId) {
+                header("Location: " . BASE_URL . "index.php?action=mis_chats&chat_id=" . $chatId);
+                exit();
+            }
+        }
+        header("Location: " . BASE_URL . "index.php?action=mis_equipos");
+        exit();
     }
 
     private function deleteChat() {
@@ -96,13 +128,42 @@ class MisChatsController {
             $currentChatId = $_POST['chat_id'] ?? null;
             $messageContent = trim($_POST['message_content'] ?? '');
             
-            if ($currentChatId && !empty($messageContent)) {
+            $metadata = null;
+            if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+                // 10 MB limit
+                if ($_FILES['attachment']['size'] > 10 * 1024 * 1024) {
+                    echo json_encode(['success' => false, 'message' => 'El archivo supera el límite de 10 MB.']);
+                    exit();
+                }
+                
+                $uploadDirOriginal = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'chat_archivos' . DIRECTORY_SEPARATOR;
+                if (!is_dir($uploadDirOriginal)) {
+                    mkdir($uploadDirOriginal, 0777, true);
+                }
+                
+                $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9.\-_]/", "", basename($_FILES['attachment']['name']));
+                $targetFile = $uploadDirOriginal . $fileName;
+                
+                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetFile)) {
+                    $metadataArr = [
+                        'attachmentUrl' => 'assets/images/Uploads/chat_archivos/' . $fileName,
+                        'fileName' => basename($_FILES['attachment']['name']),
+                        'fileType' => mime_content_type($targetFile)
+                    ];
+                    $metadata = json_encode($metadataArr);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error moviendo el archivo adjunto.']);
+                    exit();
+                }
+            }
+            
+            if ($currentChatId && (!empty($messageContent) || $metadata)) {
                 if ($this->model->isParticipant($currentChatId, $this->userId)) {
                     $userData = $this->model->getUserData($this->userId);
                     $userName = $userData['nombre'] ?? 'Usuario';
                     $notificationUrl = BASE_URL . "index.php?action=mis_chats&chat_id=" . $currentChatId;
                     
-                    $success = $this->model->sendMessage($currentChatId, $this->userId, $messageContent, $notificationUrl, $userName);
+                    $success = $this->model->sendMessage($currentChatId, $this->userId, $messageContent, $notificationUrl, $userName, $metadata);
                     if ($success) {
                         echo json_encode(['success' => true]);
                     } else {
@@ -112,7 +173,7 @@ class MisChatsController {
                     echo json_encode(['success' => false, 'message' => 'No tienes acceso a esta conversación.']);
                 }
             } else {
-                echo json_encode(['success' => false, 'message' => 'Faltan datos requeridos.']);
+                echo json_encode(['success' => false, 'message' => 'El mensaje no puede ir vacío si no hay archivos.']);
             }
         }
         exit();

@@ -130,7 +130,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!isSent) newHtml += avatarHtml;
                             newHtml += `<div class="message-container">`;
                             if (!isSent) newHtml += `<div class="message-sender-name">${senderName}</div>`;
-                            newHtml += `<div class="message-bubble ${messageClass}">${msg.contenido}</div>`;
+                            newHtml += `<div class="message-bubble ${messageClass}">`;
+                            
+                            if (msg.metadata) {
+                                try {
+                                    const meta = JSON.parse(msg.metadata);
+                                    if (meta && meta.attachmentUrl) {
+                                        const fileClass = isSent ? 'bg-white bg-opacity-25 text-white' : 'bg-light text-dark border';
+                                        newHtml += `<a href="${baseUrl}${meta.attachmentUrl}" target="_blank" class="d-block mb-2 p-2 rounded text-decoration-none d-flex align-items-center gap-2 ${fileClass}" style="font-size: 0.9rem;">
+                                            <i class="fas fa-file-download fa-lg"></i>
+                                            <span class="text-truncate" style="max-width: 200px;">${meta.fileName}</span>
+                                        </a>`;
+                                    }
+                                } catch(e) {}
+                            }
+                            
+                            newHtml += `${msg.contenido}</div>`;
                             newHtml += `<div class="message-info ${messageClass}">${hours}:${mins}</div>`;
                             newHtml += `</div>`;
                             if (isSent) newHtml += avatarHtml;
@@ -153,6 +168,30 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(fetchMessages, 3000); // Polling every 3 seconds for continuous updates
     }
 
+    // Gestor de adjuntos
+    const attachmentInput = document.getElementById('attachment_input');
+    const attachmentPreviewContainer = document.getElementById('attachment_preview_container');
+    const attachmentPreviewName = document.getElementById('attachment_preview_name');
+    const removeAttachmentBtn = document.getElementById('remove_attachment_btn');
+
+    if (attachmentInput) {
+        attachmentInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                attachmentPreviewName.textContent = this.files[0].name;
+                attachmentPreviewContainer.classList.remove('d-none');
+            } else {
+                attachmentPreviewContainer.classList.add('d-none');
+            }
+        });
+    }
+
+    if (removeAttachmentBtn) {
+        removeAttachmentBtn.addEventListener('click', function() {
+            attachmentInput.value = '';
+            attachmentPreviewContainer.classList.add('d-none');
+        });
+    }
+
     // Send Message AJAX
     if (messageForm) {
         messageForm.addEventListener('submit', function(e) {
@@ -161,13 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Usar el ID del chat actual de la variable global o del input
             const chatId = document.getElementById('chat_id_input')?.value || activeChatId;
             const content = messageInput.value.trim();
+            const hasAttachment = attachmentInput && attachmentInput.files.length > 0;
             
-            if(!chatId || !content) {
-                console.error('Falta ID de chat o contenido');
+            if(!chatId || (!content && !hasAttachment)) {
+                console.error('Falta ID de chat o contenido/adjunto');
                 return;
             }
 
-            const formData = new FormData();
+            const formData = new FormData(messageForm);
             formData.append('sub_action', 'send_message');
             formData.append('chat_id', chatId);
             formData.append('message_content', content);
@@ -182,11 +222,13 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchJsonWithTimeout(`${baseUrl}index.php?action=mis_chats`, {
                 method: 'POST',
                 body: formData
-            }, 20000)
+            }, 30000)
             .then(data => {
                 if (data.success) {
                     messageInput.value = '';
                     messageInput.style.height = 'auto';
+                    if (attachmentInput) attachmentInput.value = '';
+                    if (attachmentPreviewContainer) attachmentPreviewContainer.classList.add('d-none');
                     fetchMessages(); // Actualizar inmediatamente
                 } else {
                     customAlert(`Error: ${data.message || 'No se pudo enviar el mensaje'}`);
@@ -202,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .finally(() => {
                 if(submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
                 }
             });
         });

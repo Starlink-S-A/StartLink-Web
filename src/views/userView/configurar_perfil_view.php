@@ -22,48 +22,32 @@
         </div>
     <?php endif; ?>
 
-    <h1 class="text-center mb-4">Configura tu Perfil</h1>
+    <h2 class="text-center mb-4 pb-3 border-bottom" style="font-weight: 700; color: var(--sidebar-text); letter-spacing: -0.5px;">Configura tu Perfil</h2>
 
-    <?php
-        $stepOrder = [
-            'personal' => 1,
-            'experience' => 2,
-            'education' => 3,
-            'skills' => 4,
-            'cv' => 5,
-        ];
-        $stepNum = $stepOrder[$currentStep] ?? 1;
-        $progress = (int)round(($stepNum / 5) * 100);
-    ?>
-
-    <div class="progress mb-4">
-        <div class="progress-bar" role="progressbar" style="width: <?= $progress ?>%;" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100">Paso <?= $stepNum ?> de 5</div>
-    </div>
-
-    <ul class="nav flex-column profile-nav mb-4" id="profileTabs" role="tablist">
+    <ul class="nav nav-pills gap-2 d-flex flex-wrap justify-content-center profile-nav mb-4" id="profileTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'personal' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=personal">
-                <i class="fas fa-user-circle me-2"></i> Información Personal
+                <i class="fas fa-user-circle me-1"></i> Personal
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'experience' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=experience">
-                <i class="fas fa-briefcase me-2"></i> Experiencia Laboral
+                <i class="fas fa-briefcase me-1"></i> Experiencia
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'education' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=education">
-                <i class="fas fa-graduation-cap me-2"></i> Estudios Académicos
+                <i class="fas fa-graduation-cap me-1"></i> Estudios
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'skills' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=skills">
-                <i class="fas fa-tools me-2"></i> Habilidades
+                <i class="fas fa-tools me-1"></i> Habilidades
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link <?= $currentStep == 'cv' ? 'active' : '' ?>" href="<?= BASE_URL ?>configurar_perfil?step=cv">
-                <i class="fas fa-file-alt me-2"></i> Hoja de Vida (CV)
+                <i class="fas fa-file-alt me-1"></i> CV
             </a>
         </li>
     </ul>

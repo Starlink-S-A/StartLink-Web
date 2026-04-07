@@ -170,12 +170,18 @@
                                 <?php endif; ?>
 
                             <?php elseif ($esUsuario): ?>
-                                <form action="<?= BASE_URL ?>index.php?action=postular" method="POST" class="flex-grow-1">
-                                    <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-dash-primary w-100">
-                                        <i class="fas fa-paper-plane me-1"></i> Postularme ahora
+                                <?php if (!empty($oferta['yaEnEmpresaDeOferta'])): ?>
+                                    <button type="button" class="btn btn-sm btn-secondary w-100 disabled" style="cursor: not-allowed;" title="Ya formas parte de esta empresa">
+                                        <i class="fas fa-lock me-1"></i> Ya perteneces
                                     </button>
-                                </form>
+                                <?php else: ?>
+                                    <form action="<?= BASE_URL ?>index.php?action=postular" method="POST" class="flex-grow-1">
+                                        <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-dash-primary w-100">
+                                            <i class="fas fa-paper-plane me-1"></i> Postularme ahora
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                             <?php endif; ?>
 
                             <?php if ($oferta['esCreador'] && $esContratador): ?>

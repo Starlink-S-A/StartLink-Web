@@ -111,7 +111,15 @@
                                     <div class="message-sender-name"><?= $senderName ?></div>
                                 <?php endif; ?>
                                 <div class="message-bubble <?= $messageClass ?>">
-                                    <?= htmlspecialchars($message['contenido']) ?>
+                                    <?php if (!empty($message['metadata'])): 
+                                        $meta = json_decode($message['metadata'], true);
+                                        if ($meta && !empty($meta['attachmentUrl'])): ?>
+                                        <a href="<?= BASE_URL . $meta['attachmentUrl'] ?>" target="_blank" class="d-block mb-2 p-2 rounded text-decoration-none d-flex align-items-center gap-2 <?= $isSent ? 'bg-white bg-opacity-25 text-white' : 'bg-light text-dark border' ?>" style="font-size: 0.9rem;">
+                                            <i class="fas fa-file-download fa-lg"></i>
+                                            <span class="text-truncate" style="max-width: 200px;"><?= htmlspecialchars($meta['fileName']) ?></span>
+                                        </a>
+                                    <?php endif; endif; ?>
+                                    <?= nl2br(htmlspecialchars($message['contenido'])) ?>
                                 </div>
                                 <div class="message-info <?= $messageClass ?> js-local-time" data-iso="<?= htmlspecialchars($isoTime) ?>">
                                     <?= $dt->format('H:i') ?>
@@ -131,15 +139,36 @@
         </div>
         
         <?php if ($currentChatId && $currentChatData): ?>
-            <form class="message-input-area" id="message-form">
+            <!-- CONTENEDOR PREVIEW ADJUNTO -->
+            <div id="attachment_preview_container" class="d-none px-3 py-2 bg-white border-top border-bottom">
+                <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background-color: #f1f5f9; border: 1px solid #e2e8f0;">
+                    <div class="d-flex align-items-center gap-2 text-truncate text-secondary fw-500" style="font-size: 0.9rem;">
+                       <i class="fas fa-file-alt text-primary"></i> <span id="attachment_preview_name">archivo.pdf</span>
+                    </div>
+                    <button type="button" class="btn-close" style="font-size: 0.75rem;" id="remove_attachment_btn" aria-label="Close"></button>
+                </div>
+            </div>
+            
+            <form class="message-input-area d-flex align-items-end gap-2 p-3 bg-white" id="message-form" enctype="multipart/form-data">
                 <input type="hidden" id="chat_id_input" value="<?= $currentChatId ?>">
-                <textarea id="message_content" class="form-control" placeholder="Escribe un mensaje..." rows="1" style="resize: none;" required></textarea>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
+                
+                <label for="attachment_input" class="btn btn-light rounded-circle text-secondary m-0 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px; cursor: pointer; background-color: #f1f5f9; border: none;">
+                    <i class="fas fa-paperclip fs-5"></i>
+                </label>
+                <input type="file" id="attachment_input" name="attachment" class="d-none">
+                
+                <div class="flex-grow-1 position-relative">
+                   <textarea id="message_content" class="form-control rounded-4 px-3 shadow-none bg-light" placeholder="Escribe un mensaje..." rows="1" style="resize: none; border: 1px solid #e2e8f0; padding-top: 12px; padding-bottom: 12px;"></textarea>
+                </div>
+                
+                <button type="submit" class="btn text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 border-0" style="width: 45px; height: 45px; background-color: #00a680; transition: background-color 0.2s;">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </form>
         <?php else: ?>
-            <div class="message-input-area">
-                <textarea class="form-control" placeholder="Selecciona un chat para escribir..." rows="1" style="resize: none;" disabled></textarea>
-                <button class="btn btn-primary" disabled><i class="fas fa-paper-plane"></i> Enviar</button>
+            <div class="message-input-area d-flex gap-2 p-3">
+                <textarea class="form-control rounded-4" placeholder="Selecciona un chat para escribir..." rows="1" style="resize: none;" disabled></textarea>
+                <button class="btn btn-secondary rounded-circle" style="width: 45px; height: 45px;" disabled><i class="fas fa-paper-plane"></i></button>
             </div>
         <?php endif; ?>
     </div>

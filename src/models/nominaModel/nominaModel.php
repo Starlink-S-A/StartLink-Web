@@ -288,9 +288,12 @@ class NominaModel
     {
         $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email
                 FROM nomina n JOIN usuario u ON n.id_usuario = u.id
-                WHERE n.id_usuario = ? ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+                WHERE n.id_usuario = :id ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
-        $stmt->execute([$idUsuario, $limit, $offset]);
+        $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -298,10 +301,13 @@ class NominaModel
     {
         $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
                 FROM nomina n JOIN usuario u ON n.id_usuario = u.id
-                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
-                ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = :id
+                ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
-        $stmt->execute([$idEmpresa, $limit, $offset]);
+        $stmt->bindValue(':id', $idEmpresa, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -309,9 +315,11 @@ class NominaModel
     {
         $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
                 FROM nomina n JOIN usuario u ON n.id_usuario = u.id
-                ORDER BY n.fecha_generacion DESC LIMIT ? OFFSET ?";
+                ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
-        $stmt->execute([$limit, $offset]);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -335,9 +343,12 @@ class NominaModel
     {
         $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
                 FROM seguimiento_desempeño sd LEFT JOIN usuario u ON sd.evaluador_id = u.id
-                WHERE sd.id_usuario = ? ORDER BY sd.fecha_evaluacion DESC LIMIT ? OFFSET ?";
+                WHERE sd.id_usuario = :id ORDER BY sd.fecha_evaluacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
-        $stmt->execute([$idUsuario, $limit, $offset]);
+        $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -346,11 +357,14 @@ class NominaModel
         $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email, ev.nombre AS nombre_evaluador
                 FROM seguimiento_desempeño sd
                 JOIN usuario u ON sd.id_usuario = u.id
-                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
+                JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = :id
                 LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
-                ORDER BY sd.fecha_evaluacion DESC LIMIT ? OFFSET ?";
+                ORDER BY sd.fecha_evaluacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
-        $stmt->execute([$idEmpresa, $limit, $offset]);
+        $stmt->bindValue(':id', $idEmpresa, PDO::PARAM_INT);
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

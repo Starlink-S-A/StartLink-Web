@@ -63,6 +63,17 @@
             font-weight: 700;
             margin-bottom: 4px;
         }
+        .btn-hover-light-green {
+            border-color: #00a680;
+            color: #00a680;
+            background-color: transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-hover-light-green:hover {
+            background-color: #d1fae5 !important;
+            color: #1e293b !important;
+            border-color: #00a680;
+        }
     </style>
 </head>
 <body>
@@ -77,18 +88,17 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
     
     <!-- HEADER OFERTA -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-            <h2 class="fw-700 mb-1" style="font-size:1.6rem; color:#1e293b;">
-                <i class="fas fa-briefcase me-2 text-success"></i> <?= htmlspecialchars($oferta['titulo_oferta'] ?? '') ?>
-            </h2>
-            <p class="text-muted mb-0 small">
-                <i class="fas fa-building me-1"></i> <?= htmlspecialchars($oferta['nombre_empresa'] ?? '') ?> &nbsp; | &nbsp; 
-                <i class="fas fa-map-marker-alt me-1"></i> <?= htmlspecialchars($oferta['ubicacion'] ?? 'No especificada') ?> (<?= htmlspecialchars($oferta['modalidad'] ?? 'No especificada') ?>)
-            </p>
-        </div>
-        <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn btn-outline-secondary rounded-pill px-4">
+        <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="text-decoration-none text-dark fw-600">
             <i class="fas fa-arrow-left me-2"></i>Volver a ofertas
         </a>
+        <div class="badge border rounded-2 px-3 py-2 fw-600 d-flex align-items-center shadow-sm" style="color: #0f766e; background-color: #d1fae5; border-color: #059669 !important; font-size: 0.95rem;">
+            Presupuesto: 
+            <?php if (isset($oferta['presupuesto_min'], $oferta['presupuesto_max']) && $oferta['presupuesto_min'] > 0): ?>
+                $<?= number_format($oferta['presupuesto_min'], 2) ?> - $<?= number_format($oferta['presupuesto_max'], 2) ?>
+            <?php else: ?>
+                A convenir
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if (isset($mensaje)): ?>
@@ -105,36 +115,78 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
         </div>
     <?php endif; ?>
 
-    <!-- RESUMEN OFERTA -->
-    <div class="dash-card mb-5">
-        <div class="dash-card-header">
-            <h5 class="dash-card-title"><i class="fas fa-info-circle text-success me-2"></i>Detalles de la Oferta</h5>
-            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-600">
-                Presupuesto: 
-                <?php if (isset($oferta['presupuesto_min']) && isset($oferta['presupuesto_max'])): ?>
-                    $<?= number_format($oferta['presupuesto_min'], 2) ?> – $<?= number_format($oferta['presupuesto_max'], 2) ?>
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="card border border-secondary-subtle rounded-4 bg-white shadow-sm mb-5 overflow-hidden">
+        
+        <!-- CABECERA DE LA OFERTA -->
+        <div class="p-4 p-md-5 d-flex align-items-center gap-4 flex-wrap border-bottom border-light" style="background-color: #e6fcf5;">
+            <?php 
+            $logoUrl = null;
+            if (!empty($oferta['logo_ruta'])) {
+                $nombreArchivo = basename((string)$oferta['logo_ruta']);
+                $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'logos_empresa' . DIRECTORY_SEPARATOR . $nombreArchivo;
+                $rutaPublica = rtrim(BASE_URL, '/') . '/assets/images/Uploads/logos_empresa/' . $nombreArchivo;
+                if (file_exists($rutaAbsoluta)) {
+                    $logoUrl = $rutaPublica;
+                }
+            }
+            ?>
+            <?php $bgClass = $logoUrl ? 'bg-transparent' : 'bg-warning'; ?>
+            <div class="rounded-4 <?= $bgClass ?> border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm overflow-hidden" style="width: 70px; height: 70px;">
+                <?php if ($logoUrl): ?>
+                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo Empresa" class="w-100 h-100" style="object-fit: contain;">
                 <?php else: ?>
-                    A convenir
+                    <i class="fas fa-shield-alt" style="color: #3b82f6; font-size: 2.2rem;"></i>
                 <?php endif; ?>
-            </span>
-        </div>
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="info-label">Descripción</div>
-                    <p class="text-secondary" style="font-size:0.9rem; line-height:1.6;"><?= nl2br(htmlspecialchars($oferta['descripcion_oferta'] ?? '')) ?></p>
-                </div>
-                <div class="col-md-6">
-                    <div class="info-label">Requisitos</div>
-                    <p class="text-secondary" style="font-size:0.9rem; line-height:1.6;"><?= nl2br(htmlspecialchars($oferta['requisitos'] ?? '')) ?></p>
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div>
+                        <h2 class="fw-bold mb-2 text-dark" style="font-size: 1.5rem;"><?= htmlspecialchars($oferta['titulo_oferta'] ?? '') ?></h2>
+                        <div class="d-flex align-items-center flex-wrap gap-3 text-muted small fw-500">
+                            <span style="color: #10b981;"><i class="fas fa-building me-1"></i> <?= htmlspecialchars($oferta['nombre_empresa'] ?? '') ?></span>
+                            <span><i class="fas fa-map-marker-alt me-1 text-secondary"></i> <?= htmlspecialchars($oferta['ubicacion'] ?? 'No especificada') ?></span>
+                            <span class="badge border border-primary text-primary px-3 py-1 rounded-2 fw-600 bg-transparent">
+                                <i class="fas fa-desktop me-1"></i> <?= htmlspecialchars($oferta['modalidad'] ?? 'No especificada') ?>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="p-4 p-md-5">
+            <!-- DETALLES OFERTA -->
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <div class="bg-info bg-opacity-10 text-info rounded d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;"><i class="fas fa-info-circle small" style="color: #3b82f6;"></i></div>
+                <h6 class="fw-bold text-dark m-0" style="font-size: 1.1rem;">Detalles de la Oferta</h6>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="bg-light rounded-4 p-4 h-100 border border-light">
+                        <div class="fw-600 text-secondary mb-3 small text-uppercase tracking-wider">DESCRIPCIÓN</div>
+                        <p class="text-secondary mb-0" style="font-size: 0.95rem; line-height: 1.6;"><?= nl2br(htmlspecialchars($oferta['descripcion_oferta'] ?? '')) ?></p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-light rounded-4 p-4 h-100 border border-light">
+                        <div class="fw-600 text-secondary mb-3 small text-uppercase tracking-wider">REQUISITOS</div>
+                        <p class="text-secondary mb-0" style="font-size: 0.95rem; line-height: 1.6;"><?= nl2br(htmlspecialchars($oferta['requisitos'] ?? '')) ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="text-secondary opacity-10 my-5">
 
     <!-- LISTA POSTULANTES -->
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h3 class="fw-700 m-0"><i class="fas fa-users text-success me-2"></i>Postulantes Activos <span class="badge bg-secondary rounded-pill fs-6 ms-2"><?= count($postulantes) ?></span></h3>
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; font-size: 2.2rem; background-color: #dbeafe; color: #3b82f6;">
+                <i class="fas fa-user-friends"></i>
+            </div>
+            <h3 class="fw-700 m-0" style="font-size: 1.5rem;">Postulantes Activos <span class="badge rounded-pill fs-6 ms-2 text-white" style="background-color: #64748b;"><?= count($postulantes) ?></span></h3>
+        </div>
     </div>
 
     <div class="row g-4 mb-5">
@@ -151,108 +203,187 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
         <?php else: ?>
             <?php foreach ($postulantes as $u): ?>
                 <div class="col-12">
-                    <div class="dash-card p-sm-4 p-3 shadow-sm hover-shadow transition-all mb-4">
-                        <div class="d-flex flex-column flex-md-row gap-4 align-items-md-start">
-                            
-                            <!-- FOTO y SALARIO -->
-                            <div class="d-flex flex-column align-items-center flex-shrink-0" style="width: 140px;">
-                                <?php
-                                $img = 'https://static.thenounproject.com/png/4154905-200.png';
-                                if (!empty($u['foto_perfil']) && file_exists(ROOT_PATH . $u['foto_perfil'])) {
-                                    $img = BASE_URL . $u['foto_perfil'];
-                                }
-                                ?>
-                                <div class="rounded-circle overflow-hidden shadow-sm border border-3 border-white mb-3" style="width: 110px; height: 110px;">
-                                    <img src="<?= htmlspecialchars($img) ?>" alt="Foto de perfil" class="w-100 h-100" style="object-fit: cover;">
-                                </div>
-                                
-                                <?php if (!empty($u['salario_base'])): ?>
-                                    <div class="badge bg-success-subtle text-success w-100 py-2 fw-bold shadow-sm" style="font-size: 0.8rem;">
-                                        <i class="fas fa-money-bill-wave me-1"></i> $<?= number_format($u['salario_base'], 0, ',', '.') ?>
+                    <div class="card border border-light shadow-sm mb-4 rounded-4 bg-white">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+                                <div class="d-flex align-items-center gap-4">
+                                    <?php
+                                    $img = 'https://static.thenounproject.com/png/4154905-200.png';
+                                    if (!empty($u['foto_perfil']) && file_exists(ROOT_PATH . $u['foto_perfil'])) {
+                                        $img = BASE_URL . $u['foto_perfil'];
+                                    }
+                                    ?>
+                                    <div class="rounded-circle overflow-hidden shadow-sm position-relative" style="width: 80px; height: 80px;">
+                                        <img src="<?= htmlspecialchars($img) ?>" alt="Foto" class="w-100 h-100" style="object-fit: cover;">
+                                        <div class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width: 20px; height: 20px; right: 5px; bottom: 5px;">
+                                            <i class="fas fa-check text-white d-flex align-items-center justify-content-center h-100" style="font-size: 0.6rem;"></i>
+                                        </div>
                                     </div>
+                                    <div>
+                                        <h5 class="fw-bold mb-1 text-dark" style="font-size: 1.25rem;"><?= htmlspecialchars($u['nombre'] ?? '') ?></h5>
+                                        <div class="badge bg-light text-secondary px-3 py-1 fw-500 rounded-pill">
+                                            <?= htmlspecialchars($u['cargo'] ?? 'Sin cargo') ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column gap-2 align-items-md-end">
+                                    <button type="button" class="btn btn-hover-light-green rounded-2 px-4 fw-600" style="border-width: 1px;" data-bs-toggle="modal" data-bs-target="#modalPerfilInfo<?= $u['id'] ?>">
+                                        Ver perfil completo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <div class="border rounded-4 p-3 d-flex align-items-center gap-3">
+                                        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-envelope"></i></div>
+                                        <div>
+                                            <div class="small text-muted mb-1">Email</div>
+                                            <div class="fw-500 text-dark"><?= htmlspecialchars($u['email'] ?? '') ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="border rounded-4 p-3 d-flex align-items-center gap-3">
+                                        <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-phone"></i></div>
+                                        <div>
+                                            <div class="small text-muted mb-1">Teléfono</div>
+                                            <!-- Asumiendo dnI guarda el telefono o algo, el wireframe dice telefono. -->
+                                            <div class="fw-500 text-dark"><?= !empty($u['telefono']) ? htmlspecialchars($u['telefono']) : 'Sin teléfono' ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-3 flex-wrap mb-5 pb-3">
+                                <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" class="btn btn-primary rounded-2 px-4 flex-grow-1 py-2 fw-600 pt-2 pb-2" style="background-color: #2563eb; border: 1px solid #2563eb;">
+                                    <i class="far fa-comments me-2"></i> Chat de la Oferta
+                                </a>
+                                <?php if ($esCreador): ?>
+                                    <a href="index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $u['id'] ?>" class="btn btn-outline-secondary rounded-2 px-4 flex-grow-1 py-2 fw-600 pt-2 pb-2 text-dark" style="border-width: 1px;">
+                                        <i class="far fa-comment-dots me-2"></i> Chat Privado con Postulante
+                                    </a>
                                 <?php endif; ?>
                             </div>
 
-                            <!-- INFO PRINCIPAL -->
-                            <div class="flex-grow-1 w-100">
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start mb-4 gap-3">
-                                    <div>
-                                        <h4 class="fw-bold mb-2 text-dark" style="font-size: 1.4rem;"><?= htmlspecialchars($u['nombre'] ?? '') ?></h4>
-                                        <span class="badge bg-light text-secondary border px-3 py-2 fw-semibold mb-2" style="font-size:0.85rem;">
-                                            <i class="fas fa-user-tag me-1 text-success"></i> <?= htmlspecialchars($u['cargo'] ?? 'Sin cargo') ?>
-                                        </span>
-                                        <div class="text-muted small d-flex flex-wrap gap-3 mt-2">
-                                            <span><i class="fas fa-envelope me-1 text-secondary"></i> <?= htmlspecialchars($u['email'] ?? '') ?></span>
-                                            <span><i class="fas fa-id-card me-1 text-secondary"></i> <?= htmlspecialchars($u['dni'] ?? 'Sin DNI') ?></span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- BOTONES SUPERIORES (Acciones) -->
-                                    <div class="d-flex gap-2 flex-wrap justify-content-md-end">
-                                        <?php if (!empty($u['ruta_hdv'])): 
-                                            $cvPath = 'assets/images/Uploads/cvs/' . basename($u['ruta_hdv']);
-                                            if (file_exists(ROOT_PATH . $cvPath)): ?>
-                                            <a href="<?= BASE_URL . $cvPath ?>" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-600 shadow-sm" title="Ver CV">
-                                                <i class="fas fa-file-pdf text-danger"></i>
-                                            </a>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        <?php if ($esCreador): ?>
-                                            <a href="chat_oferta.php?id_oferta=<?= $oferta['id_oferta'] ?>&id_usuario_privado=<?= $u['id'] ?>&tipo_chat=privado" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-600 shadow-sm" title="Chat Privado">
-                                                <i class="fas fa-comment-dots text-info"></i>
-                                            </a>
-                                        <?php endif; ?>
-
-                            <div class="d-flex gap-2 mt-3">
-                                <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-comments"></i> Chat de la Oferta
-                                </a>
-
-                                <?php if ($esCreador): ?>
-                                    <a href="index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>&id_usuario_privado=<?= $u['id'] ?>" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-comment-dots"></i> Chat Privado con Postulante
-                                    </a>
-                                <?php endif; ?>
-
-                                    <?php if (!empty($u['experiencias'])): ?>
-                                    <div class="col-md-4">
-                                        <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing:1px;">Experiencia Laboral</h6>
-                                        <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+                            <div class="row g-4 pt-4 border-top">
+                                <?php if (!empty($u['experiencias'])): ?>
+                                <div class="col-md-6">
+                                    <div class="fw-600 text-dark mb-3 small"><i class="fas fa-briefcase text-secondary me-2"></i> Experiencia Laboral</div>
+                                    <div class="bg-light rounded-4 p-3 border border-light">
+                                        <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
                                             <?php 
                                             $exps = explode('||', $u['experiencias']); 
                                             foreach ($exps as $exp): ?>
-                                                <li class="text-secondary small d-flex align-items-start">
-                                                    <i class="fas fa-briefcase text-success mt-1 me-2" style="font-size:0.75rem;"></i>
+                                                <li class="text-dark small d-flex align-items-start">
+                                                    <span class="text-primary me-2 mt-1" style="font-size: 0.5rem;"><i class="fas fa-circle"></i></span>
                                                     <span><?= htmlspecialchars($exp) ?></span>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
                                     </div>
-                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
 
-                                    <?php if (!empty($u['estudios'])): ?>
-                                    <div class="col-md-4">
-                                        <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing:1px;">Formación Académica</h6>
-                                        <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+                                <?php if (!empty($u['estudios'])): ?>
+                                <div class="col-md-6">
+                                    <div class="fw-600 text-dark mb-3 small"><i class="fas fa-graduation-cap text-secondary me-2"></i> Formación Académica</div>
+                                    <div class="bg-light rounded-4 p-3 border border-light">
+                                        <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
                                             <?php 
                                             $ests = explode('||', $u['estudios']); 
                                             foreach ($ests as $est): ?>
-                                                <li class="text-secondary small d-flex align-items-start">
-                                                    <i class="fas fa-graduation-cap text-success mt-1 me-2" style="font-size:0.75rem;"></i>
+                                                <li class="text-dark small d-flex align-items-start">
+                                                    <span class="text-success me-2 mt-1" style="font-size: 0.5rem;"><i class="fas fa-circle"></i></span>
                                                     <span><?= htmlspecialchars($est) ?></span>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
                                     </div>
-                                    <?php endif; ?>
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- MODALES AFUERA DE LA TARJETA (Evita bugs de z-index y fixed positioning) -->
+                
+                <!-- MODAL PERFIL COMPLETO -->
+                <div class="modal fade" id="modalPerfilInfo<?= $u['id'] ?>" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-id-badge text-primary me-2"></i>Perfil del Postulante</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body px-4 py-4">
+                                <div class="d-flex align-items-center flex-wrap gap-4 mb-4 pb-4 border-bottom border-light">
+                                    <div class="rounded-circle overflow-hidden shadow-sm flex-shrink-0" style="width: 80px; height: 80px;">
+                                        <img src="<?= htmlspecialchars($img) ?>" alt="Foto" class="w-100 h-100" style="object-fit: cover;">
+                                    </div>
+                                    <div>
+                                        <h4 class="fw-bold mb-1 text-dark"><?= htmlspecialchars($u['nombre'] ?? '') ?></h4>
+                                        <div class="text-secondary fw-500 mb-2"><?= htmlspecialchars($u['cargo'] ?? 'Sin cargo') ?></div>
+                                        <div class="small text-muted d-flex gap-3 flex-wrap">
+                                            <span><i class="fas fa-envelope me-1"></i><?= htmlspecialchars($u['email'] ?? '') ?></span>
+                                            <span><i class="fas fa-phone me-1"></i><?= !empty($u['telefono']) ? htmlspecialchars($u['telefono']) : (!empty($u['dni']) ? htmlspecialchars($u['dni']) : 'Sin teléfono') ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <?php if (!empty($u['habilidades'])): ?>
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-dark mb-3"><i class="fas fa-star text-warning me-2"></i>Habilidades Registradas</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <?php 
+                                        $habs = explode(',', $u['habilidades']);
+                                        foreach($habs as $h): ?>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-2 px-3 py-1"><?= htmlspecialchars(trim($h)) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                    <div class="mb-4">
+                                        <div class="text-muted fst-italic small">No hay habilidades registradas públicamente.</div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($u['ruta_hdv']) && file_exists(ROOT_PATH . $u['ruta_hdv'])): ?>
+                                <div class="mb-4 bg-light rounded-4 p-3 border border-light d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-danger-subtle text-danger rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px; font-size: 1.25rem;"><i class="fas fa-file-pdf"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold m-0 text-dark">Currículum Vitae adjunto</h6>
+                                            <div class="small text-muted">Archivo PDF disponible</div>
+                                        </div>
+                                    </div>
+                                    <a href="<?= BASE_URL . $u['ruta_hdv'] ?>" target="_blank" class="btn btn-outline-danger rounded-2 px-4 shadow-sm fw-600">
+                                        Abrir CV
+                                    </a>
+                                </div>
+                                <?php else: ?>
+                                <div class="mb-4 bg-light rounded-4 p-3 border border-light d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-secondary-subtle text-secondary rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px; font-size: 1.25rem;"><i class="fas fa-file-excel"></i></div>
+                                        <div>
+                                            <h6 class="fw-bold m-0 text-muted">Sin Currículum en PDF</h6>
+                                            <div class="small text-muted">Aún no ha subido su archivo</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="modal-footer bg-light border-0 py-3 px-4 d-flex justify-content-between gap-3 flex-wrap">
+                                <?php if ($esCreador && ($u['estado_postulacion'] ?? '') !== 'Contratado'): ?>
+                                    <button type="button" class="btn btn-success rounded-2 shadow-sm fw-600 px-4" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalContratar<?= $u['id'] ?>">
+                                        <i class="fas fa-handshake me-2"></i>Contratar
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- MODAL CONTRATAR -->
                 <div class="modal fade" id="modalContratar<?= $u['id'] ?>" tabindex="-1">
@@ -326,7 +457,10 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
-    </div>
+    </div> <!-- /row g-4 mb-5 (Postulantes) -->
+    
+        </div> <!-- /p-4 p-md-5 (Contenido interior grande) -->
+    </div> <!-- /CONTENEDOR PRINCIPAL -->
 </div><!-- /.main-content -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -33,10 +33,32 @@ class OfertasController {
         // Obtener datos de sesión
         $userId = $_SESSION["user_id"];
         $idEmpresaActual = $_SESSION['id_empresa'] ?? null;
-        $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
         $rolGlobal = $_SESSION['id_rol'] ?? null;
-        $esContratador = in_array($rolEmpresa, [1, 2]);
-        $esUsuario = ($rolGlobal == 2);
+
+        $dbOfertasValidation = getDbConnection();
+
+        // [Sincronización] Siempre obtener el rol más reciente de la BD
+        if ($idEmpresaActual) {
+            $stmtRoleEmpresa = $dbOfertasValidation->prepare("SELECT id_rol_empresa FROM usuario_empresa WHERE id_usuario = ? AND id_empresa = ? LIMIT 1");
+            $stmtRoleEmpresa->execute([$userId, $idEmpresaActual]);
+            $dbRolEmpresa = $stmtRoleEmpresa->fetchColumn();
+            if ($dbRolEmpresa !== false) {
+                $_SESSION['id_rol_empresa'] = (int)$dbRolEmpresa;
+            }
+        }
+        
+        $rolEmpresa = $_SESSION['id_rol_empresa'] ?? null;
+        $esContratador = in_array((int)$rolEmpresa, [1, 2]);
+        
+        $stmtUserEmpresas = $dbOfertasValidation->prepare("SELECT id_empresa FROM usuario_empresa WHERE id_usuario = ?");
+        $stmtUserEmpresas->execute([$userId]);
+        $empresasVinculadas = $stmtUserEmpresas->fetchAll(PDO::FETCH_COLUMN);
+
+        $stmtRole = $dbOfertasValidation->prepare("SELECT id_rol FROM usuario WHERE id = ?");
+        $stmtRole->execute([$userId]);
+        $rolGlobalUsuario = $stmtRole->fetchColumn();
+        
+        $esUsuario = in_array($rolGlobalUsuario, [2, 3]);
         
         // Determinar si es administrador de empresa para el navbar
         $esAdminEmpresa = in_array($rolEmpresa, [1, 2]);
@@ -53,6 +75,7 @@ class OfertasController {
             // Enriquecer datos de ofertas con información de postulación
             foreach ($ofertas as $oferta) {
                 $ofertaEnriquecida = $oferta;
+                $ofertaEnriquecida['yaEnEmpresaDeOferta'] = in_array($oferta['id_empresa'] ?? 0, $empresasVinculadas);
                 
                 // Obtener estado de postulación del usuario actual
                 $estadoPostulacion = $this->ofertasModel->getUserApplicationStatus($userId, $oferta['id_oferta']);
@@ -493,9 +516,24 @@ class OfertasController {
         }
 
         try {
-            // Verificar si el usuario tiene rol de TRABAJADOR (id_rol = 2)
-            if ($_SESSION['id_rol'] != 2) {
-                $_SESSION['mensaje'] = "Solo los candidatos pueden postularse a ofertas.";
+            $dbValidation = getDbConnection();
+            $stmtRole = $dbValidation->prepare("SELECT id_rol FROM usuario WHERE id = ?");
+            $stmtRole->execute([$userId]);
+            $userRole = $stmtRole->fetchColumn();
+
+            if (!in_array($userRole, [2, 3])) {
+                $_SESSION['mensaje'] = "Solo los candidatos o trabajadores pueden postularse a vacantes.";
+                header("Location: " . BASE_URL . "index.php?action=ofertas");
+                exit();
+            }
+
+            $oferta = $this->ofertasModel->getOfertaById($ofertaId);
+            $idEmpresaOferta = $oferta['id_empresa'] ?? 0;
+
+            $stmtEmpCheck = $dbValidation->prepare("SELECT 1 FROM usuario_empresa WHERE id_usuario = ? AND id_empresa = ?");
+            $stmtEmpCheck->execute([$userId, $idEmpresaOferta]);
+            if ($stmtEmpCheck->fetchColumn()) {
+                $_SESSION['mensaje'] = "No puedes postularte porque ya perteneces a esta misma empresa.";
                 header("Location: " . BASE_URL . "index.php?action=ofertas");
                 exit();
             }
@@ -511,7 +549,7 @@ class OfertasController {
                     $notifModel->crearNotificacion(
                         $oferta['id_creador_oferta'],
                         "Nueva postulación para: " . $oferta['titulo_oferta'],
-                        'Candidatos',
+                        'info',
                         'fas fa-user-tie',
                         BASE_URL . "index.php?action=detalle_oferta&id=" . $ofertaId
                     );

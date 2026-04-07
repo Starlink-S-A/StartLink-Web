@@ -8,7 +8,7 @@ class DetallesOfertasModel {
     }
 
     public function getOfertaById($ofertaId) {
-        $sql = "SELECT o.*, e.nombre_empresa, o.id_creador_oferta
+        $sql = "SELECT o.*, e.nombre_empresa, e.logo_ruta, o.id_creador_oferta
                 FROM oferta_trabajo o
                 JOIN empresa e ON o.id_empresa = e.id_empresa
                 WHERE o.id_oferta = ?";

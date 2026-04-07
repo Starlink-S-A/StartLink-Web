@@ -106,7 +106,7 @@ class EmpresasController {
                         $notifModel->crearNotificacion(
                             $userId,
                             "¡Empresa " . $data['nombre_empresa'] . " registrada con éxito!",
-                            'Sistema',
+                            'info',
                             'fas fa-building',
                             BASE_URL . "index.php?action=dashboard"
                         );

@@ -7,6 +7,7 @@ if (isset($esAdminGlobal) && $esAdminGlobal) {
 } elseif (isset($rolEmpresa)) {
     if ((int)$rolEmpresa === 1) $rolLabel = 'Admin Empresa';
     elseif ((int)$rolEmpresa === 2) $rolLabel = 'Contratador';
+    elseif ((int)$rolEmpresa === 3) $rolLabel = 'Empleado';
     else $rolLabel = 'Candidato';
 }
 
