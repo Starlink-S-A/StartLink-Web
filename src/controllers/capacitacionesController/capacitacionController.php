@@ -55,6 +55,8 @@ class CapacitacionController {
         try {
             $capacitaciones = $this->capacitacionModel->getAllActiveCapacitaciones();
 
+            $empresasAdminReclutador = $this->capacitacionModel->getEmpresasAdminReclutador($userId);
+
             // Verificar inscripción y permisos para cada capacitación
             foreach ($capacitaciones as &$cap) {
                 // HU-15: Verificar si el usuario ya está inscrito
@@ -63,8 +65,10 @@ class CapacitacionController {
                 $cap['estadoInscripcion'] = $estadoInscripcion;
 
                 // HU-14/HU-16: Determinar permisos de gestión
-                // Creador, ADMINISTRADOR global, o Admin de Empresa
-                $cap['puedeGestionarCapacitacion'] = ($cap['creador_id'] == $userId || $rolGlobal == 1 || $rolEmpresa == 1);
+                // Creador, ADMINISTRADOR global, o Admin/Reclutador de Empresa
+                $capEmpresaId = $cap['id_empresa'];
+                $esAdminAqui = !empty($capEmpresaId) && in_array($capEmpresaId, $empresasAdminReclutador);
+                $cap['puedeGestionarCapacitacion'] = ($rolGlobal == 1 || $esAdminAqui || (empty($capEmpresaId) && $cap['creador_id'] == $userId));
             }
             unset($cap);
 
@@ -284,7 +288,19 @@ class CapacitacionController {
 
             // Verificar permisos para editar
             $creadorData = $this->capacitacionModel->getCreadorId($id_capacitacion);
-            if (!$creadorData || ($creadorData['creador_id'] != $userId && $rolGlobal != 1 && $rolEmpresa != 1)) {
+            
+            $puedeEditar = false;
+            if ($creadorData) {
+                $empresasAdminReclutador = $this->capacitacionModel->getEmpresasAdminReclutador($userId);
+                $capEmpresaId = $creadorData['id_empresa'];
+                $esAdminAqui = !empty($capEmpresaId) && in_array($capEmpresaId, $empresasAdminReclutador);
+                
+                if ($rolGlobal == 1 || $esAdminAqui || (empty($capEmpresaId) && $creadorData['creador_id'] == $userId)) {
+                    $puedeEditar = true;
+                }
+            }
+
+            if (!$puedeEditar) {
                 $_SESSION['mensaje_capacitacion'] = 'No tienes permiso para editar esta capacitación.';
                 $_SESSION['tipo_mensaje_capacitacion'] = 'danger';
                 header("Location: " . BASE_URL . "src/index.php?action=capacitaciones");
@@ -358,9 +374,13 @@ class CapacitacionController {
                 }
 
                 $creadorIdCapacitacion = $capacitacion['creador_id'];
+                $capEmpresaId = $capacitacion['id_empresa'];
 
+                $empresasAdminReclutador = $this->capacitacionModel->getEmpresasAdminReclutador($userId);
+                
                 // HU-14: Verificar permisos para eliminar
-                $puedeEliminar = ($creadorIdCapacitacion == $userId || $rolGlobal == 1 || $rolEmpresa == 1);
+                $esAdminAqui = !empty($capEmpresaId) && in_array($capEmpresaId, $empresasAdminReclutador);
+                $puedeEliminar = ($rolGlobal == 1 || $esAdminAqui || (empty($capEmpresaId) && $creadorIdCapacitacion == $userId));
 
                 if (!$puedeEliminar) {
                     $_SESSION['mensaje_capacitacion'] = 'No tienes permiso para eliminar esta capacitación.';
@@ -506,7 +526,12 @@ class CapacitacionController {
             }
 
             $creadorIdCapacitacion = $capacitacion['creador_id'];
-            $puedeVerInscritos = ($creadorIdCapacitacion == $userId || $rolGlobal == 1 || $rolEmpresa == 1);
+            $capEmpresaId = $capacitacion['id_empresa'];
+
+            $empresasAdminReclutador = $this->capacitacionModel->getEmpresasAdminReclutador($userId);
+            
+            $esAdminAqui = !empty($capEmpresaId) && in_array($capEmpresaId, $empresasAdminReclutador);
+            $puedeVerInscritos = ($rolGlobal == 1 || $esAdminAqui || (empty($capEmpresaId) && $creadorIdCapacitacion == $userId));
 
             if (!$puedeVerInscritos) {
                 $response['message'] = 'No tienes permiso para ver los inscritos de esta capacitación.';

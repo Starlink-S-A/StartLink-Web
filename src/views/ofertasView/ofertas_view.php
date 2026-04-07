@@ -126,7 +126,7 @@
                         </div>
 
                         <?php 
-                        $showBottomActions = ($oferta['yaPostulado'] && ($oferta['estadoPostulacion'] ?? '') !== 'Contratado') 
+                        $showBottomActions = ($oferta['yaPostulado'] && ($oferta['estadoPostulacion'] ?? '') !== 'Contratado' && ($oferta['estadoPostulacion'] ?? '') !== 'Rechazado') 
                             || ($esUsuario && !$oferta['yaPostulado']) 
                             || ($oferta['esCreador'] && $esContratador); 
                         ?>
@@ -137,7 +137,7 @@
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
                                         <i class="fas fa-user-check me-1"></i> Contratado
                                     </span>
-                                <?php else: ?>
+                                <?php elseif (($oferta['estadoPostulacion'] ?? '') !== 'Rechazado'): ?>
                                     <a href="<?= BASE_URL ?>index.php?action=mis_chats&id_oferta=<?= $oferta['id_oferta'] ?>" 
                                        class="btn btn-sm btn-outline-success flex-grow-1">
                                         <i class="fas fa-comments me-1"></i> Chat

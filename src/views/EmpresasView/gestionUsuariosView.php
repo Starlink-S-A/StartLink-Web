@@ -400,7 +400,7 @@ foreach ($rolesEmpresa as $r) {
             document.querySelectorAll('[data-tooltip=\"true\"]').forEach(function (el) {
                 new bootstrap.Tooltip(el);
             });
-        });
+        }
     });
     </script>
 <?php endif; ?>

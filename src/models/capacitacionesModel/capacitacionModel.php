@@ -219,13 +219,30 @@ class CapacitacionModel
     public function getCreadorId($capId)
     {
         try {
-            $stmt = $this->conexion->prepare("SELECT creador_id FROM capacitacion WHERE id = ?");
+            $stmt = $this->conexion->prepare("SELECT creador_id, id_empresa FROM capacitacion WHERE id = ?");
             $stmt->execute([$capId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         }
         catch (PDOException $e) {
             error_log("Error al obtener creador de capacitación: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Obtener las empresas de las que el usuario es Admin o Reclutador
+     * @param int $userId
+     * @return array
+     */
+    public function getEmpresasAdminReclutador($userId)
+    {
+        try {
+            $stmt = $this->conexion->prepare("SELECT id_empresa FROM usuario_empresa WHERE id_usuario = ? AND id_rol_empresa IN (1, 2)");
+            $stmt->execute([$userId]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+        catch (PDOException $e) {
+            return [];
         }
     }
 

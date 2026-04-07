@@ -374,8 +374,11 @@ include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
                                 </div>
                                 <?php endif; ?>
                             </div>
-                            <div class="modal-footer bg-light border-0 py-3 px-4 d-flex justify-content-between gap-3 flex-wrap">
+                            <div class="modal-footer bg-light border-0 py-3 px-4 d-flex justify-content-end gap-3 flex-wrap">
                                 <?php if ($esCreador && ($u['estado_postulacion'] ?? '') !== 'Contratado'): ?>
+                                    <button type="button" class="btn btn-outline-danger rounded-2 shadow-sm fw-600 px-4" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalRechazar<?= $u['id'] ?>">
+                                        <i class="fas fa-user-times me-2"></i>Rechazar
+                                    </button>
                                     <button type="button" class="btn btn-success rounded-2 shadow-sm fw-600 px-4" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalContratar<?= $u['id'] ?>">
                                         <i class="fas fa-handshake me-2"></i>Contratar
                                     </button>
