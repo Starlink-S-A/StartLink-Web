@@ -309,8 +309,9 @@ class CapacitacionModel
     public function inscribir($userId, $capId)
     {
         try {
-            $stmt = $this->conexion->prepare("INSERT INTO inscripcion (id_usuario, id_capacitacion, fecha_inscripcion, estado_inscripcion) VALUES (?, ?, NOW(), 'Inscrito')");
-            $ok = $stmt->execute([$userId, $capId]);
+            $fechaAhorita = date('Y-m-d H:i:s');
+            $stmt = $this->conexion->prepare("INSERT INTO inscripcion (id_usuario, id_capacitacion, fecha_inscripcion, estado_inscripcion) VALUES (?, ?, ?, 'Inscrito')");
+            $ok = $stmt->execute([$userId, $capId, $fechaAhorita]);
             if ($ok) {
                 $this->notificarInscripcion($userId, $capId);
             }

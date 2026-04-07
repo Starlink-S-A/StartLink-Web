@@ -118,7 +118,7 @@ CREATE TABLE capacitacion (
 CREATE TABLE inscripcion (
     id_usuario INT NOT NULL,
     id_capacitacion INT NOT NULL,
-    fecha_inscripcion DATE NOT NULL,
+    fecha_inscripcion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado_inscripcion VARCHAR(50) NOT NULL,
     PRIMARY KEY (id_usuario, id_capacitacion),
     FOREIGN KEY (id_usuario) REFERENCES usuario(id) ON DELETE CASCADE,
