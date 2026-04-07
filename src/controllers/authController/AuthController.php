@@ -368,18 +368,27 @@ public function register() {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'jguaza999@gmail.com';      
-        $mail->Password = 'vitq cwse yphr ssce';     
+        $mail->Username = 'startlink456@gmail.com';      
+        $mail->Password = 'riej zaha wvdr vnba';     
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = 587;
 
+        // Opción para desarrollo en local (evita errores de certificados SSL en XAMPP/WAMP)
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
+
         // Remitente y destinatario
-        $mail->setFrom('jguaza999@gmail.com', 'TalentLink');
+        $mail->setFrom('startlink456@gmail.com', 'StartLink');
         $mail->addAddress($email, $user['nombre']);
 
         // Contenido
         $mail->isHTML(true);
-        $mail->Subject = 'Recuperar contraseña - TalentLink';
+        $mail->Subject = 'Recuperar contraseña - StartLink';
         $mail->Body    = "
             <p>Hola <b>" . htmlspecialchars($user['nombre']) . "</b>,</p>
             <p>Tu código de recuperación es: <b>$resetCode</b></p>
@@ -431,6 +440,27 @@ public function register() {
 
             if (strtotime($user['reset_expire']) < time()) {
                 $response['message'] = "El código ha expirado.";
+                echo json_encode($response);
+                exit;
+            }
+
+            if (strlen($newPassword) < 8) {
+                $response['message'] = "La contraseña debe tener al menos 8 caracteres.";
+                echo json_encode($response);
+                exit;
+            }
+            if (strlen($newPassword) > 20) {
+                $response['message'] = "La contraseña no debe superar los 20 caracteres.";
+                echo json_encode($response);
+                exit;
+            }
+            if (!preg_match('/[0-9]/', $newPassword)) {
+                $response['message'] = "La contraseña debe contener al menos un número.";
+                echo json_encode($response);
+                exit;
+            }
+            if (!preg_match('/[\W_]/', $newPassword)) {
+                $response['message'] = "La contraseña debe contener al menos un carácter especial.";
                 echo json_encode($response);
                 exit;
             }

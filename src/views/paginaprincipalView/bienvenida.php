@@ -116,6 +116,29 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
                 <a href="#" id="backToLoginLink" class="btn-link">Volver al login</a>
             </div>
         </div>
+
+        <!-- Restablecer contraseña -->
+        <div id="resetPasswordSection" class="section-container" style="display: none; opacity: 0; transform: translateY(20px);">
+            <h3 class="mb-3">Nueva contraseña</h3>
+            <form id="resetPasswordForm">
+                <div class="mb-3">
+                    <label for="resetToken" class="form-label">Código de Verificación</label>
+                    <input type="text" class="form-control" id="resetToken" name="resetToken" required placeholder="Ingresa el código enviado a tu correo">
+                </div>
+                <div class="mb-3">
+                    <label for="resetNewPassword" class="form-label">Nueva Contraseña</label>
+                    <input type="password" class="form-control" id="resetNewPassword" name="resetNewPassword" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmResetPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                    <input type="password" class="form-control" id="confirmResetPassword" name="confirmResetPassword" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Cambiar Contraseña</button>
+            </form>
+            <div class="mt-3 text-center">
+                <a href="#" id="backToLoginFromResetLink" class="btn-link">Volver al login</a>
+            </div>
+        </div>
     </div> <!-- /.main-content -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

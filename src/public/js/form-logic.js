@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginFormSection = document.getElementById('loginFormSection');
     const registerFormSection = document.getElementById('registerFormSection');
     const forgotPasswordSection = document.getElementById('forgotPasswordSection');
+    const resetPasswordSection = document.getElementById('resetPasswordSection');
 
     const loginForm = document.getElementById('loginForm');
     const registrationForm = document.getElementById('registrationForm');
@@ -37,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const changeSection = (sectionToShow) => {
         const sections = [
             welcomeSection, loginFormSection,
-            registerFormSection, forgotPasswordSection
+            registerFormSection, forgotPasswordSection, resetPasswordSection
         ];
         let currentActiveSection = null;
 
@@ -80,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginFormSection) loginFormSection.style.display = 'none';
     if (registerFormSection) registerFormSection.style.display = 'none';
     if (forgotPasswordSection) forgotPasswordSection.style.display = 'none';
+    if (resetPasswordSection) resetPasswordSection.style.display = 'none';
 
     if (initialSection) {
         initialSection.style.display = 'block';
@@ -289,7 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
                 displayMessage(result.message, result.status === 'success' ? 'success' : 'danger');
-                if (result.status === 'success') forgotPasswordForm.reset();
+                if (result.status === 'success') {
+                    forgotPasswordForm.reset();
+                    changeSection(resetPasswordSection);
+                }
             } catch (err) {
                 console.error(err);
                 displayMessage("Error al conectar con el servidor.", "danger");
@@ -297,7 +302,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-   
+    // -------- Reset Password --------
+    if (resetPasswordForm) {
+        resetPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = document.getElementById('resetToken').value.trim();
+            const newPassword = document.getElementById('resetNewPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmResetPassword').value.trim();
+
+            if (!token || !newPassword || !confirmPassword) {
+                displayMessage("Todos los campos son obligatorios.", "danger");
+                return;
+            }
+
+            // Validaciones de contraseña 
+            if (newPassword !== confirmPassword) {
+                displayMessage("Las contraseñas no coinciden.", "danger");
+                return;
+            }
+            if (newPassword.length < 8) {
+                displayMessage("La contraseña debe tener al menos 8 caracteres.", "danger");
+                return;
+            }
+            if (newPassword.length > 20) {
+                displayMessage("La contraseña no debe superar los 20 caracteres.", "danger");
+                return;
+            }
+            if (!/[0-9]/.test(newPassword)) {
+                displayMessage("La contraseña debe contener al menos un número.", "danger");
+                return;
+            }
+            if (!/[\W_]/.test(newPassword)) {
+                displayMessage("La contraseña debe contener al menos un carácter especial.", "danger");
+                return;
+            }
+
+            displayMessage("Procesando...", "info");
+            try {
+                const response = await fetch(`${BASE_URL}src/index.php?action=resetPassword`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ token: token, new_password: newPassword })
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    displayMessage(result.message, 'success');
+                    resetPasswordForm.reset();
+                    setTimeout(() => changeSection(loginFormSection), 1500);
+                } else {
+                    displayMessage(result.message, 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                displayMessage("Error al conectar con el servidor.", "danger");
+            }
+        });
+    }
 
     // -------- Botones navegación --------
     if (showLoginFormBtn) {
@@ -327,6 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showForgotPasswordLink.addEventListener('click', (e) => {
             e.preventDefault();
             changeSection(forgotPasswordSection);
+            if (messageContainer) messageContainer.innerHTML = '';
+        });
+    }
+
+    const backToLoginFromResetLink = document.getElementById('backToLoginFromResetLink');
+    if (backToLoginFromResetLink) {
+        backToLoginFromResetLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            changeSection(loginFormSection);
             if (messageContainer) messageContainer.innerHTML = '';
         });
     }
