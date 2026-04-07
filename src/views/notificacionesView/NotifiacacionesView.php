@@ -40,7 +40,7 @@
                 </div>
             <?php else: ?>
                 <?php foreach ($notifications as $n): ?>
-                    <a href="<?= !empty($n['url_redireccion']) ? htmlspecialchars($n['url_redireccion']) : '#' ?>" 
+                    <a href="<?= BASE_URL ?>src/index.php?action=notificaciones&sub_action=redirect&notification_id=<?= (int)$n['id'] ?>" 
                        class="notification-item <?= !$n['leida'] ? 'unread' : '' ?>" 
                        data-id="<?= $n['id'] ?>">
                         <div class="notification-icon-wrapper <?= htmlspecialchars($n['tipo']) ?>">
@@ -63,15 +63,15 @@
                 <nav>
                     <ul class="pagination mb-0">
                         <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $currentPage - 1 ?>">&laquo;</a>
+                            <a class="page-link" href="<?= BASE_URL ?>src/index.php?action=notificaciones&page=<?= $currentPage - 1 ?>">&laquo;</a>
                         </li>
                         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                             <li class="page-item <?= ($i == $currentPage) ? 'active' : '' ?>">
-                                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                <a class="page-link" href="<?= BASE_URL ?>src/index.php?action=notificaciones&page=<?= $i ?>"><?= $i ?></a>
                             </li>
                         <?php endfor; ?>
                         <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $currentPage + 1 ?>">&raquo;</a>
+                            <a class="page-link" href="<?= BASE_URL ?>src/index.php?action=notificaciones&page=<?= $currentPage + 1 ?>">&raquo;</a>
                         </li>
                     </ul>
                 </nav>
@@ -113,6 +113,5 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= BASE_URL ?>src/public/js/notificaiones.js"></script>
 </body>
 </html>

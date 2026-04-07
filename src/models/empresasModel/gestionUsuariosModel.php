@@ -114,7 +114,7 @@ class GestionUsuariosModel {
                 $mensaje = "Se ha registrado una nueva evaluación de desempeño para ti.";
                 $stmtNotif = $this->pdo->prepare("
                     INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
-                    VALUES (?, ?, 'info', 'fas fa-chart-line', 'index.php?action=configurar_perfil', NOW(), 0)
+                    VALUES (?, ?, 'info', 'fas fa-chart-line', 'src/index.php?action=configurar_perfil', NOW(), 0)
                 ");
                 $stmtNotif->execute([$usuarioId, $mensaje]);
             } catch (PDOException $e) {
@@ -123,5 +123,28 @@ class GestionUsuariosModel {
             return true;
         }
         return false;
+    }
+
+    public function getSolicitudesContratacionEmpresa(int $empresaId, int $limit = 50): array {
+        $stmt = $this->pdo->prepare("
+            SELECT
+                sc.id,
+                sc.id_candidato,
+                sc.salario_base,
+                sc.horas_semanales_estandar,
+                sc.estado,
+                sc.fecha_creacion,
+                u.nombre AS candidato_nombre,
+                u.email AS candidato_email
+            FROM solicitud_contratacion sc
+            JOIN usuario u ON u.id = sc.id_candidato
+            WHERE sc.id_empresa = ?
+            ORDER BY sc.fecha_creacion DESC
+            LIMIT ?
+        ");
+        $stmt->bindValue(1, $empresaId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

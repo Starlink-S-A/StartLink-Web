@@ -40,8 +40,17 @@ class MisChatsModel {
                 CP.es_favorito
             FROM conversacion_participante CP
             JOIN conversacion C ON CP.id_conversacion = C.id_conversacion
-            LEFT JOIN mensaje M ON C.id_conversacion = M.id_conversacion AND C.ultimo_mensaje = M.fecha_envio
-            LEFT JOIN usuario U_REM ON M.id_remitente = U_REM.id
+            LEFT JOIN (
+                SELECT m1.*
+                FROM mensaje m1
+                JOIN (
+                    SELECT id_conversacion, MAX(fecha_envio) AS max_fecha
+                    FROM mensaje
+                    GROUP BY id_conversacion
+                ) m2
+                    ON m1.id_conversacion = m2.id_conversacion AND m1.fecha_envio = m2.max_fecha
+            ) M ON M.id_conversacion = C.id_conversacion
+            LEFT JOIN usuario U_REM ON U_REM.id = M.id_remitente
             WHERE CP.id_usuario = ?
         ";
         $params = [$userId];
@@ -184,8 +193,7 @@ class MisChatsModel {
                 JOIN conversacion C ON CP1.id_conversacion = C.id_conversacion
                 WHERE CP1.id_usuario = ? AND CP2.id_usuario = ?
                 AND C.tipo_conversacion = 'perfil_publico'
-                GROUP BY CP1.id_conversacion
-                HAVING COUNT(DISTINCT CP1.id_usuario) = 2
+                LIMIT 1
             ");
             $stmtFindChat->execute([$userId, $candidateId]);
             $foundChatId = $stmtFindChat->fetchColumn();

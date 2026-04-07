@@ -30,6 +30,11 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 // -------------------------------
+// 🔹 Zona horaria (Colombia)
+// -------------------------------
+date_default_timezone_set('America/Bogota');
+
+// -------------------------------
 // 🔹 Configuración de errores (solo desarrollo)
 // -------------------------------
 ini_set('display_errors', 1);
@@ -111,7 +116,7 @@ if (!function_exists('getDbConnection')) {
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
                 // Forzamos el uso de SSL/TLS (esto resuelve el error 1105)
                 PDO::MYSQL_ATTR_SSL_CA => '', 
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4; SET time_zone='-05:00'"
             ];
 
             try {

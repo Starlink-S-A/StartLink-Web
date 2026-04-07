@@ -39,7 +39,7 @@
             <?php else: ?>
                 <?php foreach ($conversations as $conv): ?>
                     <div class="conversation-item-wrapper <?= ($currentChatId == $conv['id_conversacion']) ? 'active' : '' ?>" data-favorite="<?= $conv['is_favorite'] ? 'true' : 'false' ?>">
-                        <a href="<?= BASE_URL ?>index.php?action=mis_chats&chat_id=<?= htmlspecialchars($conv['id_conversacion']) ?>" class="conversation-content-link">
+                        <a href="<?= BASE_URL ?>src/index.php?action=mis_chats&chat_id=<?= htmlspecialchars($conv['id_conversacion']) ?>" class="conversation-content-link">
                             <img src="<?= htmlspecialchars($conv['avatar']) ?>" alt="Avatar" onerror="this.onerror=null;this.src='https://static.thenounproject.com/png/4154905-200.png';">
                             <div class="conversation-info">
                                 <strong><?= htmlspecialchars($conv['title']) ?></strong>

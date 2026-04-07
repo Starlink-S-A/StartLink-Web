@@ -24,6 +24,24 @@ class NotificacionesModel {
         return (int)$stmtCount->fetchColumn();
     }
 
+    public function getUnreadCountByType($userId, $tipo) {
+        $stmtCount = $this->link->prepare("SELECT COUNT(*) FROM notificaciones WHERE user_id = ? AND leida = 0 AND tipo = ?");
+        $stmtCount->execute([$userId, $tipo]);
+        return (int)$stmtCount->fetchColumn();
+    }
+
+    public function getNotificationById($notificationId, $userId) {
+        $stmt = $this->link->prepare("
+            SELECT id, url_redireccion, leida
+            FROM notificaciones
+            WHERE id = ? AND user_id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([(int)$notificationId, (int)$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function getNotificacionesPaginated($userId, $limit, $offset) {
         $stmt = $this->link->prepare("
             SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion, postulacion_id, solicitud_contratacion_id

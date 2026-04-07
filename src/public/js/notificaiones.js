@@ -9,23 +9,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function customAlert(message) {
-        document.getElementById('alertDialogBody').textContent = message;
-        if(alertDialogInstance) alertDialogInstance.show();
-        else alert(message);
+        const body = document.getElementById('alertDialogBody');
+        if (body && alertDialogInstance) {
+            body.textContent = message;
+            alertDialogInstance.show();
+            return;
+        }
+        alert(message);
     }
 
     function customConfirm(message, callback) {
-        document.getElementById('confirmModalBody').textContent = message;
+        const body = document.getElementById('confirmModalBody');
+        const btn = document.getElementById('confirmActionButton');
         confirmCallback = callback;
-        if(confirmModalInstance) {
+        if (body && btn && confirmModalInstance) {
+            body.textContent = message;
             confirmModalInstance.show();
-            document.getElementById('confirmActionButton').onclick = () => {
+            btn.onclick = () => {
                 if (confirmCallback) confirmCallback();
                 confirmModalInstance.hide();
             };
-        } else {
-            if (confirm(message)) if (callback) callback();
+            return;
         }
+        if (confirm(message)) if (callback) callback();
     }
 
     // AJAX Call to Mark Notification as Read
@@ -34,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('sub_action', 'mark_notification_read');
         formData.append('notification_id', notificationId);
 
-        return fetch(`${BASE_URL}index.php?action=notificaciones`, {
+        return fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
             method: 'POST',
             body: formData
         })
@@ -84,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formData = new FormData();
                 formData.append('sub_action', 'mark_all_notifications_read');
 
-                const response = await fetch(`${BASE_URL}index.php?action=notificaciones`, {
+                const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
                     method: 'POST',
                     body: formData
                 });
@@ -98,20 +104,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const navbarMarkAllReadBtn = document.getElementById('navbar-mark-all-read-btn');
+    if (navbarMarkAllReadBtn) {
+        navbarMarkAllReadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            customConfirm('¿Marcar todas tus notificaciones como leídas?', async () => {
+                const formData = new FormData();
+                formData.append('sub_action', 'mark_all_notifications_read');
+                const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    pollNotifications();
+                    window.location.reload();
+                } else {
+                    customAlert(`Error: ${data.message}`);
+                }
+            });
+        });
+    }
+
     // Continuous update polling for Notifications (checks every 5 seconds)
     function pollNotifications() {
-        fetch(`${BASE_URL}index.php?action=notificaciones&sub_action=fetch_latest_ajax`)
+        fetch(`${BASE_URL}src/index.php?action=notificaciones&sub_action=fetch_latest_ajax`)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // If there's an external badge element, update it here using data.unread_count
-                const badge = document.getElementById('notifications-badge'); // Example ID for bell icon
+                const badge = document.getElementById('notifications-badge');
                 if (badge) {
-                    badge.textContent = data.unread_count;
+                    badge.textContent = data.unread_count > 0 ? data.unread_count : '';
                     badge.style.display = data.unread_count > 0 ? 'inline-block' : 'none';
                 }
 
-                // Update unread count in sidebar if possible
+                const msgBadge = document.getElementById('messages-badge');
+                if (msgBadge && typeof data.unread_chat_count !== 'undefined') {
+                    msgBadge.textContent = data.unread_chat_count > 0 ? data.unread_chat_count : '';
+                    msgBadge.style.display = data.unread_chat_count > 0 ? 'inline-block' : 'none';
+                }
+
                 const sidebarBadge = document.querySelector('.sidebar-nav .badge.bg-danger');
                 if (sidebarBadge) {
                     sidebarBadge.textContent = data.unread_count;

@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('sub_action', 'update_active_chat');
         formData.append('chat_id', activeChatId);
-        fetch(`${baseUrl}index.php?action=mis_chats`, {
+        fetch(`${baseUrl}src/index.php?action=mis_chats`, {
             method: 'POST',
             body: formData
         });
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('sub_action', 'update_active_chat');
         formData.append('chat_id', '');
-        navigator.sendBeacon(`${baseUrl}index.php?action=mis_chats`, formData);
+        navigator.sendBeacon(`${baseUrl}src/index.php?action=mis_chats`, formData);
     });
 
     // Autoajuste del textarea
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchMessages() {
         if (!messagesContainer || !activeChatId) return;
         
-        const url = `${baseUrl}index.php?action=mis_chats&sub_action=fetch_messages_ajax&chat_id=${activeChatId}`;
+        const url = `${baseUrl}src/index.php?action=mis_chats&sub_action=fetch_messages_ajax&chat_id=${activeChatId}`;
         
         fetchJsonWithTimeout(url, { method: 'GET' }, 15000)
             .then(data => {
@@ -121,8 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             const senderPhoto = msg.remitente_foto || (typeof DEFAULT_AVATAR !== 'undefined' ? DEFAULT_AVATAR : (baseUrl + 'images/default-profile.jpg'));
                             
                             const date = new Date(msg.fecha_envio);
-                            const hours = date.getHours().toString().padStart(2, '0');
-                            const mins = date.getMinutes().toString().padStart(2, '0');
+                            const timeText = date.toLocaleTimeString('es-CO', {
+                                timeZone: 'America/Bogota',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
 
                             let avatarHtml = `<img src="${senderPhoto}" alt="Avatar" class="message-avatar" onerror="this.onerror=null;this.src='${typeof DEFAULT_AVATAR !== 'undefined' ? DEFAULT_AVATAR : baseUrl + 'images/default-profile.jpg'}';">`;
                             
@@ -146,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             
                             newHtml += `${msg.contenido}</div>`;
-                            newHtml += `<div class="message-info ${messageClass}">${hours}:${mins}</div>`;
+                            newHtml += `<div class="message-info ${messageClass}">${timeText}</div>`;
                             newHtml += `</div>`;
                             if (isSent) newHtml += avatarHtml;
                             newHtml += `</div>`;
@@ -219,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             }
 
-            fetchJsonWithTimeout(`${baseUrl}index.php?action=mis_chats`, {
+            fetchJsonWithTimeout(`${baseUrl}src/index.php?action=mis_chats`, {
                 method: 'POST',
                 body: formData
             }, 30000)
@@ -261,14 +265,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('sub_action', 'delete_chat');
                 formData.append('chat_id', chatId);
 
-                fetch(`${baseUrl}index.php?action=mis_chats`, {
+                fetch(`${baseUrl}src/index.php?action=mis_chats`, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        window.location.href = `${baseUrl}index.php?action=mis_chats`;
+                        window.location.href = `${baseUrl}src/index.php?action=mis_chats`;
                     } else customAlert(`Error: ${data.message}`);
                 });
             });
@@ -290,14 +294,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('chat_id', chatId);
                 formData.append('is_favorite', newIsFavorite);
 
-                fetch(`${baseUrl}index.php?action=mis_chats`, {
+                fetch(`${baseUrl}src/index.php?action=mis_chats`, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        window.location.href = `${baseUrl}index.php?action=mis_chats`;
+                        window.location.href = `${baseUrl}src/index.php?action=mis_chats`;
                     } else customAlert(`Error: ${data.message}`);
                 });
             });

@@ -62,11 +62,11 @@ class MisChatsController {
         if ($empresaId && is_numeric($empresaId)) {
             $chatId = $this->model->getOrCreateEmpresaChat((int)$empresaId, $this->userId);
             if ($chatId) {
-                header("Location: " . BASE_URL . "index.php?action=mis_chats&chat_id=" . $chatId);
+                header("Location: " . BASE_URL . "src/index.php?action=mis_chats&chat_id=" . $chatId);
                 exit();
             }
         }
-        header("Location: " . BASE_URL . "index.php?action=mis_equipos");
+        header("Location: " . BASE_URL . "src/index.php?action=mis_equipos");
         exit();
     }
 
@@ -75,11 +75,11 @@ class MisChatsController {
         if ($candidateId && is_numeric($candidateId)) {
             $chatId = $this->model->createPrivateChat($this->userId, (int)$candidateId);
             if ($chatId) {
-                header("Location: " . BASE_URL . "index.php?action=mis_chats&chat_id=" . $chatId);
+                header("Location: " . BASE_URL . "src/index.php?action=mis_chats&chat_id=" . $chatId);
                 exit();
             }
         }
-        header("Location: " . BASE_URL . "index.php?action=mis_equipos");
+        header("Location: " . BASE_URL . "src/index.php?action=mis_equipos");
         exit();
     }
 
@@ -161,7 +161,7 @@ class MisChatsController {
                 if ($this->model->isParticipant($currentChatId, $this->userId)) {
                     $userData = $this->model->getUserData($this->userId);
                     $userName = $userData['nombre'] ?? 'Usuario';
-                    $notificationUrl = BASE_URL . "index.php?action=mis_chats&chat_id=" . $currentChatId;
+                    $notificationUrl = BASE_URL . "src/index.php?action=mis_chats&chat_id=" . $currentChatId;
                     
                     $success = $this->model->sendMessage($currentChatId, $this->userId, $messageContent, $notificationUrl, $userName, $metadata);
                     if ($success) {
@@ -239,12 +239,12 @@ class MisChatsController {
             }
             $newChatId = $this->model->createPrivateChat($this->userId, $candidateId);
             if ($newChatId) {
-                header("Location: index.php?action=mis_chats&chat_id=" . $newChatId);
+                header("Location: " . BASE_URL . "src/index.php?action=mis_chats&chat_id=" . $newChatId);
                 exit();
             } else {
                 $_SESSION['mensaje'] = "Error al iniciar el chat privado.";
                 $_SESSION['tipo'] = "danger";
-                header("Location: index.php?action=mis_chats");
+                header("Location: " . BASE_URL . "src/index.php?action=mis_chats");
                 exit();
             }
         }
@@ -263,12 +263,12 @@ class MisChatsController {
             }
 
             if ($newChatId) {
-                header("Location: index.php?action=mis_chats&chat_id=" . $newChatId);
+                header("Location: " . BASE_URL . "src/index.php?action=mis_chats&chat_id=" . $newChatId);
                 exit();
             } else {
                 $_SESSION['mensaje'] = "Error al acceder al chat de la oferta.";
                 $_SESSION['tipo'] = "danger";
-                header("Location: index.php?action=ofertas");
+                header("Location: " . BASE_URL . "src/index.php?action=ofertas");
                 exit();
             }
         }

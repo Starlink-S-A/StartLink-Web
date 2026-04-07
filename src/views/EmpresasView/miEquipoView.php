@@ -37,7 +37,7 @@ $miembros = $miembros ?? [];
                 <p class="text-muted mx-auto" style="max-width: 440px;">
                     Vuelve a seleccionar una empresa para ver el equipo.
                 </p>
-                <a href="<?= BASE_URL ?>index.php?action=mis_equipos" class="btn-premium mt-3">
+                <a href="<?= BASE_URL ?>src/index.php?action=mis_equipos" class="btn-premium mt-3">
                     Seleccionar empresa
                 </a>
             </div>
@@ -68,10 +68,10 @@ $miembros = $miembros ?? [];
                         </div>
                     </div>
                     <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
-                        <a href="<?= BASE_URL ?>index.php?action=mis_chats&sub_action=create_company_chat&empresa_id=<?= $empresa['id_empresa'] ?>" class="btn btn-primary" style="background: linear-gradient(135deg, #00a680 0%, #059669 100%); border: none;">
+                        <a href="<?= BASE_URL ?>src/index.php?action=mis_chats&sub_action=create_company_chat&empresa_id=<?= $empresa['id_empresa'] ?>" class="btn btn-primary" style="background: linear-gradient(135deg, #00a680 0%, #059669 100%); border: none;">
                             <i class="fas fa-comments me-2"></i> Chat Grupal
                         </a>
-                        <a href="<?= BASE_URL ?>index.php?action=mis_equipos" class="btn btn-outline-secondary">
+                        <a href="<?= BASE_URL ?>src/index.php?action=mis_equipos" class="btn btn-outline-secondary">
                             Cambiar empresa
                         </a>
                     </div>
@@ -105,7 +105,7 @@ $miembros = $miembros ?? [];
                                     <i class="fas fa-id-badge"></i>
                                     <?= htmlspecialchars($m['nombre_rol_empresa'] ?? 'Miembro') ?>
                                 </div>
-                                <a href="<?= BASE_URL ?>index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $m['id_usuario'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto w-100" style="color: #00a680; border-color: #00a680;">
+                                <a href="<?= BASE_URL ?>src/index.php?action=mis_chats&sub_action=create_private_chat&candidate_id=<?= $m['id_usuario'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto w-100" style="color: #00a680; border-color: #00a680;">
                                     <i class="fas fa-comment-dots me-1"></i> Chat Privado
                                 </a>
                             </div>

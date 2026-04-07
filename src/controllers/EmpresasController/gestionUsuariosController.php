@@ -42,12 +42,17 @@ class GestionUsuariosController {
 
         $usuarios = $this->model->getUsuariosEmpresa($empresaId);
         $rolesEmpresa = $this->model->getRolesEmpresa();
+        $solicitudesContratacion = [];
+        if ($canManageUsers) {
+            $solicitudesContratacion = $this->model->getSolicitudesContratacionEmpresa($empresaId, 50);
+        }
 
         return [
             'canManageUsers' => $canManageUsers,
             'canChangeRoles' => $canChangeRoles,
             'usuarios' => $usuarios,
             'rolesEmpresa' => $rolesEmpresa,
+            'solicitudesContratacion' => $solicitudesContratacion,
         ];
     }
 
@@ -93,6 +98,23 @@ class GestionUsuariosController {
         $ok = $this->model->removeUsuarioEmpresa($usuarioId, $empresaId);
         if ($ok) {
             $this->model->updateRolGlobalAfterUnlink($usuarioId);
+            try {
+                $pdo = getDbConnection();
+                $stmtEmp = $pdo->prepare("SELECT nombre_empresa FROM empresa WHERE id_empresa = ? LIMIT 1");
+                $stmtEmp->execute([$empresaId]);
+                $empresaNombre = (string)($stmtEmp->fetchColumn() ?: 'la empresa');
+
+                require_once __DIR__ . '/../../models/notifiacionesModel/notificacionesModel.php';
+                $notifModel = new NotificacionesModel();
+                $notifModel->crearNotificacion(
+                    $usuarioId,
+                    "Has sido eliminado de {$empresaNombre}.",
+                    'warning',
+                    'fas fa-user-times',
+                    BASE_URL . "src/index.php?action=mis_empresas"
+                );
+            } catch (Throwable $e) {
+            }
             $_SESSION['mensaje'] = 'Usuario eliminado correctamente de la empresa.';
             $_SESSION['tipo'] = 'success';
         } else {

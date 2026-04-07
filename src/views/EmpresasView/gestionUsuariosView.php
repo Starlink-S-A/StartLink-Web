@@ -3,6 +3,7 @@ $canManageUsers = $canManageUsers ?? false;
 $canChangeRoles = $canChangeRoles ?? false;
 $usuarios = $usuarios ?? [];
 $rolesEmpresa = $rolesEmpresa ?? [];
+$solicitudesContratacion = $solicitudesContratacion ?? [];
 
 $rolesById = [];
 foreach ($rolesEmpresa as $r) {
@@ -15,6 +16,12 @@ foreach ($rolesEmpresa as $r) {
         Acceso no autorizado.
     </div>
 <?php else: ?>
+    <?php
+        $pendientes = 0;
+        foreach ($solicitudesContratacion as $sc) {
+            if (($sc['estado'] ?? '') === 'pendiente') $pendientes++;
+        }
+    ?>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div class="d-flex flex-column gap-2">
             <div class="text-muted small">
@@ -22,6 +29,75 @@ foreach ($rolesEmpresa as $r) {
             </div>
             <div style="max-width: 420px;">
                 <input type="text" id="usuariosFilterInput" class="form-control form-control-sm" placeholder="Filtrar por nombre o DNI">
+            </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolicitudesContratacion" aria-expanded="false">
+                <i class="fas fa-handshake me-1"></i> Solicitudes
+                <?php if ($pendientes > 0): ?>
+                    <span class="badge bg-danger rounded-pill ms-1"><?= $pendientes ?></span>
+                <?php endif; ?>
+            </button>
+        </div>
+    </div>
+
+    <div class="collapse mb-4" id="collapseSolicitudesContratacion">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="fw-semibold">
+                    Solicitudes de contratación
+                    <?php if ($pendientes > 0): ?>
+                        <span class="badge bg-danger rounded-pill ms-2"><?= $pendientes ?> pendiente<?= $pendientes !== 1 ? 's' : '' ?></span>
+                    <?php endif; ?>
+                </div>
+                <a href="<?= BASE_URL ?>src/index.php?action=notificaciones" class="btn btn-sm btn-light rounded-pill px-3">
+                    <i class="fas fa-bell me-1"></i> Ver notificaciones
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($solicitudesContratacion)): ?>
+                    <div class="p-4 text-center text-muted">No hay solicitudes de contratación registradas.</div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Candidato</th>
+                                    <th>Estado</th>
+                                    <th>Salario</th>
+                                    <th>Horas</th>
+                                    <th>Fecha</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($solicitudesContratacion as $sc): ?>
+                                    <?php
+                                        $estado = (string)($sc['estado'] ?? '');
+                                        $badge = $estado === 'pendiente' ? 'warning' : ($estado === 'aceptada' ? 'success' : 'secondary');
+                                        $fecha = !empty($sc['fecha_creacion']) ? (new DateTime($sc['fecha_creacion']))->format('d/m/Y H:i') : '';
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold"><?= htmlspecialchars($sc['candidato_nombre'] ?? '') ?></div>
+                                            <div class="text-muted small"><?= htmlspecialchars($sc['candidato_email'] ?? '') ?></div>
+                                        </td>
+                                        <td><span class="badge bg-<?= $badge ?>-subtle text-<?= $badge ?> rounded-pill px-3"><?= htmlspecialchars($estado) ?></span></td>
+                                        <td><?= $sc['salario_base'] !== null ? ('$' . number_format((float)$sc['salario_base'], 2)) : '<span class="text-muted">—</span>' ?></td>
+                                        <td><?= $sc['horas_semanales_estandar'] !== null ? (htmlspecialchars((string)$sc['horas_semanales_estandar']) . ' h') : '<span class="text-muted">—</span>' ?></td>
+                                        <td class="text-muted small"><?= htmlspecialchars($fecha) ?></td>
+                                        <td class="text-end">
+                                            <a class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                               href="<?= BASE_URL ?>src/index.php?action=perfiles_candidatos&candidate_id=<?= (int)$sc['id_candidato'] ?>">
+                                                Ver perfil
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -123,7 +199,7 @@ foreach ($rolesEmpresa as $r) {
                                 </button>
 
                                 <?php if (!$isOwner): ?>
-                                    <form method="POST" action="<?= BASE_URL ?>mi_empresa?seccion=usuarios" class="d-inline">
+                                    <form method="POST" action="<?= BASE_URL ?>mi_empresa?seccion=usuarios" class="d-inline form-eliminar-usuario" data-user-name="<?= htmlspecialchars($nombre) ?>">
                                         <input type="hidden" name="form_type" value="eliminar_usuario">
                                         <input type="hidden" name="eliminar_usuario_id" value="<?= $idUsuario ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger px-2" title="Eliminar usuario" aria-label="Eliminar usuario" data-tooltip="true">
@@ -261,8 +337,53 @@ foreach ($rolesEmpresa as $r) {
         </table>
     </div>
 
+    <div class="modal fade" id="modalConfirmEliminarUsuario" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow-lg">
+                <div class="modal-header bg-light p-3 border-bottom-0">
+                    <h5 class="modal-title fs-5 text-dark">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4 text-secondary" id="modalConfirmEliminarUsuarioBody"></div>
+                <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4" id="btnConfirmEliminarUsuario">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        let modalInstance = null;
+        let pendingForm = null;
+        try {
+            modalInstance = new bootstrap.Modal(document.getElementById('modalConfirmEliminarUsuario'));
+        } catch (e) {}
+
+        const btnConfirm = document.getElementById('btnConfirmEliminarUsuario');
+        if (btnConfirm) {
+            btnConfirm.addEventListener('click', () => {
+                if (pendingForm) pendingForm.submit();
+            });
+        }
+
+        document.querySelectorAll('form.form-eliminar-usuario').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                pendingForm = form;
+                const nombre = form.dataset.userName || 'este usuario';
+                const msg = `¿Seguro que deseas eliminar a ${nombre} de la empresa?`;
+                const body = document.getElementById('modalConfirmEliminarUsuarioBody');
+                if (modalInstance && body) {
+                    body.textContent = msg;
+                    modalInstance.show();
+                    return;
+                }
+                if (confirm(msg)) form.submit();
+            });
+        });
+
         const input = document.getElementById('usuariosFilterInput');
         const rows = Array.from(document.querySelectorAll('tbody tr[data-search]'));
         if (input) {

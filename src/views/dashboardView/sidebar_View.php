@@ -103,7 +103,7 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                 </a>
             </li>
             <li>
-                <a class="sidebar-link <?= $currentAction == 'nominas' ? 'active' : '' ?>" href="<?= BASE_URL ?>index.php?action=nominas">
+                <a class="sidebar-link <?= $currentAction == 'nominas' ? 'active' : '' ?>" href="<?= BASE_URL ?>src/index.php?action=nominas">
                     <i class="fas fa-history"></i> <span class="sidebar-link-text">Historial</span>
                 </a>
             </li>

@@ -32,6 +32,9 @@ class NotificacionesController {
             case 'mark_all_notifications_read':
                 $this->markAllAsRead();
                 break;
+            case 'redirect':
+                $this->redirectToNotification();
+                break;
             case 'fetch_latest_ajax':
                 $this->fetchLatestAjax();
                 break;
@@ -76,11 +79,49 @@ class NotificacionesController {
     private function fetchLatestAjax() {
         header('Content-Type: application/json');
         $unreadCount = $this->model->getUnreadCount($this->userId);
+        $unreadChatCount = $this->model->getUnreadCountByType($this->userId, 'chat');
         $latest = $this->model->getNotificaciones($this->userId, 10);
         foreach ($latest as &$n) {
             $n = $this->processNotificationIcon($n);
         }
-        echo json_encode(['success' => true, 'unread_count' => $unreadCount, 'notifications' => $latest]);
+        echo json_encode([
+            'success' => true,
+            'unread_count' => $unreadCount,
+            'unread_chat_count' => $unreadChatCount,
+            'notifications' => $latest
+        ]);
+        exit();
+    }
+
+    private function redirectToNotification(): void {
+        $notificationId = $_GET['notification_id'] ?? null;
+        if (!$notificationId || !is_numeric($notificationId)) {
+            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            exit();
+        }
+
+        $notif = $this->model->getNotificationById((int)$notificationId, $this->userId);
+        if (!$notif) {
+            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            exit();
+        }
+
+        if (empty($notif['leida'])) {
+            $this->model->markAsRead((int)$notificationId, $this->userId);
+        }
+
+        $target = $notif['url_redireccion'] ?? '';
+        if ($target === '' || $target === '#') {
+            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            exit();
+        }
+
+        if (preg_match('~^https?://~i', $target) !== 1) {
+            $target = ltrim($target, '/');
+            $target = rtrim(BASE_URL, '/') . '/' . $target;
+        }
+
+        header("Location: " . $target);
         exit();
     }
 

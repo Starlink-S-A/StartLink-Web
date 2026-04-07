@@ -81,32 +81,109 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
 
 <script>
 function responderSolicitud(respuesta) {
-    if (!confirm('¿Estás seguro de que deseas ' + (respuesta === 'aceptada' ? 'aceptar' : 'rechazar') + ' este contrato?')) {
-        return;
-    }
-    
     const formData = new FormData();
     formData.append('id', <?= (int)$solicitudId ?>);
     formData.append('respuesta', respuesta);
     
-    fetch(BASE_URL + 'index.php?action=responder_solicitud', {
+    fetch(BASE_URL + 'src/index.php?action=responder_solicitud', {
         method: 'POST',
         body: formData
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            showAlert(data.message, true);
             window.location.reload();
         } else {
-            alert('Error: ' + data.message);
+            showAlert('Error: ' + data.message, false);
         }
     })
     .catch(err => {
         console.error(err);
-        alert('Ocurrió un error de red.');
+        showAlert('Ocurrió un error de red.', false);
     });
 }
+</script>
+
+<div class="modal fade" id="confirmModalSolicitud" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow-lg">
+            <div class="modal-header bg-light p-3 border-bottom-0">
+                <h5 class="modal-title fs-5 text-dark">Confirmar acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4 text-secondary" id="confirmModalSolicitudBody"></div>
+            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" id="confirmSolicitudActionButton">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="alertDialogSolicitud" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow-lg">
+            <div class="modal-header bg-light p-3 border-bottom-0">
+                <h5 class="modal-title fs-5 text-dark">Mensaje</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4 text-secondary" id="alertDialogSolicitudBody"></div>
+            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
+                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let confirmInstance = null;
+let alertInstance = null;
+let pendingAction = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        confirmInstance = new bootstrap.Modal(document.getElementById('confirmModalSolicitud'));
+        alertInstance = new bootstrap.Modal(document.getElementById('alertDialogSolicitud'));
+    } catch (e) {}
+
+    const btnConfirm = document.getElementById('confirmSolicitudActionButton');
+    if (btnConfirm) {
+        btnConfirm.addEventListener('click', () => {
+            if (typeof pendingAction === 'function') pendingAction();
+            if (confirmInstance) confirmInstance.hide();
+            pendingAction = null;
+        });
+    }
+});
+
+function showConfirm(message, action) {
+    const body = document.getElementById('confirmModalSolicitudBody');
+    pendingAction = action;
+    if (body && confirmInstance) {
+        body.textContent = message;
+        confirmInstance.show();
+        return;
+    }
+    if (confirm(message)) action();
+}
+
+function showAlert(message) {
+    const body = document.getElementById('alertDialogSolicitudBody');
+    if (body && alertInstance) {
+        body.textContent = message;
+        alertInstance.show();
+        return;
+    }
+    alert(message);
+}
+
+const originalResponderSolicitud = responderSolicitud;
+window.responderSolicitud = function(respuesta) {
+    const label = respuesta === 'aceptada' ? 'aceptar' : 'rechazar';
+    showConfirm(`¿Estás seguro de que deseas ${label} este contrato?`, () => originalResponderSolicitud(respuesta));
+};
 </script>
 </body>
 </html>

@@ -225,7 +225,7 @@ class NominaModel
     {
         try {
             $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
-                    FROM seguimiento_desempeño sd
+                    FROM `seguimiento_desempeño` sd
                     LEFT JOIN usuario u ON sd.evaluador_id = u.id
                     WHERE sd.id_usuario = ?
                     ORDER BY sd.fecha_evaluacion DESC";
@@ -246,7 +246,7 @@ class NominaModel
         try {
             $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email,
                            ev.nombre AS nombre_evaluador
-                    FROM seguimiento_desempeño sd
+                    FROM `seguimiento_desempeño` sd
                     JOIN usuario u ON sd.id_usuario = u.id
                     JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
                     LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
@@ -286,9 +286,18 @@ class NominaModel
 
     public function getNominasByUsuarioPag(int $idUsuario, int $limit, int $offset): array
     {
-        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email
-                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
-                WHERE n.id_usuario = :id ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, e.nombre_empresa
+                FROM nomina n
+                JOIN usuario u ON n.id_usuario = u.id
+                LEFT JOIN (
+                    SELECT id_usuario, MIN(id_empresa) AS id_empresa
+                    FROM usuario_empresa
+                    GROUP BY id_usuario
+                ) ue ON ue.id_usuario = u.id
+                LEFT JOIN empresa e ON e.id_empresa = ue.id_empresa
+                WHERE n.id_usuario = :id
+                ORDER BY n.fecha_generacion DESC
+                LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
         $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
@@ -299,9 +308,11 @@ class NominaModel
 
     public function getNominasByEmpresaPag(int $idEmpresa, int $limit, int $offset): array
     {
-        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
-                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo, e.nombre_empresa
+                FROM nomina n
+                JOIN usuario u ON n.id_usuario = u.id
                 JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = :id
+                JOIN empresa e ON e.id_empresa = ue.id_empresa
                 ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
         $stmt->bindValue(':id', $idEmpresa, PDO::PARAM_INT);
@@ -313,9 +324,17 @@ class NominaModel
 
     public function getAllNominasPag(int $limit, int $offset): array
     {
-        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo
-                FROM nomina n JOIN usuario u ON n.id_usuario = u.id
-                ORDER BY n.fecha_generacion DESC LIMIT :lim OFFSET :off";
+        $sql = "SELECT n.*, u.nombre AS nombre_trabajador, u.email, u.cargo, e.nombre_empresa
+                FROM nomina n
+                JOIN usuario u ON n.id_usuario = u.id
+                LEFT JOIN (
+                    SELECT id_usuario, MIN(id_empresa) AS id_empresa
+                    FROM usuario_empresa
+                    GROUP BY id_usuario
+                ) ue ON ue.id_usuario = u.id
+                LEFT JOIN empresa e ON e.id_empresa = ue.id_empresa
+                ORDER BY n.fecha_generacion DESC
+                LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
@@ -325,7 +344,7 @@ class NominaModel
 
     public function countDesempenoByUsuario(int $idUsuario): int
     {
-        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM seguimiento_desempeño WHERE id_usuario = ?");
+        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM `seguimiento_desempeño` WHERE id_usuario = ?");
         $stmt->execute([$idUsuario]);
         return (int)$stmt->fetchColumn();
     }
@@ -333,7 +352,7 @@ class NominaModel
     public function countDesempenoByEmpresa(int $idEmpresa): int
     {
         $stmt = $this->conexion->prepare(
-            "SELECT COUNT(*) FROM seguimiento_desempeño sd JOIN usuario_empresa ue ON ue.id_usuario = sd.id_usuario AND ue.id_empresa = ?"
+            "SELECT COUNT(*) FROM `seguimiento_desempeño` sd JOIN usuario_empresa ue ON ue.id_usuario = sd.id_usuario AND ue.id_empresa = ?"
         );
         $stmt->execute([$idEmpresa]);
         return (int)$stmt->fetchColumn();
@@ -341,9 +360,18 @@ class NominaModel
 
     public function getDesempenoByUsuarioPag(int $idUsuario, int $limit, int $offset): array
     {
-        $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
-                FROM seguimiento_desempeño sd LEFT JOIN usuario u ON sd.evaluador_id = u.id
-                WHERE sd.id_usuario = :id ORDER BY sd.fecha_evaluacion DESC LIMIT :lim OFFSET :off";
+        $sql = "SELECT sd.*, u.nombre AS nombre_evaluador, e.nombre_empresa
+                FROM `seguimiento_desempeño` sd
+                LEFT JOIN usuario u ON sd.evaluador_id = u.id
+                LEFT JOIN (
+                    SELECT id_usuario, MIN(id_empresa) AS id_empresa
+                    FROM usuario_empresa
+                    GROUP BY id_usuario
+                ) ue ON ue.id_usuario = sd.id_usuario
+                LEFT JOIN empresa e ON e.id_empresa = ue.id_empresa
+                WHERE sd.id_usuario = :id
+                ORDER BY sd.fecha_evaluacion DESC
+                LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);
         $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
@@ -354,10 +382,11 @@ class NominaModel
 
     public function getDesempenoByEmpresaPag(int $idEmpresa, int $limit, int $offset): array
     {
-        $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email, ev.nombre AS nombre_evaluador
-                FROM seguimiento_desempeño sd
+        $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email, ev.nombre AS nombre_evaluador, e.nombre_empresa
+                FROM `seguimiento_desempeño` sd
                 JOIN usuario u ON sd.id_usuario = u.id
                 JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = :id
+                JOIN empresa e ON e.id_empresa = ue.id_empresa
                 LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
                 ORDER BY sd.fecha_evaluacion DESC LIMIT :lim OFFSET :off";
         $stmt = $this->conexion->prepare($sql);

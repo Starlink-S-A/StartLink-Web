@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/configuracionInicial.php';
 class SolicitudController {
     public function verSolicitud() {
         if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . BASE_URL . 'index.php');
+            header('Location: ' . BASE_URL . 'src/index.php');
             exit();
         }
         
@@ -81,6 +81,32 @@ class SolicitudController {
                     
                     $stmtHide = $pdo->prepare("UPDATE perfil_busqueda_empleo SET esta_disponible = 0 WHERE id_usuario = ?");
                     $stmtHide->execute([$userId]);
+                }
+            }
+
+            $stmtUser = $pdo->prepare("SELECT nombre FROM usuario WHERE id = ? LIMIT 1");
+            $stmtUser->execute([$userId]);
+            $nombreCandidato = (string)($stmtUser->fetchColumn() ?: 'El candidato');
+
+            $stmtEmpresa = $pdo->prepare("SELECT nombre_empresa FROM empresa WHERE id_empresa = ? LIMIT 1");
+            $stmtEmpresa->execute([(int)$solicitud['id_empresa']]);
+            $nombreEmpresa = (string)($stmtEmpresa->fetchColumn() ?: 'tu empresa');
+
+            $stmtAdmins = $pdo->prepare("SELECT id_usuario FROM usuario_empresa WHERE id_empresa = ? AND id_rol_empresa IN (1,2)");
+            $stmtAdmins->execute([(int)$solicitud['id_empresa']]);
+            $destinatarios = $stmtAdmins->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($destinatarios)) {
+                $mensajeNotif = $respuesta === 'aceptada'
+                    ? "{$nombreCandidato} aceptó la solicitud de contratación en {$nombreEmpresa}."
+                    : "{$nombreCandidato} rechazó la solicitud de contratación en {$nombreEmpresa}.";
+                $stmtNotif = $pdo->prepare("
+                    INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                    VALUES (?, ?, 'info', 'fas fa-handshake', ?, NOW(), 0)
+                ");
+                $url = BASE_URL . "mi_empresa?seccion=usuarios";
+                foreach ($destinatarios as $destId) {
+                    $stmtNotif->execute([(int)$destId, $mensajeNotif, $url]);
                 }
             }
             

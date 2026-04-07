@@ -124,7 +124,7 @@ class CapacitacionModel
                         $mensajeOwner = "Se ha creado una nueva capacitación: '{$data['nombre_capacitacion']}' en tu empresa.";
                         $stmtNotif = $this->conexion->prepare("
                             INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
-                            VALUES (?, ?, 'info', 'fas fa-chalkboard-teacher', 'index.php?action=capacitaciones', NOW(), 0)
+                            VALUES (?, ?, 'info', 'fas fa-chalkboard-teacher', 'src/index.php?action=capacitaciones', NOW(), 0)
                         ");
                         foreach ($owners as $ownerId) {
                             $stmtNotif->execute([$ownerId, $mensajeOwner]);
@@ -293,7 +293,11 @@ class CapacitacionModel
     {
         try {
             $stmt = $this->conexion->prepare("INSERT INTO inscripcion (id_usuario, id_capacitacion, fecha_inscripcion, estado_inscripcion) VALUES (?, ?, NOW(), 'Inscrito')");
-            return $stmt->execute([$userId, $capId]);
+            $ok = $stmt->execute([$userId, $capId]);
+            if ($ok) {
+                $this->notificarInscripcion($userId, $capId);
+            }
+            return $ok;
         }
         catch (PDOException $e) {
             error_log("Error al inscribir en capacitación: " . $e->getMessage());
@@ -356,6 +360,54 @@ class CapacitacionModel
         catch (PDOException $e) {
             error_log("Error PDO al obtener inscritos: " . $e->getMessage());
             throw new Exception("Error de base de datos al cargar inscritos.");
+        }
+    }
+
+    private function notificarInscripcion(int $userId, int $capId): void
+    {
+        try {
+            $stmtCap = $this->conexion->prepare("SELECT nombre_capacitacion, creador_id, id_empresa FROM capacitacion WHERE id = ? LIMIT 1");
+            $stmtCap->execute([$capId]);
+            $cap = $stmtCap->fetch(PDO::FETCH_ASSOC);
+            if (!$cap) return;
+
+            $stmtUser = $this->conexion->prepare("SELECT nombre FROM usuario WHERE id = ? LIMIT 1");
+            $stmtUser->execute([$userId]);
+            $nombreUsuario = (string)($stmtUser->fetchColumn() ?: 'Un usuario');
+
+            $nombreCap = (string)($cap['nombre_capacitacion'] ?? 'una capacitación');
+            $mensaje = "{$nombreUsuario} se inscribió en la capacitación \"{$nombreCap}\".";
+            $url = 'src/index.php?action=capacitaciones';
+
+            $destinatarios = [];
+            $creadorId = (int)($cap['creador_id'] ?? 0);
+            if ($creadorId > 0 && $creadorId !== $userId) {
+                $destinatarios[] = $creadorId;
+            }
+
+            $empresaId = $cap['id_empresa'] ?? null;
+            if (!empty($empresaId)) {
+                $stmtOwners = $this->conexion->prepare("SELECT id_usuario FROM usuario_empresa WHERE id_empresa = ? AND id_rol_empresa = 1");
+                $stmtOwners->execute([(int)$empresaId]);
+                $owners = $stmtOwners->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($owners as $oid) {
+                    $oid = (int)$oid;
+                    if ($oid > 0 && $oid !== $userId && $oid !== $creadorId) $destinatarios[] = $oid;
+                }
+            }
+
+            $destinatarios = array_values(array_unique($destinatarios));
+            if (empty($destinatarios)) return;
+
+            $stmtNotif = $this->conexion->prepare("
+                INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                VALUES (?, ?, 'info', 'fas fa-user-plus', ?, NOW(), 0)
+            ");
+            foreach ($destinatarios as $destId) {
+                $stmtNotif->execute([(int)$destId, $mensaje, $url]);
+            }
+        } catch (Throwable $e) {
+            error_log("Error al notificar inscripción: " . $e->getMessage());
         }
     }
 }

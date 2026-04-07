@@ -138,6 +138,7 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                         <thead style="background:#f8fafc;">
                             <tr>
                                 <?php if ($puedeGenerar): ?><th class="px-4 py-3 fw-600 text-muted">Trabajador</th><?php endif; ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Empresa</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Período</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Horas</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Salario Bruto</th>
@@ -165,6 +166,9 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                                     </div>
                                 </td>
                                 <?php endif; ?>
+                                <td class="px-4">
+                                    <?= !empty($nomina['nombre_empresa']) ? htmlspecialchars($nomina['nombre_empresa']) : '<span class="text-muted">—</span>' ?>
+                                </td>
                                 <td class="px-4">
                                     <span class="badge bg-light text-dark fw-500 border">
                                         <?= date('d/m/Y', strtotime($nomina['fecha_inicio_periodo'])) ?> – <?= date('d/m/Y', strtotime($nomina['fecha_fin_periodo'])) ?>
@@ -204,13 +208,19 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                                                         <div class="text-muted small"><?= htmlspecialchars($nomina['email']) ?></div>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
+                                                    <div class="detail-box">
+                                                        <div class="detail-label">Empresa</div>
+                                                        <div class="detail-value" style="font-size:0.85rem;"><?= !empty($nomina['nombre_empresa']) ? htmlspecialchars($nomina['nombre_empresa']) : '—' ?></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2">
                                                     <div class="detail-box">
                                                         <div class="detail-label">Fecha Generación</div>
                                                         <div class="detail-value"><?= date('d/m/Y', strtotime($nomina['fecha_generacion'])) ?></div>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <div class="detail-box">
                                                         <div class="detail-label">Período</div>
                                                         <div class="detail-value" style="font-size:0.82rem;">
@@ -274,15 +284,15 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                     <nav>
                         <ul class="pagination pagination-sm pagination-premium mb-0">
                             <li class="page-item <?= $pageNom <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $pageNom - 1 ?>&page_des=<?= $pageDes ?>"><i class="fas fa-chevron-left"></i></a>
+                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $pageNom - 1 ?>&page_des=<?= $pageDes ?>#panel-nominas"><i class="fas fa-chevron-left"></i></a>
                             </li>
                             <?php for ($p = 1; $p <= $totalPagesNom; $p++): ?>
                             <li class="page-item <?= $p === $pageNom ? 'active' : '' ?>">
-                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $p ?>&page_des=<?= $pageDes ?>"><?= $p ?></a>
+                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $p ?>&page_des=<?= $pageDes ?>#panel-nominas"><?= $p ?></a>
                             </li>
                             <?php endfor; ?>
                             <li class="page-item <?= $pageNom >= $totalPagesNom ? 'disabled' : '' ?>">
-                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $pageNom + 1 ?>&page_des=<?= $pageDes ?>"><i class="fas fa-chevron-right"></i></a>
+                                <a class="page-link" href="<?= $baseHistorialUrl ?>&page_nom=<?= $pageNom + 1 ?>&page_des=<?= $pageDes ?>#panel-nominas"><i class="fas fa-chevron-right"></i></a>
                             </li>
                         </ul>
                     </nav>
@@ -322,6 +332,7 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                         <thead style="background:#f8fafc;">
                             <tr>
                                 <?php if ($puedeGenerar): ?><th class="px-4 py-3 fw-600 text-muted">Trabajador</th><?php endif; ?>
+                                <th class="px-4 py-3 fw-600 text-muted">Empresa</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Fecha</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Tipo</th>
                                 <th class="px-4 py-3 fw-600 text-muted">Puntuación</th>
@@ -347,6 +358,9 @@ include __DIR__ . '/../dashboardView/sidebar_View.php';
                                     </div>
                                 </td>
                                 <?php endif; ?>
+                                <td class="px-4">
+                                    <?= !empty($d['nombre_empresa']) ? htmlspecialchars($d['nombre_empresa']) : '<span class="text-muted">—</span>' ?>
+                                </td>
                                 <td class="px-4"><span class="badge bg-light text-dark fw-500 border"><?= date('d/m/Y', strtotime($d['fecha_evaluacion'])) ?></span></td>
                                 <td class="px-4"><span class="badge bg-primary-subtle text-primary rounded-pill px-3"><?= htmlspecialchars($d['tipo_evaluacion']) ?></span></td>
                                 <td class="px-4">

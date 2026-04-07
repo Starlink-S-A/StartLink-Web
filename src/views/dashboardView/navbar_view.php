@@ -27,7 +27,7 @@ if ($notificaciones === null && isset($_SESSION["user_id"])) {
     $link = function_exists('getDbConnection') ? getDbConnection() : null; 
     if ($link instanceof PDO) {
         try {
-            $stmt_notif = $link->prepare("SELECT id, mensaje, tipo, icono, fecha_creacion, leida FROM notificaciones WHERE user_id = ? ORDER BY fecha_creacion DESC LIMIT 10");
+            $stmt_notif = $link->prepare("SELECT id, mensaje, tipo, icono, fecha_creacion, leida, url_redireccion FROM notificaciones WHERE user_id = ? ORDER BY fecha_creacion DESC LIMIT 10");
             $stmt_notif->execute([$_SESSION["user_id"]]);
             while ($row = $stmt_notif->fetch(PDO::FETCH_ASSOC)) {
                 if (empty($row['icono'])) {
@@ -58,11 +58,15 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
 
 // Fetch recent messages
 $recent_messages = [];
-$unread_messages_count = 0; // Se puede implementar luego un contador real
+$unread_messages_count = 0;
 if (isset($_SESSION["user_id"])) {
     $link = function_exists('getDbConnection') ? getDbConnection() : null; 
     if ($link instanceof PDO) {
         try {
+            $stmt_unread_msgs = $link->prepare("SELECT COUNT(*) FROM notificaciones WHERE user_id = ? AND leida = 0 AND tipo = 'chat'");
+            $stmt_unread_msgs->execute([$_SESSION["user_id"]]);
+            $unread_messages_count = (int)$stmt_unread_msgs->fetchColumn();
+
             $stmt_msgs = $link->prepare("
                 SELECT
                     C.id_conversacion,
@@ -75,8 +79,17 @@ if (isset($_SESSION["user_id"])) {
                     U_REM.id AS remitente_id
                 FROM conversacion_participante CP
                 JOIN conversacion C ON CP.id_conversacion = C.id_conversacion
-                JOIN mensaje M ON C.id_conversacion = M.id_conversacion AND C.ultimo_mensaje = M.fecha_envio
-                LEFT JOIN usuario U_REM ON M.id_remitente = U_REM.id
+                LEFT JOIN (
+                    SELECT m1.*
+                    FROM mensaje m1
+                    JOIN (
+                        SELECT id_conversacion, MAX(fecha_envio) AS max_fecha
+                        FROM mensaje
+                        GROUP BY id_conversacion
+                    ) m2
+                        ON m1.id_conversacion = m2.id_conversacion AND m1.fecha_envio = m2.max_fecha
+                ) M ON M.id_conversacion = C.id_conversacion
+                LEFT JOIN usuario U_REM ON U_REM.id = M.id_remitente
                 WHERE CP.id_usuario = ?
                 ORDER BY M.fecha_envio DESC
                 LIMIT 5
@@ -99,9 +112,9 @@ if (isset($_SESSION["user_id"])) {
         <div class="dropdown">
             <button class="nav-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                 <i class="far fa-bell"></i>
-                <?php if($unread_notifications_count > 0): ?>
-                    <span class="nav-badge"><?= $unread_notifications_count ?></span>
-                <?php endif; ?>
+                <span class="nav-badge" id="notifications-badge" style="<?= $unread_notifications_count > 0 ? '' : 'display:none;' ?>">
+                    <?= $unread_notifications_count > 0 ? $unread_notifications_count : '' ?>
+                </span>
             </button>
             <div class="dropdown-menu dropdown-menu-end nav-dropdown-menu" style="width: 380px;">
                 <div class="dropdown-header-custom">
@@ -113,7 +126,7 @@ if (isset($_SESSION["user_id"])) {
                     </h6>
                 </div>
                 <div class="d-flex justify-content-between px-3 py-2 border-bottom" style="font-size: 0.78rem;">
-                    <a href="#" class="text-dark fw-bold text-decoration-none">Marcar todas como leídas</a>
+                    <a href="#" id="navbar-mark-all-read-btn" class="text-dark fw-bold text-decoration-none">Marcar todas como leídas</a>
                     <a href="#" class="text-danger text-decoration-none">Borrar todas</a>
                 </div>
                 <div style="max-height: 320px; overflow-y: auto;">
@@ -144,7 +157,7 @@ if (isset($_SESSION["user_id"])) {
                                 elseif ($diff->i > 0) $fechaTexto = "Hace {$diff->i} minutos";
                             }
                         ?>
-                        <div class="notif-item">
+                        <div class="notif-item position-relative">
                             <div class="notif-icon-circle" style="background-color: <?= $iconColorBg ?>; color: <?= $iconColorText ?>;">
                                 <i class="<?= htmlspecialchars($notif['icono'] ?? 'fas fa-bell') ?>"></i>
                             </div>
@@ -156,12 +169,14 @@ if (isset($_SESSION["user_id"])) {
                                 <p class="mb-1 text-muted" style="font-size: 0.78rem; line-height: 1.4;"><?= htmlspecialchars($notif['mensaje']) ?></p>
                                 <small class="text-muted" style="font-size: 0.7rem;"><?= $fechaTexto ?></small>
                             </div>
-                            <button class="notif-delete-btn" title="Eliminar"><i class="far fa-trash-alt"></i></button>
+                            <a class="stretched-link"
+                               href="<?= BASE_URL ?>src/index.php?action=notificaciones&sub_action=redirect&notification_id=<?= (int)$notif['id'] ?>"></a>
+                            <button class="notif-delete-btn position-relative" style="z-index:2;" title="Eliminar" type="button"><i class="far fa-trash-alt"></i></button>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-                <a href="<?= BASE_URL ?>index.php?action=notificaciones" class="dropdown-view-all">Ver todas las notificaciones</a>
+                <a href="<?= BASE_URL ?>src/index.php?action=notificaciones" class="dropdown-view-all">Ver todas las notificaciones</a>
             </div>
         </div>
 
@@ -169,6 +184,9 @@ if (isset($_SESSION["user_id"])) {
         <div class="dropdown">
             <button class="nav-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                 <i class="far fa-comment-dots"></i>
+                <span class="nav-badge" id="messages-badge" style="<?= $unread_messages_count > 0 ? '' : 'display:none;' ?>">
+                    <?= $unread_messages_count > 0 ? $unread_messages_count : '' ?>
+                </span>
             </button>
             <div class="dropdown-menu dropdown-menu-end nav-dropdown-menu" style="width: 380px;">
                 <div class="dropdown-header-custom">
@@ -210,7 +228,7 @@ if (isset($_SESSION["user_id"])) {
                                 $fotoBase = basename($msg['remitente_foto']);
                                 $contactPhotoUrl = BASE_URL . 'assets/images/Uploads/profile_pictures/' . $fotoBase;
                             }
-                            $msgUrl = BASE_URL . 'index.php?action=mis_chats&chat_id=' . $msg['id_conversacion'];
+                            $msgUrl = BASE_URL . 'src/index.php?action=mis_chats&chat_id=' . $msg['id_conversacion'];
                         ?>
                         <a href="<?= htmlspecialchars($msgUrl) ?>" class="notif-item text-decoration-none text-dark d-flex">
                             <div class="msg-avatar" style="<?= $contactPhotoUrl ? 'background: transparent;' : '' ?>">
@@ -233,7 +251,7 @@ if (isset($_SESSION["user_id"])) {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-                <a href="<?= BASE_URL ?>index.php?action=mis_chats" class="dropdown-view-all">Ver todos los mensajes</a>
+                <a href="<?= BASE_URL ?>src/index.php?action=mis_chats" class="dropdown-view-all">Ver todos los mensajes</a>
             </div>
         </div>
 
@@ -286,7 +304,7 @@ if (isset($_SESSION["user_id"])) {
                             <small class="text-muted" style="font-size: 0.7rem;">Contraseña y configuración de seguridad</small>
                         </div>
                     </a>
-                    <a href="<?= BASE_URL ?>nominas" class="dropdown-item-custom">
+                    <a href="<?= BASE_URL ?>src/index.php?action=nominas" class="dropdown-item-custom">
                         <i class="far fa-file-alt"></i>
                         <div>
                             <span class="d-block fw-500">Historial laboral</span>
@@ -309,3 +327,10 @@ if (isset($_SESSION["user_id"])) {
         </div>
     </div>
 </div>
+
+<script>
+    if (typeof BASE_URL === 'undefined') {
+        window.BASE_URL = '<?= BASE_URL ?>';
+    }
+</script>
+<script src="<?= BASE_URL ?>src/public/js/notificaiones.js" defer></script>

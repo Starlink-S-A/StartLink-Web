@@ -106,7 +106,7 @@ class PerfilesCandidatosModel {
             $companyName = $stmtComp->fetchColumn();
 
             $mensaje = "Has recibido una solicitud de contratación de la empresa {$companyName}.";
-            $urlRedireccion = "index.php?action=ver_solicitud_contrato&id=" . $solicitudId;
+            $urlRedireccion = "src/index.php?action=ver_solicitud_contrato&id=" . $solicitudId;
 
             // Importar notificacionesModel manualmente si es necesario, o hacer insert directo para mayor seguridad si no está cargado
             $stmtNotif = $this->pdo->prepare("
