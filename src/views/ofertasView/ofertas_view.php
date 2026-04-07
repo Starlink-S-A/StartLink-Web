@@ -146,27 +146,6 @@
                                             data-bs-target="#modalSalirOferta<?= $oferta['id_oferta'] ?>">
                                         Abandonar
                                     </button>
-                                    
-                                    <div class="modal fade" id="modalSalirOferta<?= $oferta['id_oferta'] ?>" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content border-0 shadow-lg">
-                                                <form action="<?= BASE_URL ?>index.php?action=salir_oferta" method="POST">
-                                                    <input type="hidden" name="id_oferta" value="<?= $oferta['id_oferta'] ?>">
-                                                    <div class="modal-header border-0 pb-0">
-                                                        <h5 class="modal-title fw-700">¿Retirar postulación?</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body py-4">
-                                                        Si abandonas esta oferta, perderás tu lugar en el proceso de selección de <strong><?= htmlspecialchars($oferta['nombre_empresa']) ?></strong>.
-                                                    </div>
-                                                    <div class="modal-footer border-0">
-                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                                                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, retirar</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
                                 <?php endif; ?>
 
                             <?php elseif ($esUsuario): ?>
