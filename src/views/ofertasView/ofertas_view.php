@@ -12,11 +12,16 @@
 <body style="background-color: #f8fafc;">
 <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
-<div class="container mt-5 pt-4">
-    <div class="d-flex justify-content-between align-items-center mb-5">
+<div class="main-content-wrapper px-md-4">
+    <?php 
+    $pageTitle = 'Ofertas de Empleo';
+    include __DIR__ . '/../dashboardView/navbar_view.php'; 
+    ?>
+
+<div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="dash-title mb-1">Ofertas de Empleo</h2>
-            <p class="text-muted small">Encuentra tu próximo paso profesional o gestiona tus vacantes.</p>
+            <p class="text-muted small mb-0">Encuentra tu próximo paso profesional o gestiona tus vacantes.</p>
         </div>
         <?php if ($esContratador): ?>
             <button class="btn btn-dash-primary px-4" data-bs-toggle="modal" data-bs-target="#modalCrearOferta">
@@ -446,5 +451,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= BASE_URL ?>src/public/js/ofertas.js"></script>
+</div> <!-- Cierra main-content-wrapper -->
 </body>
 </html>

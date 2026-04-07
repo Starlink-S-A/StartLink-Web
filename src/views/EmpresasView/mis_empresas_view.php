@@ -26,10 +26,13 @@ $empresas = $empresas ?? [];
 </head>
 <body>
 
-    <!-- Incluir el Navbar -->
-    <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+    <?php
+    $pageTitle = 'Mis Empresas';
+    include __DIR__ . '/../dashboardView/sidebar_View.php';
+    ?>
 
-    <!-- Contenido Principal -->
+    <div class="main-content">
+    <?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
     <div class="container mt-5 pt-4">
         <div class="d-flex justify-content-between align-items-center mb-5">
             <div>
@@ -97,6 +100,7 @@ $empresas = $empresas ?? [];
                 <input type="hidden" name="empresa_id" id="empresa_id_input" value="">
             </form>
         <?php endif; ?>
+    </div>
     </div>
 
     <!-- Scripts -->

@@ -29,8 +29,13 @@
     </style>
 </head>
 <body>
-<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+<?php
+$pageTitle = 'Nueva Empresa';
+include __DIR__ . '/../dashboardView/sidebar_View.php';
+?>
 
+<div class="main-content">
+<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -127,6 +132,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

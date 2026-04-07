@@ -55,6 +55,48 @@ if ($link instanceof PDO) {
 
 // Determinar si el usuario es un "TRABAJADOR" (rol global 3) o tiene un rol de empresa (Contratador o Empleado Interno)
 $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3]));
+
+// Fetch Dashboard Metrics
+$countOfertas = 0;
+$countPostulaciones = 0;
+$countCapacitaciones = 0;
+$ofertasRecomendadas = [];
+$misPostulaciones = [];
+
+if ($link instanceof PDO) {
+    try {
+        $stmtOfertas = $link->query("SELECT COUNT(*) FROM oferta_trabajo WHERE estado_oferta = 'Abierta'");
+        $countOfertas = $stmtOfertas->fetchColumn();
+
+        $stmtPostulaciones = $link->prepare("SELECT COUNT(*) FROM postulacion WHERE id_usuario = ?");
+        $stmtPostulaciones->execute([$userId]);
+        $countPostulaciones = $stmtPostulaciones->fetchColumn();
+
+        $stmtCapacitaciones = $link->prepare("SELECT COUNT(*) FROM inscripcion WHERE id_usuario = ?");
+        $stmtCapacitaciones->execute([$userId]);
+        $countCapacitaciones = $stmtCapacitaciones->fetchColumn();
+
+        $stmtRecomendadas = $link->query("
+            SELECT id_oferta, titulo_oferta, empresa.nombre_empresa, oferta_trabajo.fecha_publicacion 
+            FROM oferta_trabajo 
+            JOIN empresa ON oferta_trabajo.id_empresa = empresa.id_empresa 
+            WHERE estado_oferta = 'Abierta' 
+            ORDER BY fecha_publicacion DESC LIMIT 3
+        ");
+        $ofertasRecomendadas = $stmtRecomendadas->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtMisPostulaciones = $link->prepare("
+            SELECT oferta_trabajo.id_oferta, oferta_trabajo.titulo_oferta, empresa.nombre_empresa, postulacion.estado_postulacion 
+            FROM postulacion 
+            JOIN oferta_trabajo ON postulacion.id_oferta = oferta_trabajo.id_oferta 
+            JOIN empresa ON oferta_trabajo.id_empresa = empresa.id_empresa 
+            WHERE postulacion.id_usuario = ? 
+            ORDER BY fecha_postulacion DESC LIMIT 2
+        ");
+        $stmtMisPostulaciones->execute([$userId]);
+        $misPostulaciones = $stmtMisPostulaciones->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) { /* ignore */ }
+}
 ?>
 
 <!DOCTYPE html>
@@ -70,6 +112,12 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
 </head>
 <body>
 <?php include __DIR__ . '/sidebar_View.php'; ?>
+
+<div class="main-content-wrapper px-md-4">
+    <?php 
+    $pageTitle = 'Home';
+    include __DIR__ . '/navbar_view.php'; 
+    ?>
 
 
     <?php 
@@ -130,7 +178,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
             </div>
             <div class="metric-data">
                 <h5>Ofertas Activas</h5>
-                <p>12</p>
+                <p><?= htmlspecialchars($countOfertas) ?></p>
             </div>
         </div>
         <div class="metric-box">
@@ -139,8 +187,8 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
             </div>
             <div class="metric-data">
                 <h5>Postulaciones</h5>
-                <p>5</p>
-                <span class="badge-status">En proceso</span>
+                <p><?= htmlspecialchars($countPostulaciones) ?></p>
+                <?php if($countPostulaciones > 0): ?><span class="badge-status">En proceso</span><?php endif; ?>
             </div>
         </div>
         <div class="metric-box">
@@ -149,7 +197,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
             </div>
             <div class="metric-data">
                 <h5>Capacitaciones</h5>
-                <p>3</p>
+                <p><?= htmlspecialchars($countCapacitaciones) ?></p>
             </div>
         </div>
         <div class="metric-box">
@@ -174,72 +222,40 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                     <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="text-muted"><i class="fas fa-ellipsis-v"></i></a>
                 </div>
                 <div class="card-body p-0">
-                    <div class="event-item">
-                        <div class="event-icon-circle">
-                            <i class="fas fa-code"></i>
-                        </div>
-                        <div class="event-details">
-                            <h6>Desarrollador Senior PHP</h6>
-                            <p>Tech Solutions - Hace 2 horas</p>
-                        </div>
-                        <div class="ms-auto event-action">
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                    </div>
-                    <div class="event-item">
-                        <div class="event-icon-circle">
-                            <i class="fas fa-paint-brush"></i>
-                        </div>
-                        <div class="event-details">
-                            <h6>Diseñador UI/UX</h6>
-                            <p>Creative Studio - Hace 5 horas</p>
-                        </div>
-                        <div class="ms-auto event-action">
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                    </div>
+                    <?php if (empty($ofertasRecomendadas)): ?>
+                        <div class="p-4 text-center text-muted">No hay ofertas recientes</div>
+                    <?php else: ?>
+                        <?php foreach($ofertasRecomendadas as $oferta): 
+                            $fechaOf = "Hace poco";
+                            if (!empty($oferta['fecha_publicacion'])) {
+                                $creacion = new DateTime($oferta['fecha_publicacion']);
+                                $ahora = new DateTime();
+                                $diff = $ahora->diff($creacion);
+                                if ($diff->d > 0) $fechaOf = "Hace {$diff->d} día" . ($diff->d > 1 ? 's' : '');
+                                elseif ($diff->h > 0) $fechaOf = "Hace {$diff->h} hora" . ($diff->h > 1 ? 's' : '');
+                                elseif ($diff->i > 0) $fechaOf = "Hace {$diff->i} min";
+                            }
+                        ?>
+                        <a href="<?= BASE_URL ?>src/index.php?action=ofertas&id=<?= $oferta['id_oferta'] ?>" class="event-item text-decoration-none text-dark d-flex">
+                            <div class="event-icon-circle">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="event-details">
+                                <h6><?= htmlspecialchars($oferta['titulo_oferta']) ?></h6>
+                                <p><?= htmlspecialchars($oferta['nombre_empresa']) ?> - <?= $fechaOf ?></p>
+                            </div>
+                            <div class="ms-auto event-action">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
                 <div class="mt-4 text-center">
                     <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary w-100">Ver todas las ofertas</a>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-6">
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h5 class="dash-card-title">
-                        <i class="fas fa-tasks text-primary"></i> 
-                        Mis Postulaciones
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-4">Consulta el estado actual de tus procesos de selección de forma rápida.</p>
-                    <div class="event-item">
-                        <div class="event-icon-circle" style="background-color: #fef3c7; color: #d97706;">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
-                        <div class="event-details">
-                            <h6>Analista de Datos</h6>
-                            <p>DataCorp - En revisión</p>
-                        </div>
-                    </div>
-                    <div class="event-item">
-                        <div class="event-icon-circle" style="background-color: #d1fae5; color: #059669;">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <div class="event-details">
-                            <h6>Frontend Developer</h6>
-                            <p>WebFlow - Entrevista programada</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3 text-center">
-                    <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary w-100">Ver historial completo</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="row g-4 mt-2 mb-5">
         <div class="col-md-4">
@@ -272,7 +288,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
                                 <i class="fas fa-folder-open text-muted"></i>
                             </div>
                             <p>Consulta tu historial de empleo y descarga tus nóminas anteriores.</p>
-                            <a href="<?= BASE_URL ?>src/index.php?action=ofertas" class="btn-dash-primary">Ver Historial Completo</a>
+                            <a href="<?= BASE_URL ?>src/index.php?action=nominas" class="btn-dash-primary">Ver Historial Completo</a>
                         </div>
                     </div>
                 </div>
@@ -280,6 +296,7 @@ $esTrabajadorActivo = ($userRoleGlobal == 3 || in_array($userRolEmpresa, [2, 3])
         <?php endif; ?>
     </div>
 </div>
+</div> <!-- Cierra main-content-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

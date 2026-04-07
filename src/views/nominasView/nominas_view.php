@@ -63,9 +63,13 @@ $baseHistorialUrl = BASE_URL . 'src/index.php?action=nominas';
     </style>
 </head>
 <body>
-<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+<?php
+$pageTitle = 'Historial';
+include __DIR__ . '/../dashboardView/sidebar_View.php';
+?>
 
 <div class="main-content">
+<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
 
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">

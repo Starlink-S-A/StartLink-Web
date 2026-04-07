@@ -92,7 +92,15 @@
                         $isSent = ($message['id_remitente'] == $userId);
                         $messageClass = $isSent ? 'sent' : 'received';
                         $senderName = $isSent ? 'Tú' : htmlspecialchars($message['remitente_nombre']);
-                        $senderPhoto = $isSent ? $currentUserPhoto : (empty($message['remitente_foto']) ? 'https://static.thenounproject.com/png/4154905-200.png' : $message['remitente_foto']);
+                        
+                        $fotoDB = $message['remitente_foto'];
+                        $senderPhotoUrl = empty($fotoDB) ? 'https://static.thenounproject.com/png/4154905-200.png' : BASE_URL . 'assets/images/Uploads/profile_pictures/' . basename($fotoDB);
+                        $senderPhoto = $isSent ? $currentUserPhoto : $senderPhotoUrl;
+
+                        // Calculate correct time in JS by outputting the ISO string
+                        // DB saves in America/Bogota as per config
+                        $dt = new DateTime($message['fecha_envio'], new DateTimeZone('America/Bogota'));
+                        $isoTime = $dt->format('c');
                     ?>
                         <div class="message-wrapper <?= $messageClass ?>">
                             <?php if (!$isSent): ?>
@@ -105,8 +113,8 @@
                                 <div class="message-bubble <?= $messageClass ?>">
                                     <?= htmlspecialchars($message['contenido']) ?>
                                 </div>
-                                <div class="message-info <?= $messageClass ?>">
-                                    <?= (new DateTime($message['fecha_envio']))->format('H:i') ?>
+                                <div class="message-info <?= $messageClass ?> js-local-time" data-iso="<?= htmlspecialchars($isoTime) ?>">
+                                    <?= $dt->format('H:i') ?>
                                 </div>
                             </div>
                             <?php if ($isSent): ?>
@@ -173,5 +181,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= BASE_URL ?>src/public/js/chats.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const timeElements = document.querySelectorAll('.js-local-time');
+        timeElements.forEach(el => {
+            const isoString = el.getAttribute('data-iso');
+            if (isoString) {
+                const dateObj = new Date(isoString);
+                // format cleanly without seconds to exactly match the design
+                el.textContent = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+        });
+    });
+</script>
 </body>
 </html>

@@ -21,11 +21,16 @@
 <body style="background-color: #f8fafc;">
 <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
 
-<div class="container mt-5 pt-4">
-    <div class="d-flex justify-content-between align-items-center mb-5">
+<div class="main-content-wrapper px-md-4">
+    <?php 
+    $pageTitle = 'Capacitaciones';
+    include __DIR__ . '/../dashboardView/navbar_view.php'; 
+    ?>
+
+<div class="container mt-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="dash-title mb-1">Capacitaciones</h2>
-            <p class="text-muted small">Formaciones disponibles para impulsar tu desarrollo profesional.</p>
+            <p class="text-muted small mb-0">Formaciones disponibles para impulsar tu desarrollo profesional.</p>
         </div>
         <?php if ($puedeCrearCapacitacion): ?>
             <button class="btn btn-dash-primary px-4" data-bs-toggle="modal" data-bs-target="#modalCrearCapacitacion">
@@ -437,5 +442,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+</div> <!-- Cierra main-content-wrapper -->
 </body>
 </html>

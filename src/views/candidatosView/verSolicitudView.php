@@ -22,8 +22,12 @@
     </style>
 </head>
 <body class="bg-light">
-<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+<?php
+$pageTitle = 'Solicitud de Contrato';
+include __DIR__ . '/../dashboardView/sidebar_View.php';
+?>
 <div class="main-content">
+<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
     <div class="container">
         <div class="request-card">
             <?php 

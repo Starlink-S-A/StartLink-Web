@@ -137,7 +137,7 @@
                         <label for="pais" class="form-label">País <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="pais" name="pais" value="<?= isset($_POST['pais']) ? htmlspecialchars($_POST['pais']) : htmlspecialchars($perfilData['pais'] ?? '') ?>" required>
                     </div>
-                    <div class="form-navigation mt-4">
+                    <div class="form-navigation mt-4" id="seccion-seguridad">
                         <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
                         <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Cambiar Contraseña</button>
                     </div>

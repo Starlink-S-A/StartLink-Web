@@ -68,10 +68,12 @@
 <body>
 <?php
 $userName = $_SESSION["user_name"] ?? 'Usuario';
+$pageTitle = 'Detalle de Oferta';
 include ROOT_PATH . 'src/views/dashboardView/sidebar_View.php';
 ?>
 
 <div class="main-content">
+    <?php include ROOT_PATH . 'src/views/dashboardView/navbar_view.php'; ?>
     
     <!-- HEADER OFERTA -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">

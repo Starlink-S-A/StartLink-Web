@@ -225,7 +225,7 @@ class NominaModel
     {
         try {
             $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
-                    FROM seguimiento_desempeno sd
+                    FROM seguimiento_desempeño sd
                     LEFT JOIN usuario u ON sd.evaluador_id = u.id
                     WHERE sd.id_usuario = ?
                     ORDER BY sd.fecha_evaluacion DESC";
@@ -246,7 +246,7 @@ class NominaModel
         try {
             $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email,
                            ev.nombre AS nombre_evaluador
-                    FROM seguimiento_desempeno sd
+                    FROM seguimiento_desempeño sd
                     JOIN usuario u ON sd.id_usuario = u.id
                     JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
                     LEFT JOIN usuario ev ON sd.evaluador_id = ev.id
@@ -317,7 +317,7 @@ class NominaModel
 
     public function countDesempenoByUsuario(int $idUsuario): int
     {
-        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM seguimiento_desempeno WHERE id_usuario = ?");
+        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM seguimiento_desempeño WHERE id_usuario = ?");
         $stmt->execute([$idUsuario]);
         return (int)$stmt->fetchColumn();
     }
@@ -325,7 +325,7 @@ class NominaModel
     public function countDesempenoByEmpresa(int $idEmpresa): int
     {
         $stmt = $this->conexion->prepare(
-            "SELECT COUNT(*) FROM seguimiento_desempeno sd JOIN usuario_empresa ue ON ue.id_usuario = sd.id_usuario AND ue.id_empresa = ?"
+            "SELECT COUNT(*) FROM seguimiento_desempeño sd JOIN usuario_empresa ue ON ue.id_usuario = sd.id_usuario AND ue.id_empresa = ?"
         );
         $stmt->execute([$idEmpresa]);
         return (int)$stmt->fetchColumn();
@@ -334,7 +334,7 @@ class NominaModel
     public function getDesempenoByUsuarioPag(int $idUsuario, int $limit, int $offset): array
     {
         $sql = "SELECT sd.*, u.nombre AS nombre_evaluador
-                FROM seguimiento_desempeno sd LEFT JOIN usuario u ON sd.evaluador_id = u.id
+                FROM seguimiento_desempeño sd LEFT JOIN usuario u ON sd.evaluador_id = u.id
                 WHERE sd.id_usuario = ? ORDER BY sd.fecha_evaluacion DESC LIMIT ? OFFSET ?";
         $stmt = $this->conexion->prepare($sql);
         $stmt->execute([$idUsuario, $limit, $offset]);
@@ -344,7 +344,7 @@ class NominaModel
     public function getDesempenoByEmpresaPag(int $idEmpresa, int $limit, int $offset): array
     {
         $sql = "SELECT sd.*, u.nombre AS nombre_trabajador, u.email, ev.nombre AS nombre_evaluador
-                FROM seguimiento_desempeno sd
+                FROM seguimiento_desempeño sd
                 JOIN usuario u ON sd.id_usuario = u.id
                 JOIN usuario_empresa ue ON ue.id_usuario = u.id AND ue.id_empresa = ?
                 LEFT JOIN usuario ev ON sd.evaluador_id = ev.id

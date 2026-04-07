@@ -40,8 +40,13 @@ $modalEstaDisponible = (int)($userProfile['esta_disponible'] ?? 0) === 1;
 </head>
 <body>
 
-<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+<?php
+$pageTitle = 'Perfiles de Candidatos';
+include __DIR__ . '/../dashboardView/sidebar_View.php';
+?>
 
+<div class="main-content">
+<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
 <div class="container mt-5 pt-4">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
@@ -130,6 +135,7 @@ $modalEstaDisponible = (int)($userProfile['esta_disponible'] ?? 0) === 1;
             </div>
         <?php endforeach; ?>
     </div>
+</div>
 </div>
 
 <div class="modal fade" id="publishProfileModal" tabindex="-1" aria-hidden="true">

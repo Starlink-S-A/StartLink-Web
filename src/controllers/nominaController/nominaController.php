@@ -90,19 +90,28 @@ class NominaController
                 $totalNominas   = $this->nominaModel->countNominasByEmpresa($s['idEmpresa']);
                 $nominas        = $this->nominaModel->getNominasByEmpresaPag($s['idEmpresa'], $perPage, $offsetNom);
                 $trabajadores   = $this->nominaModel->getTrabajadoresDeEmpresa($s['idEmpresa']);
-                $totalDesempenos = $this->nominaModel->countDesempenoByEmpresa($s['idEmpresa']);
-                $desempenos     = $this->nominaModel->getDesempenoByEmpresaPag($s['idEmpresa'], $perPage, $offsetDes);
             } else {
-                // Trabajador: solo sus propias nóminas y desempeño
+                // Trabajador: solo sus propias nóminas
                 $totalNominas   = $this->nominaModel->countNominasByUsuario($s['userId']);
                 $nominas        = $this->nominaModel->getNominasByUsuarioPag($s['userId'], $perPage, $offsetNom);
+            }
+        } catch (Exception $e) {
+            error_log("Error al cargar historial de nominas: " . $e->getMessage());
+            $mensaje     = "Error al cargar el historial. Inténtalo de nuevo.";
+            $tipoMensaje = "danger";
+        }
+
+        try {
+            if ($esAdminEmpresa && $s['idEmpresa']) {
+                $totalDesempenos = $this->nominaModel->countDesempenoByEmpresa($s['idEmpresa']);
+                $desempenos     = $this->nominaModel->getDesempenoByEmpresaPag($s['idEmpresa'], $perPage, $offsetDes);
+            } elseif (!$esAdminGlobal) {
+                // Trabajador: solo su desempeño
                 $totalDesempenos = $this->nominaModel->countDesempenoByUsuario($s['userId']);
                 $desempenos     = $this->nominaModel->getDesempenoByUsuarioPag($s['userId'], $perPage, $offsetDes);
             }
         } catch (Exception $e) {
-            error_log("Error al cargar historial: " . $e->getMessage());
-            $mensaje     = "Error al cargar el historial. Inténtalo de nuevo.";
-            $tipoMensaje = "danger";
+            error_log("Error al cargar historial de desempeno: " . $e->getMessage());
         }
 
         // Variables de paginación para la vista

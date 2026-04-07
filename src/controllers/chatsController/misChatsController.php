@@ -124,20 +124,24 @@ class MisChatsController {
         if ($currentChatId && $this->model->isParticipant($currentChatId, $this->userId)) {
             $messages = $this->model->getMessages($currentChatId);
             
-            // Enriquecer mensajes con la URL de la foto procesada
+            // Enriquecer mensajes con la URL de la foto procesada y hora ISO
             foreach ($messages as &$msg) {
-                if ($msg['remitente_foto']) {
+                // Convert fecha_envio string from DB (America/Bogota) to ISO standard string
+                $dt = new DateTime($msg['fecha_envio'], new DateTimeZone('America/Bogota'));
+                $msg['fecha_envio'] = $dt->format('c');
+
+                if (!empty($msg['remitente_foto'])) {
                     $nombreArchivo = basename($msg['remitente_foto']);
                     $rutaAbsoluta = rtrim(ROOT_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'Uploads' . DIRECTORY_SEPARATOR . 'profile_pictures' . DIRECTORY_SEPARATOR . $nombreArchivo;
-                    $rutaPublica  = rtrim(BASE_URL, '/') . 'assets/images/Uploads/profile_pictures/' . $nombreArchivo;
+                    $rutaPublica  = rtrim(BASE_URL, '/') . '/assets/images/Uploads/profile_pictures/' . $nombreArchivo;
 
                     if (file_exists($rutaAbsoluta)) {
                         $msg['remitente_foto'] = $rutaPublica;
                     } else {
-                        $msg['remitente_foto'] = BASE_URL . 'images/default-profile.jpg';
+                        $msg['remitente_foto'] = rtrim(BASE_URL, '/') . '/images/default-profile.jpg';
                     }
                 } else {
-                    $msg['remitente_foto'] = BASE_URL . 'images/default-profile.jpg';
+                    $msg['remitente_foto'] = rtrim(BASE_URL, '/') . '/images/default-profile.jpg';
                 }
             }
             unset($msg);

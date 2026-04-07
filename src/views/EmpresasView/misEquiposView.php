@@ -21,8 +21,13 @@ $empresas = $empresas ?? [];
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+    <?php
+    $pageTitle = 'Mi Equipo';
+    include __DIR__ . '/../dashboardView/sidebar_View.php';
+    ?>
 
+    <div class="main-content">
+    <?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
     <div class="container mt-5 pt-4">
         <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
             <div>
@@ -74,6 +79,7 @@ $empresas = $empresas ?? [];
                 <input type="hidden" name="empresa_id" id="empresa_id_input" value="">
             </form>
         <?php endif; ?>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

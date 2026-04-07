@@ -18,11 +18,16 @@ if (session_status() === PHP_SESSION_NONE) {
 </head>
 <body>
 
-<?php include __DIR__ . '/../dashboardView/sidebar_View.php'; ?>
+<?php
+$pageTitle = 'Mi Empresa';
+include __DIR__ . '/../dashboardView/sidebar_View.php';
+?>
 
 <?php $seccion = $seccion ?? 'informacion'; ?>
 <?php $isUsuarios = $seccion === 'usuarios'; ?>
 
+<div class="main-content">
+<?php include __DIR__ . '/../dashboardView/navbar_view.php'; ?>
 <div class="container-fluid mt-5 mb-5 pt-4">
     <div class="row justify-content-center">
         <div class="col-12 col-xxl-11">
@@ -201,6 +206,7 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

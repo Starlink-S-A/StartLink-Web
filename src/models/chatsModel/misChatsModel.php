@@ -119,21 +119,19 @@ class MisChatsModel {
         try {
             $this->link->beginTransaction();
 
-            $now = date('Y-m-d H:i:s');
-
             // El campo se llama 'id_mensaje' (PK), 'id_conversacion', 'id_remitente', 'contenido', 'fecha_envio'
             $stmtInsertMessage = $this->link->prepare("
                 INSERT INTO mensaje (id_conversacion, id_remitente, contenido, fecha_envio, tipo_mensaje)
-                VALUES (?, ?, ?, ?, 'normal')
+                VALUES (?, ?, ?, NOW(), 'normal')
             ");
-            if (!$stmtInsertMessage->execute([$chatId, $userId, $messageContent, $now])) {
+            if (!$stmtInsertMessage->execute([$chatId, $userId, $messageContent])) {
                 throw new Exception("Error al insertar mensaje en la base de datos.");
             }
 
             $stmtUpdateLastMessage = $this->link->prepare("
-                UPDATE conversacion SET ultimo_mensaje = ? WHERE id_conversacion = ?
+                UPDATE conversacion SET ultimo_mensaje = NOW() WHERE id_conversacion = ?
             ");
-            if (!$stmtUpdateLastMessage->execute([$now, $chatId])) {
+            if (!$stmtUpdateLastMessage->execute([$chatId])) {
                 throw new Exception("Error al actualizar último mensaje en conversación.");
             }
 
