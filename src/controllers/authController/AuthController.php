@@ -375,16 +375,20 @@ class AuthController
             ]);
 
             // 📧 Enviar correo con PHPMailer
-            require_once ROOT_PATH . "vendor/autoload.php";
             $mail = new PHPMailer\PHPMailer\PHPMailer();
 
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
+            $mail->Host = SMTP_HOST;
             $mail->SMTPAuth = true;
-            $mail->Username = 'startlink456@gmail.com';
-            $mail->Password = 'riej zaha wvdr vnba';
-            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
+            $mail->Username = SMTP_USER;
+            $mail->Password = SMTP_PASS;
+            // Si el puerto es 465 usamos SSL, si es 587 usamos STARTTLS
+            if (SMTP_PORT == 465) {
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } else {
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            }
+            $mail->Port = SMTP_PORT;
 
             // Opción para desarrollo en local (evita errores de certificados SSL en XAMPP/WAMP)
             $mail->SMTPOptions = array(
@@ -392,11 +396,14 @@ class AuthController
                     'verify_peer' => false,
                     'verify_peer_name' => false,
                     'allow_self_signed' => true
+                ),
+                'socket' => array(
+                    'bindto' => '0:0' // Fuerza el uso de IPv4 para evitar el error 'Network is unreachable'
                 )
             );
 
             // Remitente y destinatario
-            $mail->setFrom('startlink456@gmail.com', 'StartLink');
+            $mail->setFrom(SMTP_FROM, SMTP_NAME);
             $mail->addAddress($email, $user['nombre']);
 
             // Contenido

@@ -238,15 +238,15 @@ if (file_exists(ROOT_PATH . "vendor/autoload.php")) {
 }
 
 if (!defined('SMTP_HOST'))
-    define('SMTP_HOST', 'smtp.gmail.com');
+    define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.gmail.com');
 if (!defined('SMTP_PORT'))
-    define('SMTP_PORT', 587);
+    define('SMTP_PORT', getenv('SMTP_PORT') ?: 465); // Cambiado a 465 para SSL (más estable en Docker)
 if (!defined('SMTP_USER'))
-    define('SMTP_USER', 'tu_correo@gmail.com');
+    define('SMTP_USER', getenv('SMTP_USER') ?: 'startlink456@gmail.com');
 if (!defined('SMTP_PASS'))
-    define('SMTP_PASS', 'clave_app_google');
+    define('SMTP_PASS', getenv('SMTP_PASS') ?: 'riej zaha wvdr vnba');
 if (!defined('SMTP_FROM'))
-    define('SMTP_FROM', 'tu_correo@gmail.com');
+    define('SMTP_FROM', getenv('SMTP_FROM') ?: 'startlink456@gmail.com');
 if (!defined('SMTP_NAME'))
-    define('SMTP_NAME', 'TalentLink');
+    define('SMTP_NAME', getenv('SMTP_NAME') ?: 'TalentLink');
 ?>
