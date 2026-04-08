@@ -1,4 +1,10 @@
 RewriteEngine On
+# Indicamos que el archivo principal está en src/
+DirectoryIndex src/index.php
+
+# Si la ruta está vacía, manda a src/index.php
+RewriteRule ^$ src/index.php [L]
+
 # RewriteBase eliminado para compatibilidad con el root de Render
 
 # Si piden directamente index.php en la raíz, lo mandamos al src/index.php
