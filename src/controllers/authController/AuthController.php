@@ -376,21 +376,26 @@ class AuthController
 
             // 📧 Enviar correo con PHPMailer
             $mail = new PHPMailer\PHPMailer\PHPMailer();
+            $GLOBALS['smtp_debug'] = ""; 
+            $mail->SMTPDebug = 2;
+            $mail->Debugoutput = function($str, $level) {
+                $GLOBALS['smtp_debug'] .= $str . "\n";
+            };
 
             $mail->isSMTP();
             $mail->Host = SMTP_HOST;
             $mail->SMTPAuth = true;
             $mail->Username = SMTP_USER;
             $mail->Password = SMTP_PASS;
-            // Si el puerto es 465 usamos SSL, si es 587 usamos STARTTLS
+            
             if (SMTP_PORT == 465) {
                 $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
             } else {
                 $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
             }
             $mail->Port = SMTP_PORT;
+            $mail->Timeout = 20; // Aumentar timeout a 20s
 
-            // Opción para desarrollo en local (evita errores de certificados SSL en XAMPP/WAMP)
             $mail->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,
@@ -398,27 +403,32 @@ class AuthController
                     'allow_self_signed' => true
                 ),
                 'socket' => array(
-                    'bindto' => '0:0' // Fuerza el uso de IPv4 para evitar el error 'Network is unreachable'
+                    'bindto' => '0.0.0.0:0' // Forzado estricto de IPv4 para evitar 'Network is unreachable'
                 )
             );
 
-            // Remitente y destinatario
             $mail->setFrom(SMTP_FROM, SMTP_NAME);
             $mail->addAddress($email, $user['nombre']);
 
-            // Contenido
             $mail->isHTML(true);
             $mail->Subject = 'Recuperar contraseña - StartLink';
             $mail->Body = "
-            <p>Hola <b>" . htmlspecialchars($user['nombre']) . "</b>,</p>
-            <p>Tu código de recuperación es: <b>$resetCode</b></p>
-            <p>Este código expira en 15 minutos.</p>
-        ";
+                <p>Hola <b>" . htmlspecialchars($user['nombre']) . "</b>,</p>
+                <p>Tu código de recuperación es: <b>$resetCode</b></p>
+                <p>Este código expira en 15 minutos.</p>
+            ";
 
+            ob_clean();
             if ($mail->send()) {
                 echo json_encode(['status' => 'success', 'message' => 'Se envió un código de recuperación a tu correo.']);
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo]);
+                // Si falla, incluimos el log de debug para saber EXACTAMENTE por qué
+                error_log("❌ PHPMailer Error: " . $mail->ErrorInfo . "\nDebug: " . $GLOBALS['smtp_debug']);
+                echo json_encode([
+                    'status' => 'error', 
+                    'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo,
+                    'debug' => $GLOBALS['smtp_debug']
+                ]);
             }
 
         } catch (Throwable $e) {

@@ -37,11 +37,19 @@ if (session_status() == PHP_SESSION_NONE) {
 date_default_timezone_set('America/Bogota');
 
 // -------------------------------
-// 🔹 Configuración de errores (solo desarrollo)
+// 🔹 Configuración de errores
 // -------------------------------
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+if (getenv('RENDER_EXTERNAL_URL')) {
+    // Producción (Render): No mostrar errores al usuario final para no romper el JSON
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
+} else {
+    // Desarrollo local: Mostrar todo
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+}
 
 // -------------------------------
 // 🔹 Rutas y constantes globales
