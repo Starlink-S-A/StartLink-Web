@@ -81,36 +81,6 @@
 </div>
 </div>
 
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 shadow-lg">
-            <div class="modal-header bg-light p-3 border-bottom-0">
-                <h5 class="modal-title fs-5 text-dark">Confirmar Acción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body p-4 text-secondary" id="confirmModalBody"></div>
-            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
-                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4" id="confirmActionButton">Confirmar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="alertDialog" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 shadow-lg">
-            <div class="modal-header bg-light p-3 border-bottom-0">
-                <h5 class="modal-title fs-5 text-dark">Mensaje</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body p-4 text-secondary" id="alertDialogBody"></div>
-            <div class="modal-footer bg-light p-3 border-top-0 d-flex justify-content-end">
-                <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-dismiss="modal">Aceptar</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

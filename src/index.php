@@ -3,7 +3,8 @@
 
 require_once __DIR__ . '/controllers/authController/AuthController.php';
 require_once __DIR__ . '/controllers/dashboardController/sideBarController.php';
-require_once __DIR__ . '/controllers/configuracionusuarioController/UserController.php';
+require_once __DIR__ . '/controllers/configuracionUsuarioController/UserController.php';
+require_once __DIR__ . '/helpers/MailerHelper.php';
 
 
 $action = $_GET['action'] ?? '';
@@ -50,7 +51,7 @@ switch ($action) {
         break;
 
     case 'crearEmpresa':
-        require_once __DIR__ . '/controllers/empresasController/EmpresasController.php';
+        require_once __DIR__ . '/controllers/EmpresasController/EmpresasController.php';
         $empresasController = new EmpresasController();
         $empresasController->create();
         break;

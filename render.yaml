@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: startlink-web
+    runtime: docker
+    plan: free
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        fromService:
+          name: startlink-web
+          type: web
+          property: host

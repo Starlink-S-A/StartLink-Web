@@ -8,32 +8,37 @@ document.addEventListener('DOMContentLoaded', function() {
         if(document.getElementById('confirmModal')) confirmModalInstance = new bootstrap.Modal(document.getElementById('confirmModal'));
     }
 
-    function customAlert(message) {
-        const body = document.getElementById('alertDialogBody');
-        if (body && alertDialogInstance) {
-            body.textContent = message;
-            alertDialogInstance.show();
-            return;
-        }
-        alert(message);
+    function customAlert(message, icon = 'info') {
+        Swal.fire({
+            text: message,
+            icon: icon,
+            confirmButtonColor: '#00a680',
+            confirmButtonText: 'Aceptar',
+            customClass: {
+                confirmButton: 'rounded-pill px-4'
+            }
+        });
     }
 
-    const BASE_URL = window.BASE_URL || '';
-
     function customConfirm(message, callback) {
-        const body = document.getElementById('confirmModalBody');
-        const btn = document.getElementById('confirmActionButton');
-        confirmCallback = callback;
-        if (body && btn && confirmModalInstance) {
-            body.textContent = message;
-            confirmModalInstance.show();
-            btn.onclick = () => {
-                if (confirmCallback) confirmCallback();
-                confirmModalInstance.hide();
-            };
-            return;
-        }
-        if (confirm(message)) if (callback) callback();
+        Swal.fire({
+            text: message,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#00a680',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'rounded-pill px-4 ms-2',
+                cancelButton: 'rounded-pill px-4'
+            }
+        }).then((result) => {
+            if (result.isConfirmed && callback) {
+                callback();
+            }
+        });
     }
 
     // AJAX Call to Mark Notification as Read
@@ -149,38 +154,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Global listener for notification clicks and deletions
     document.addEventListener('click', async function(event) {
+        // Handle Delete Button
         const deleteButton = event.target.closest('.notif-delete-btn');
-        if (!deleteButton) return;
+        if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const notificationId = deleteButton.dataset.notificationId;
+            if (!notificationId) return;
 
-        event.preventDefault();
-        const notificationId = deleteButton.dataset.notificationId;
-        if (!notificationId) return;
+            customConfirm('¿Eliminar esta notificación?', async () => {
+                const formData = new FormData();
+                formData.append('sub_action', 'delete_notification');
+                formData.append('notification_id', notificationId);
 
-        if (!confirm('¿Eliminar esta notificación?')) return;
-
-        const formData = new FormData();
-        formData.append('sub_action', 'delete_notification');
-        formData.append('notification_id', notificationId);
-
-        try {
-            const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
-                method: 'POST',
-                body: formData
+                try {
+                    const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        const item = document.getElementById(`notification-item-${notificationId}`);
+                        if (item) item.remove();
+                        pollNotifications();
+                    } else {
+                        customAlert(`Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting notification:', error);
+                    customAlert('Error al eliminar la notificación. Intenta de nuevo.', 'error');
+                }
             });
-            const data = await response.json();
-            if (data.success) {
-                const item = document.getElementById(`notification-item-${notificationId}`);
-                if (item) item.remove();
-                pollNotifications();
-            } else {
-                customAlert(`Error: ${data.message}`);
+            return;
+        }
+
+        // Handle Click on notification to mark as read
+        const notificationItem = event.target.closest('.notif-item, .notification-item');
+        if (notificationItem && !event.target.closest('.notif-delete-btn')) {
+            const hasLink = notificationItem.tagName === 'A' || notificationItem.querySelector('a.stretched-link');
+            if (hasLink) {
+                // Check if unread (dot in navbar or class in main view)
+                const isUnread = notificationItem.classList.contains('unread') || notificationItem.querySelector('.bg-primary.rounded-circle');
+                if (isUnread) {
+                    const notificationId = notificationItem.id.replace('notification-item-', '') || notificationItem.dataset.id;
+                    markNotificationAsRead(notificationId);
+                }
             }
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-            customAlert('Error al eliminar la notificación. Intenta de nuevo.');
         }
     });
+
+    const BASE_URL = window.BASE_URL || '';
 
     // Continuous update polling for Notifications (checks every 5 seconds)
     function pollNotifications() {
@@ -239,9 +264,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const redirectUrl = buildRedirectUrl(notification.url_redireccion);
         const timeText = formatNotificationTime(notification.fecha_creacion);
 
+        // Adjust icon colors visually
+        let iconColorBg = '#f1f5f9';
+        let iconColorText = '#64748b';
+        if (iconClass.includes('text-success')) { iconColorBg = '#d1fae5'; iconColorText = '#059669'; }
+        else if (iconClass.includes('text-warning')) { iconColorBg = '#fef3c7'; iconColorText = '#d97706'; }
+        else if (iconClass.includes('text-danger')) { iconColorBg = '#fee2e2'; iconColorText = '#dc2626'; }
+        else if (iconClass.includes('text-info')) { iconColorBg = '#e0f2fe'; iconColorText = '#0284c7'; }
+
         return `
             <div class="notif-item position-relative" id="notification-item-${notification.id}">
-                <div class="notif-icon-circle" style="background-color: #e0f2fe; color: #0284c7;">
+                <div class="notif-icon-circle" style="background-color: ${iconColorBg}; color: ${iconColorText};">
                     <i class="${iconClass}"></i>
                 </div>
                 <div class="flex-grow-1" style="min-width: 0;">
@@ -253,7 +286,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <small class="text-muted" style="font-size: 0.7rem;">${timeText}</small>
                 </div>
                 <a class="stretched-link" href="${redirectUrl}"></a>
-                <button class="notif-delete-btn position-relative" style="z-index:2;" title="Eliminar" type="button"><i class="far fa-trash-alt"></i></button>
+                <button class="notif-delete-btn position-relative" 
+                        style="z-index:10;" 
+                        data-notification-id="${notification.id}" 
+                        title="Eliminar" 
+                        type="button">
+                    <i class="far fa-trash-alt"></i>
+                </button>
             </div>
         `;
     }

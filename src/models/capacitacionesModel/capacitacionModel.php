@@ -123,39 +123,35 @@ class CapacitacionModel
                     if (!empty($owners)) {
                         $mensajeOwner = "Se ha creado una nueva capacitación: '{$data['nombre_capacitacion']}' en tu empresa.";
                         $stmtNotif = $this->conexion->prepare("
-                            INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
-                            VALUES (?, ?, 'info', 'fas fa-chalkboard-teacher', 'src/index.php?action=capacitaciones', NOW(), 0)
-                        ");
-                        foreach ($owners as $ownerId) {
-                            $stmtNotif->execute([$ownerId, $mensajeOwner]);
-                        }
-                    }
+                    INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion, fecha_creacion, leida)
+                    VALUES (?, ?, 'info', 'fas fa-chalkboard-teacher', 'index.php?action=capacitaciones', NOW(), 0)
+                ");
+                foreach ($owners as $ownerId) {
+                    $stmtNotif->execute([$ownerId, $mensajeOwner]);
                 }
+            }
+        }
 
-                $this->conexion->commit();
-                return true;
-            }
-            else {
-                $this->conexion->rollBack();
-                return false;
-            }
-
-        }
-        catch (PDOException $e) {
-            if ($this->conexion->inTransaction()) {
-                $this->conexion->rollBack();
-            }
-            error_log("Error PDO al crear capacitación: " . $e->getMessage());
-            throw new Exception("Error de base de datos al crear la capacitación.");
-        }
-        catch (Exception $e) {
-            if ($this->conexion->inTransaction()) {
-                $this->conexion->rollBack();
-            }
-            error_log("Error general al crear capacitación: " . $e->getMessage());
-            throw $e;
-        }
+        $this->conexion->commit();
+        return true;
+    } else {
+        $this->conexion->rollBack();
+        return false;
     }
+} catch (PDOException $e) {
+    if ($this->conexion->inTransaction()) {
+        $this->conexion->rollBack();
+    }
+    error_log("Error PDO al crear capacitación: " . $e->getMessage());
+    throw new Exception("Error de base de datos al crear la capacitación.");
+} catch (Exception $e) {
+    if ($this->conexion->inTransaction()) {
+        $this->conexion->rollBack();
+    }
+    error_log("Error general al crear capacitación: " . $e->getMessage());
+    throw $e;
+}
+}
 
     /**
      * Notificar a todos los usuarios sobre una nueva capacitación
@@ -167,11 +163,12 @@ class CapacitacionModel
         try {
             $nombre = htmlspecialchars($nombreCapacitacion, ENT_QUOTES, 'UTF-8');
             $mensaje = "Nueva capacitación disponible: \"{$nombre}\". ¡Inscríbete ahora!";
-            $sql = "INSERT INTO notificaciones (user_id, mensaje, tipo, icono)
-                    SELECT id, ?, 'info', 'fas fa-chalkboard-teacher text-primary'
+            $url = "index.php?action=capacitaciones";
+            $sql = "INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion)
+                    SELECT id, ?, 'info', 'fas fa-chalkboard-teacher text-primary', ?
                     FROM usuario WHERE id != ?";
             $stmt = $this->conexion->prepare($sql);
-            $stmt->execute([$mensaje, $creadorId]);
+            $stmt->execute([$mensaje, $url, $creadorId]);
         } catch (PDOException $e) {
             error_log("Error al notificar nueva capacitación: " . $e->getMessage());
         }

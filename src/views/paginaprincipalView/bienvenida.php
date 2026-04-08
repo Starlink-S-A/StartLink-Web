@@ -1,177 +1,219 @@
 <?php
 require_once __DIR__ . '/../../config/configuracionInicial.php';
-// Si $form_to_show no está definido, mostrar welcome
-if (!isset($form_to_show)) $form_to_show = 'welcome';
+// Si $form_to_show no está definido, mostrar login por defecto
+if (!isset($form_to_show))
+    $form_to_show = 'login';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StartLink - ¡Encuentra tu próximo empleo!</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Estilos base y el nuevo diseño -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/login_redesign.css">
+
     <!-- Scripts de reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ" async defer></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>"></script>
     <script>
         const BASE_URL = '<?php echo BASE_URL; ?>';
         const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
+        const RECAPTCHA_SITE_KEY = '<?php echo RECAPTCHA_SITE_KEY; ?>';
     </script>
 </head>
+
 <body>
-    <div class="video-background">
-        <video id="video1" class="video-layer active-video" autoplay loop muted playsinline>
-            <source src="<?php echo BASE_URL; ?>assets/media/Fondo.mp4" type="video/mp4">
-            Tu navegador no soporta la etiqueta de video.
-        </video>
-        <video id="video2" class="video-layer" loop muted playsinline>
-            <source src="<?php echo BASE_URL; ?>assets/media/Fondo1.mp4" type="video/mp4">
-            Tu navegador no soporta la etiqueta de video.
-        </video>
-        <div class="video-overlay"></div>
-    </div>
-
-    <div class="main-content">
-        <!-- Contenedor para mensajes -->
-        <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
-             style="z-index: 1000; width: 80%; max-width: 500px;">
-        </div>
-
-        <!-- Bienvenida -->
-        <div id="welcomeSection" class="section-container" style="display: <?php echo $form_to_show === 'welcome' ? 'block' : 'none'; ?>;">
-            <h1>¡Bienvenido a StartLink!</h1>
-            <p class="lead">Conecta con tu futuro laboral ideal.</p>
-            <button id="showLoginFormBtn" class="btn btn-primary btn-lg mt-3">Comenzar</button>
-        </div>
-
-        <!-- Login -->
-        <div id="loginFormSection" class="section-container" style="display: <?php echo $form_to_show === 'login' ? 'block' : 'none'; ?>;">
-            <h2>Iniciar Sesión</h2>
-            <form id="loginForm" class="form-container mt-4">
-                <div class="mb-3">
-                    <label for="loginEmail" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="loginEmail" name="email" required>
+    <div class="login-wrapper">
+        <!-- Parte Izquierda: Bienvenida -->
+        <div class="login-left">
+            <div class="bg-pattern"></div>
+            <div class="glass-circle circle-1"></div>
+            <div class="glass-circle circle-2"></div>
+            <div class="glass-circle circle-3"></div>
+            <div class="logo">
+                <i class="fas fa-rocket"></i> StartLink
+            </div>
+            <div class="welcome-content">
+                <h1>Tu próximo gran paso profesional comienza aquí</h1>
+                <p>Conectamos tu talento con las mejores oportunidades del mercado laboral.</p>
+                <div class="rocket-illustration">
+                    <i class="fas fa-rocket"></i>
                 </div>
-                <div class="mb-3">
-                    <label for="loginPassword" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="loginPassword" name="password" required>
-                </div>
-                <!-- Campo oculto para el token de reCAPTCHA v3 -->
-                <input type="hidden" id="recaptchaToken" name="recaptcha_token">
-
-                <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">Ingresar</button>
-
-                <p class="mt-3 text-center">
-                    ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="btn-link">Regístrate aquí</a>
-                </p>
-                <p class="mt-2 text-center">
-                    ¿Olvidaste tu contraseña?<a href="#" id="showForgotPasswordLink" class="btn-link">¿Restablecer contraseña?</a>
-                </p>
-            </form>
-        </div>
-
-        <!-- Registro -->
-        <div id="registerFormSection" class="section-container" style="display: <?php echo $form_to_show === 'register' ? 'block' : 'none'; ?>;">
-            <h2>Crear una Cuenta</h2>
-            <form id="registrationForm" class="form-container mt-4">
-                <div class="mb-3">
-                    <label for="registerName" class="form-label">Nombre</label>
-                    <input type="text" class="form-control" id="registerName" name="nombre" required>
-                </div>
-                <div class="mb-3">
-                    <label for="registerEmail" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="registerEmail" name="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="registerPassword" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="registerPassword" name="password" required>
-                </div>
-                <div class="mb-3">
-                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
-                    <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
-                </div>
-
-                <!-- reCAPTCHA v2 para registro -->
-                <div class="g-recaptcha mb-3" data-sitekey="6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2"></div>
-
-                <button type="submit" class="btn btn-success btn-lg btn-block mt-4">Registrarse</button>
-                <p class="mt-3 text-center">
-                    ¿Ya tienes cuenta? <a href="#" id="showLoginLink" class="btn-link">Inicia sesión</a>
-                </p>
-            </form>
-        </div>
-
-        <!-- Recuperar contraseña -->
-        <div id="forgotPasswordSection" class="section-container" style="display: none; opacity: 0; transform: translateY(20px);">
-            <h3 class="mb-3">Recuperar contraseña</h3>
-            <form id="forgotPasswordForm">
-                <div class="mb-3">
-                    <label for="forgotEmail" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="forgotEmail" name="forgotEmail" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Enviar enlace de recuperación</button>
-            </form>
-            <div class="mt-3 text-center">
-                <a href="#" id="backToLoginLink" class="btn-link">Volver al login</a>
             </div>
         </div>
 
-        <!-- Restablecer contraseña -->
-        <div id="resetPasswordSection" class="section-container" style="display: none; opacity: 0; transform: translateY(20px);">
-            <h3 class="mb-3">Nueva contraseña</h3>
-            <form id="resetPasswordForm">
-                <div class="mb-3">
-                    <label for="resetToken" class="form-label">Código de Verificación</label>
-                    <input type="text" class="form-control" id="resetToken" name="resetToken" required placeholder="Ingresa el código enviado a tu correo">
-                </div>
-                <div class="mb-3">
-                    <label for="resetNewPassword" class="form-label">Nueva Contraseña</label>
-                    <input type="password" class="form-control" id="resetNewPassword" name="resetNewPassword" required>
-                </div>
-                <div class="mb-3">
-                    <label for="confirmResetPassword" class="form-label">Confirmar Nueva Contraseña</label>
-                    <input type="password" class="form-control" id="confirmResetPassword" name="confirmResetPassword" required>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Cambiar Contraseña</button>
-            </form>
-            <div class="mt-3 text-center">
-                <a href="#" id="backToLoginFromResetLink" class="btn-link">Volver al login</a>
+        <!-- Parte Derecha: Formularios -->
+        <div class="login-right">
+            <!-- Contenedor para mensajes de alerta -->
+            <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
+                style="z-index: 1000; width: 90%; max-width: 400px;">
             </div>
-        </div>
-    </div> <!-- /.main-content -->
+
+            <!-- Sección Bienvenida (Mantenida por compatibilidad con JS) -->
+            <div id="welcomeSection"
+                class="form-section <?php echo $form_to_show === 'welcome' ? 'active' : ''; ?> welcome-professional">
+                <h1>¡Bienvenido a StartLink!</h1>
+                <p class="lead">Conecta con tu futuro laboral ideal.</p>
+                <button id="showLoginFormBtn" class="btn-action">Comenzar</button>
+            </div>
+
+            <!-- Login -->
+            <div id="loginFormSection" class="form-section <?php echo ($form_to_show === 'login') ? 'active' : ''; ?>">
+                <h2>Iniciar Sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group-custom">
+                        <label for="loginEmail">Correo electrónico</label>
+                        <input type="email" id="loginEmail" name="email" placeholder="Ingresa tu correo" required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="loginPassword">Contraseña</label>
+                        <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <a href="#" id="showForgotPasswordLink" class="ms-auto">¿Olvidaste tu contraseña?</a>
+                    </div>
+
+                    <!-- Campo oculto para el token de reCAPTCHA v3 -->
+                    <input type="hidden" id="recaptchaToken" name="recaptcha_token">
+
+                    <button type="submit" class="btn-action">Ingresar</button>
+
+                    <div class="link-footer">
+                        ¿No tienes una cuenta? <a href="#" id="showRegisterLink">Regístrate aquí</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Registro -->
+            <div id="registerFormSection"
+                class="form-section <?php echo $form_to_show === 'register' ? 'active' : ''; ?>">
+                <h2>Crea tu cuenta</h2>
+                <form id="registrationForm">
+                    <div class="form-group-custom">
+                        <label for="registerName">Nombre completo</label>
+                        <input type="text" id="registerName" name="nombre" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="registerEmail">Correo electrónico</label>
+                        <input type="email" id="registerEmail" name="email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="registerPassword">Contraseña</label>
+                        <input type="password" id="registerPassword" name="password" placeholder="Mín. 8 caracteres"
+                            required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="confirmPassword">Confirmar contraseña</label>
+                        <input type="password" id="confirmPassword" name="confirm_password"
+                            placeholder="Repite tu clave" required>
+                    </div>
+
+                    <!-- reCAPTCHA v3 se maneja automáticamente en JS -->
+
+                    <button type="submit" class="btn-action">Registrarme ahora</button>
+
+                    <div class="link-footer">
+                        ¿Ya eres miembro? <a href="#" id="showLoginLink">Inicia sesión aquí</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recuperar contraseña -->
+            <div id="forgotPasswordSection" class="form-section">
+                <h2>Recuperar Contraseña</h2>
+                <form id="forgotPasswordForm">
+                    <div class="form-group-custom">
+                        <label for="forgotEmail">Correo Electrónico</label>
+                        <input type="email" id="forgotEmail" name="forgotEmail" placeholder="Ingresa tu correo"
+                            required>
+                    </div>
+                    <button type="submit" class="btn-action w-100">Enviar Enlace</button>
+                    <div class="link-footer">
+                        <a href="#" id="backToLoginLink">Volver al Inicio</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Restablecer contraseña -->
+            <div id="resetPasswordSection" class="form-section">
+                <h2>Nueva Contraseña</h2>
+                <form id="resetPasswordForm">
+                    <div class="form-group-custom">
+                        <label for="resetToken">Código de Verificación</label>
+                        <input type="text" id="resetToken" name="resetToken" placeholder="Código enviado al correo"
+                            required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="resetNewPassword">Nueva Contraseña</label>
+                        <input type="password" id="resetNewPassword" name="resetNewPassword" required>
+                    </div>
+                    <div class="form-group-custom">
+                        <label for="confirmResetPassword">Confirmar Contraseña</label>
+                        <input type="password" id="confirmResetPassword" name="confirmResetPassword" required>
+                    </div>
+                    <button type="submit" class="btn-action w-100">Restablecer Contraseña</button>
+                    <div class="link-footer">
+                        <a href="#" id="backToLoginFromResetLink">Volver al Inicio</a>
+                    </div>
+                </form>
+            </div>
+
+        </div> <!-- /.login-right -->
+    </div> <!-- /.login-wrapper -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo BASE_URL; ?>src/public/js/video-crossfade.js"></script>
     <script src="<?php echo BASE_URL; ?>src/public/js/form-logic.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const loginSection = document.getElementById("loginFormSection");
-            const forgotSection = document.getElementById("forgotPasswordSection");
-            const showForgotPasswordLink = document.getElementById("showForgotPasswordLink");
-            const backToLoginLink = document.getElementById("backToLoginLink");
+            const navLoginBtn = document.getElementById('navLoginBtn');
+            const navSignUpBtn = document.getElementById('navSignUpBtn');
 
-            if (showForgotPasswordLink) {
-                showForgotPasswordLink.addEventListener("click", (e) => {
+            const setActiveNav = (btn) => {
+                if (!btn) return;
+                if (navLoginBtn) navLoginBtn.classList.remove('active');
+                if (navSignUpBtn) navSignUpBtn.classList.remove('active');
+                btn.classList.add('active');
+            };
+
+            if (navLoginBtn) {
+                navLoginBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    loginSection.style.display = "none";
-                    forgotSection.style.display = "block";
-                    forgotSection.style.opacity = "1";
-                    forgotSection.style.transform = "translateY(0)";
+                    setActiveNav(navLoginBtn);
+                    const link = document.getElementById('showLoginLink');
+                    if (link) link.click();
                 });
             }
 
-            if (backToLoginLink) {
-                backToLoginLink.addEventListener("click", (e) => {
+            if (navSignUpBtn) {
+                navSignUpBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    forgotSection.style.display = "none";
-                    loginSection.style.display = "block";
-                    loginSection.style.opacity = "1";
-                    loginSection.style.transform = "translateY(0)";
+                    setActiveNav(navSignUpBtn);
+                    const link = document.getElementById('showRegisterLink');
+                    if (link) link.click();
                 });
+            }
+
+            // Sincronizar botones superiores cuando se cambia de sección vía links internos
+            const showRegisterLink = document.getElementById('showRegisterLink');
+            const showLoginLink = document.getElementById('showLoginLink');
+
+            if (showRegisterLink) showRegisterLink.addEventListener('click', () => setActiveNav(navSignUpBtn));
+            if (showLoginLink) showLoginLink.addEventListener('click', () => setActiveNav(navLoginBtn));
+
+            const showLoginFormBtn = document.getElementById('showLoginFormBtn');
+            if (showLoginFormBtn) {
+                showLoginFormBtn.addEventListener('click', () => setActiveNav(navLoginBtn));
             }
         });
     </script>
 </body>
+
 </html>

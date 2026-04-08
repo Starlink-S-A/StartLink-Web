@@ -328,6 +328,7 @@ if (isset($_SESSION["user_id"])) {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     if (typeof BASE_URL === 'undefined') {
         window.BASE_URL = '<?= BASE_URL ?>';
