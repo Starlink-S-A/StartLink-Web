@@ -58,10 +58,11 @@ class NominaModel
             $fechaInicioFormat = date('d/m/Y', strtotime($data['fecha_inicio_periodo']));
             $fechaFinFormat    = date('d/m/Y', strtotime($data['fecha_fin_periodo']));
             $mensajeNotif      = "Se ha generado tu recibo de nómina para el período {$fechaInicioFormat} al {$fechaFinFormat}.";
+            $urlNotif          = "index.php?action=nominas";
             
-            $sqlNotif = "INSERT INTO notificaciones (user_id, mensaje, tipo, icono) VALUES (?, ?, 'info', 'fas fa-file-invoice-dollar')";
+            $sqlNotif = "INSERT INTO notificaciones (user_id, mensaje, tipo, icono, url_redireccion) VALUES (?, ?, 'info', 'fas fa-file-invoice-dollar', ?)";
             $stmtNotif = $this->conexion->prepare($sqlNotif);
-            $stmtNotif->execute([$data['id_usuario'], $mensajeNotif]);
+            $stmtNotif->execute([$data['id_usuario'], $mensajeNotif, $urlNotif]);
 
             $this->conexion->commit();
             return true;

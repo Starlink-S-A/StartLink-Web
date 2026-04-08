@@ -7,13 +7,15 @@
 // 🔹 Funciones auxiliares de sesión
 // -------------------------------
 if (!function_exists('setTempSessionData')) {
-    function setTempSessionData($key, $data) {
+    function setTempSessionData($key, $data)
+    {
         $_SESSION['temp_data'][$key] = $data;
     }
 }
 
 if (!function_exists('getTempSessionData')) {
-    function getTempSessionData($key, $clear = true) {
+    function getTempSessionData($key, $clear = true)
+    {
         $data = $_SESSION['temp_data'][$key] ?? null;
         if ($clear) {
             unset($_SESSION['temp_data'][$key]);
@@ -35,17 +37,31 @@ if (session_status() == PHP_SESSION_NONE) {
 date_default_timezone_set('America/Bogota');
 
 // -------------------------------
-// 🔹 Configuración de errores (solo desarrollo)
+// 🔹 Configuración de errores
 // -------------------------------
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+if (getenv('RENDER_EXTERNAL_URL')) {
+    // Producción (Render): No mostrar errores al usuario final para no romper el JSON
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
+} else {
+    // Desarrollo local: Mostrar todo
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+}
 
 // -------------------------------
 // 🔹 Rutas y constantes globales
 // -------------------------------
 if (!defined('BASE_URL')) {
-    define('BASE_URL', 'http://localhost/StartLink-Web/');
+    // Detectamos si estamos en Render usando la variable RENDER_EXTERNAL_URL
+    $externalUrl = getenv('RENDER_EXTERNAL_URL');
+    if ($externalUrl) {
+        define('BASE_URL', rtrim($externalUrl, '/') . '/');
+    } else {
+        define('BASE_URL', 'http://localhost/StartLink-Web/');
+    }
 }
 
 if (!defined('ROOT_PATH')) {
@@ -58,8 +74,10 @@ if (!defined('ROOT_PATH')) {
 if (file_exists(ROOT_PATH . '.env')) {
     $lines = file(ROOT_PATH . '.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
+        if (strpos(trim($line), '#') === 0)
+            continue;
+        if (strpos($line, '=') === false)
+            continue;
         list($name, $value) = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value);
@@ -74,11 +92,15 @@ if (file_exists(ROOT_PATH . '.env')) {
 // -------------------------------
 // 🔹 Configuración de reCAPTCHA
 // -------------------------------
+// Intentamos obtener de las variables de entorno de Render
+$envSiteKey = getenv('RECAPTCHA_SITE_KEY');
+$envSecretKey = getenv('RECAPTCHA_SECRET_KEY');
+
 if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: 'YOUR_RECAPTCHA_SITE_KEY'); 
+    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2');
 }
 if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: 'YOUR_RECAPTCHA_SECRET_KEY'); 
+    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH');
 }
 
 // -------------------------------
@@ -91,31 +113,37 @@ if (!defined('JWT_SECRET_KEY')) {
 // -------------------------------
 // 🔹 Configuración de Base de Datos (Aiven Cloud)
 // -------------------------------
-if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
-if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: 'root');
-if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
-if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: '3306');
+if (!defined('DB_HOST'))
+    define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+if (!defined('DB_NAME'))
+    define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
+if (!defined('DB_USER'))
+    define('DB_USER', getenv('DB_USER') ?: 'root');
+if (!defined('DB_PASS'))
+    define('DB_PASS', getenv('DB_PASS') ?: '');
+if (!defined('DB_PORT'))
+    define('DB_PORT', getenv('DB_PORT') ?: '3306');
 
 /**
  * 📌 Conexión PDO Singleton con Soporte SSL
  */
 if (!function_exists('getDbConnection')) {
-    function getDbConnection() {
+    function getDbConnection()
+    {
         static $pdo = null;
         if ($pdo === null) {
             $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4;connect_timeout=5';
-            
+
             $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::ATTR_TIMEOUT            => 5,
-    
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_TIMEOUT => 5,
+
                 // 🔹 CAMBIO AQUÍ: Configuración específica para TiDB Cloud
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
                 // Forzamos el uso de SSL/TLS (esto resuelve el error 1105)
-                PDO::MYSQL_ATTR_SSL_CA => '', 
+                PDO::MYSQL_ATTR_SSL_CA => '',
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4; SET time_zone='-05:00'"
             ];
 
@@ -124,7 +152,7 @@ if (!function_exists('getDbConnection')) {
             } catch (PDOException $e) {
                 // Logueamos el error internamente
                 error_log('❌ Error de conexión: ' . $e->getMessage());
-                
+
                 // Enviamos JSON limpio para que el Frontend lo entienda
                 header('Content-Type: application/json');
                 die(json_encode([
@@ -191,7 +219,8 @@ if (isset($_SESSION['loggedin'], $_SESSION['user_id']) && $_SESSION['loggedin'] 
 // 🔹 Verificar si perfil de usuario está completo
 // -------------------------------
 if (!function_exists('isProfileComplete')) {
-    function isProfileComplete($userId) {
+    function isProfileComplete($userId)
+    {
         $pdo = getDbConnection();
         try {
             // Nota: Verifica que los nombres de las tablas coincidan (minúsculas/mayúsculas)
@@ -209,15 +238,18 @@ if (!function_exists('isProfileComplete')) {
             $stmt->execute();
             $perfilCompleto = $stmt->fetchColumn() > 0;
 
-            if (!$perfilCompleto) return false;
+            if (!$perfilCompleto)
+                return false;
 
             $stmtEstudios = $pdo->prepare("SELECT COUNT(*) FROM estudio WHERE id_usuario = :id_usuario");
             $stmtEstudios->execute([':id_usuario' => $userId]);
-            if ($stmtEstudios->fetchColumn() == 0) return false;
+            if ($stmtEstudios->fetchColumn() == 0)
+                return false;
 
             $stmtExperiencia = $pdo->prepare("SELECT COUNT(*) FROM experiencia_laboral WHERE id_usuario = :id_usuario");
             $stmtExperiencia->execute([':id_usuario' => $userId]);
-            if ($stmtExperiencia->fetchColumn() == 0) return false;
+            if ($stmtExperiencia->fetchColumn() == 0)
+                return false;
 
             return true;
         } catch (PDOException $e) {

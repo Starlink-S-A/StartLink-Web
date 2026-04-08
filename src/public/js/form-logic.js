@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM cargado - Iniciando form-logic.js');
-    
+
     const showLoginFormBtn = document.getElementById('showLoginFormBtn');
     const showRegisterLink = document.getElementById('showRegisterLink');
     const showLoginLink = document.getElementById('showLoginLink');
@@ -92,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------- Registro --------
-     if (registrationForm) {
+    if (registrationForm) {
         console.log('Formulario de registro encontrado');
-        
+
         registrationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log('Submit del formulario de registro');
@@ -118,13 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     password: passwordInput,
                     confirmPassword: confirmPasswordInput
                 });
-                
+
                 const allInputs = document.querySelectorAll('input');
                 console.log('Todos los inputs en la página:');
                 allInputs.forEach(input => {
                     console.log('ID:', input.id, 'Name:', input.name, 'Type:', input.type);
                 });
-                
+
                 displayMessage("Error interno: faltan campos en el formulario.", "danger");
                 return;
             }
@@ -154,15 +154,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Validar reCAPTCHA
-            if (typeof grecaptcha === 'undefined') {
-                displayMessage("Error: reCAPTCHA no cargado.", "danger");
-                return;
-            }
+            // Mostrar mensaje de proceso
+            displayMessage("Validando seguridad, por favor espera...", "info");
 
-            const captchaResponse = grecaptcha.getResponse();
-            if (!captchaResponse) {
-                displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+            // Obtener token de reCAPTCHA v3
+            let captchaResponse;
+            try {
+                captchaResponse = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' });
+                console.log('Token reCAPTCHA (registro) generado:', captchaResponse);
+            } catch (error) {
+                console.error('Error al obtener token de reCAPTCHA (registro):', error);
+                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
                 return;
             }
 
@@ -193,31 +195,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
-                    grecaptcha.reset();
                     setTimeout(() => {
                         changeSection(loginFormSection);
                     }, 1500);
                 } else {
                     displayMessage(result.message, 'danger');
-                    grecaptcha.reset();
                 }
             } catch (err) {
                 console.error("Error en registro:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
-                grecaptcha.reset();
             }
         });
     }
 
     // -------- Login --------
-   if (loginForm) {
+    if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             // Obtener token de reCAPTCHA
             let recaptchaToken;
             try {
-                recaptchaToken = await grecaptcha.execute('6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ', {action: 'login'});
+                recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'login' });
                 console.log('Token reCAPTCHA generado:', recaptchaToken);
             } catch (error) {
                 console.error('Error al obtener token de reCAPTCHA:', error);
@@ -229,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
+                const response = await fetch("src/index.php?action=login", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -244,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const text = await response.text();
                 console.log('Respuesta del servidor (texto):', text);
-                
+
                 let result;
                 try {
                     result = JSON.parse(text);
@@ -258,10 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     displayMessage(result.message, 'success');
                     loginForm.reset();
                     localStorage.setItem('token', result.token);
-                    
+
                     // Redirect to dashboard
-                    window.location.href = (result.data && result.data.redirect) 
-                        ? result.data.redirect 
+                    window.location.href = (result.data && result.data.redirect)
+                        ? result.data.redirect
                         : `${BASE_URL}src/views/dashboardView/dashboard.php`;
                 } else {
                     displayMessage(result.message, 'danger');
@@ -289,14 +288,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email })
                 });
-                const result = await response.json();
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no es JSON:", text);
+                    displayMessage("Error del servidor: la respuesta no es válida.", "danger");
+                    return;
+                }
+
                 displayMessage(result.message, result.status === 'success' ? 'success' : 'danger');
                 if (result.status === 'success') {
                     forgotPasswordForm.reset();
-                    changeSection(resetPasswordSection);
+                    setTimeout(() => changeSection(resetPasswordSection), 1500);
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error en recuperación:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
             }
         });
@@ -344,8 +352,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ token: token, new_password: newPassword })
                 });
-                const result = await response.json();
-                
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no es JSON:", text);
+                    displayMessage("Error del servidor: la respuesta no es válida.", "danger");
+                    return;
+                }
+
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     resetPasswordForm.reset();
@@ -354,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     displayMessage(result.message, 'danger');
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error en reseteo:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
             }
         });
@@ -395,6 +411,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const backToLoginFromResetLink = document.getElementById('backToLoginFromResetLink');
     if (backToLoginFromResetLink) {
         backToLoginFromResetLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            changeSection(loginFormSection);
+            if (messageContainer) messageContainer.innerHTML = '';
+        });
+    }
+
+    const backToLoginLink = document.getElementById('backToLoginLink');
+    if (backToLoginLink) {
+        backToLoginLink.addEventListener('click', (e) => {
             e.preventDefault();
             changeSection(loginFormSection);
             if (messageContainer) messageContainer.innerHTML = '';

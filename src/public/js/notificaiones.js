@@ -8,30 +8,37 @@ document.addEventListener('DOMContentLoaded', function() {
         if(document.getElementById('confirmModal')) confirmModalInstance = new bootstrap.Modal(document.getElementById('confirmModal'));
     }
 
-    function customAlert(message) {
-        const body = document.getElementById('alertDialogBody');
-        if (body && alertDialogInstance) {
-            body.textContent = message;
-            alertDialogInstance.show();
-            return;
-        }
-        alert(message);
+    function customAlert(message, icon = 'info') {
+        Swal.fire({
+            text: message,
+            icon: icon,
+            confirmButtonColor: '#00a680',
+            confirmButtonText: 'Aceptar',
+            customClass: {
+                confirmButton: 'rounded-pill px-4'
+            }
+        });
     }
 
     function customConfirm(message, callback) {
-        const body = document.getElementById('confirmModalBody');
-        const btn = document.getElementById('confirmActionButton');
-        confirmCallback = callback;
-        if (body && btn && confirmModalInstance) {
-            body.textContent = message;
-            confirmModalInstance.show();
-            btn.onclick = () => {
-                if (confirmCallback) confirmCallback();
-                confirmModalInstance.hide();
-            };
-            return;
-        }
-        if (confirm(message)) if (callback) callback();
+        Swal.fire({
+            text: message,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#00a680',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'rounded-pill px-4 ms-2',
+                cancelButton: 'rounded-pill px-4'
+            }
+        }).then((result) => {
+            if (result.isConfirmed && callback) {
+                callback();
+            }
+        });
     }
 
     // AJAX Call to Mark Notification as Read
@@ -126,8 +133,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const navbarDeleteAllBtn = document.getElementById('navbar-delete-all-btn');
+    if (navbarDeleteAllBtn) {
+        navbarDeleteAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            customConfirm('¿Borrar todas tus notificaciones?', async () => {
+                const formData = new FormData();
+                formData.append('sub_action', 'delete_all_notifications');
+                const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    pollNotifications();
+                } else {
+                    customAlert(`Error: ${data.message}`);
+                }
+            });
+        });
+    }
+
+    // Global listener for notification clicks and deletions
+    document.addEventListener('click', async function(event) {
+        // Handle Delete Button
+        const deleteButton = event.target.closest('.notif-delete-btn');
+        if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const notificationId = deleteButton.dataset.notificationId;
+            if (!notificationId) return;
+
+            customConfirm('¿Eliminar esta notificación?', async () => {
+                const formData = new FormData();
+                formData.append('sub_action', 'delete_notification');
+                formData.append('notification_id', notificationId);
+
+                try {
+                    const response = await fetch(`${BASE_URL}src/index.php?action=notificaciones`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        const item = document.getElementById(`notification-item-${notificationId}`);
+                        if (item) item.remove();
+                        pollNotifications();
+                    } else {
+                        customAlert(`Error: ${data.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting notification:', error);
+                    customAlert('Error al eliminar la notificación. Intenta de nuevo.', 'error');
+                }
+            });
+            return;
+        }
+
+        // Handle Click on notification to mark as read
+        const notificationItem = event.target.closest('.notif-item, .notification-item');
+        if (notificationItem && !event.target.closest('.notif-delete-btn')) {
+            const hasLink = notificationItem.tagName === 'A' || notificationItem.querySelector('a.stretched-link');
+            if (hasLink) {
+                // Check if unread (dot in navbar or class in main view)
+                const isUnread = notificationItem.classList.contains('unread') || notificationItem.querySelector('.bg-primary.rounded-circle');
+                if (isUnread) {
+                    const notificationId = notificationItem.id.replace('notification-item-', '') || notificationItem.dataset.id;
+                    markNotificationAsRead(notificationId);
+                }
+            }
+        }
+    });
+
+    const BASE_URL = window.BASE_URL || '';
+
     // Continuous update polling for Notifications (checks every 5 seconds)
     function pollNotifications() {
+        if (!BASE_URL && !window.location.pathname) {
+            return;
+        }
+
         fetch(`${BASE_URL}src/index.php?action=notificaciones&sub_action=fetch_latest_ajax`)
         .then(res => res.json())
         .then(data => {
@@ -149,11 +234,87 @@ document.addEventListener('DOMContentLoaded', function() {
                     sidebarBadge.textContent = data.unread_count;
                     sidebarBadge.style.display = data.unread_count > 0 ? 'inline-block' : 'none';
                 }
+
+                updateNotificationsList(data.notifications);
             }
         })
         .catch(err => console.error('Error fetching latest notifications:', err));
     }
 
+    function formatNotificationTime(rawDate) {
+        if (!rawDate) return 'Hace un momento';
+        const date = new Date(rawDate);
+        if (Number.isNaN(date.getTime())) return 'Hace un momento';
+        return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function buildRedirectUrl(url) {
+        if (!url) return '#';
+        if (/^https?:\/\//i.test(url)) {
+            return url;
+        }
+        return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    function renderNotificationItem(notification) {
+        const isUnread = notification.leida === 0 || notification.leida === '0' || notification.leida === false;
+        const dotHtml = isUnread ? '<div class="bg-primary rounded-circle flex-shrink-0" style="width: 7px; height: 7px;"></div>' : '';
+        const notificationType = notification.tipo ? notification.tipo.charAt(0).toUpperCase() + notification.tipo.slice(1) : 'Aviso';
+        const iconClass = notification.icono || 'fas fa-info-circle text-info';
+        const redirectUrl = buildRedirectUrl(notification.url_redireccion);
+        const timeText = formatNotificationTime(notification.fecha_creacion);
+
+        // Adjust icon colors visually
+        let iconColorBg = '#f1f5f9';
+        let iconColorText = '#64748b';
+        if (iconClass.includes('text-success')) { iconColorBg = '#d1fae5'; iconColorText = '#059669'; }
+        else if (iconClass.includes('text-warning')) { iconColorBg = '#fef3c7'; iconColorText = '#d97706'; }
+        else if (iconClass.includes('text-danger')) { iconColorBg = '#fee2e2'; iconColorText = '#dc2626'; }
+        else if (iconClass.includes('text-info')) { iconColorBg = '#e0f2fe'; iconColorText = '#0284c7'; }
+
+        return `
+            <div class="notif-item position-relative" id="notification-item-${notification.id}">
+                <div class="notif-icon-circle" style="background-color: ${iconColorBg}; color: ${iconColorText};">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="flex-grow-1" style="min-width: 0;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="mb-1 fw-600" style="font-size: 0.85rem;">${notificationType}</h6>
+                        ${dotHtml}
+                    </div>
+                    <p class="mb-1 text-muted" style="font-size: 0.78rem; line-height: 1.4;">${notification.mensaje || ''}</p>
+                    <small class="text-muted" style="font-size: 0.7rem;">${timeText}</small>
+                </div>
+                <a class="stretched-link" href="${redirectUrl}"></a>
+                <button class="notif-delete-btn position-relative" 
+                        style="z-index:10;" 
+                        data-notification-id="${notification.id}" 
+                        title="Eliminar" 
+                        type="button">
+                    <i class="far fa-trash-alt"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    function updateNotificationsList(notifications) {
+        const container = document.getElementById('notifications-list');
+        if (!container) return;
+
+        if (!Array.isArray(notifications) || notifications.length === 0) {
+            container.innerHTML = `
+                <div class="p-4 text-center text-muted">
+                    <i class="far fa-bell-slash d-block mb-2" style="font-size: 1.5rem;"></i>
+                    No tienes notificaciones
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = notifications.map(renderNotificationItem).join('');
+    }
+
+    pollNotifications();
     setInterval(pollNotifications, 5000); 
 
     // Omitted logic for accept/decline offers as those hit other controllers (responder_oferta.php / responder_solicitud_contratacion.php)

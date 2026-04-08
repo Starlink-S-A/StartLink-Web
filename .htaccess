@@ -1,5 +1,11 @@
 RewriteEngine On
-RewriteBase /StartLink-Web/
+# Indicamos que el archivo principal está en src/
+DirectoryIndex src/index.php
+
+# Si la ruta está vacía, manda a src/index.php
+RewriteRule ^$ src/index.php [L]
+
+# RewriteBase eliminado para compatibilidad con el root de Render
 
 # Si piden directamente la ruta base (raíz), mostrar el welcome
 RewriteRule ^$ src/index.php?action=welcome [L,QSA]

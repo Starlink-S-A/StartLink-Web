@@ -127,9 +127,9 @@ if (isset($_SESSION["user_id"])) {
                 </div>
                 <div class="d-flex justify-content-between px-3 py-2 border-bottom" style="font-size: 0.78rem;">
                     <a href="#" id="navbar-mark-all-read-btn" class="text-dark fw-bold text-decoration-none">Marcar todas como leídas</a>
-                    <a href="#" class="text-danger text-decoration-none">Borrar todas</a>
+                    <a href="#" id="navbar-delete-all-btn" class="text-danger fw-bold text-decoration-none">Borrar todas</a>
                 </div>
-                <div style="max-height: 320px; overflow-y: auto;">
+                <div id="notifications-list" style="max-height: 320px; overflow-y: auto;">
                     <?php if(empty($notificaciones)): ?>
                         <div class="p-4 text-center text-muted">
                             <i class="far fa-bell-slash d-block mb-2" style="font-size: 1.5rem;"></i>
@@ -157,7 +157,7 @@ if (isset($_SESSION["user_id"])) {
                                 elseif ($diff->i > 0) $fechaTexto = "Hace {$diff->i} minutos";
                             }
                         ?>
-                        <div class="notif-item position-relative">
+                        <div class="notif-item position-relative" id="notification-item-<?= (int)$notif['id'] ?>">
                             <div class="notif-icon-circle" style="background-color: <?= $iconColorBg ?>; color: <?= $iconColorText ?>;">
                                 <i class="<?= htmlspecialchars($notif['icono'] ?? 'fas fa-bell') ?>"></i>
                             </div>
@@ -171,7 +171,7 @@ if (isset($_SESSION["user_id"])) {
                             </div>
                             <a class="stretched-link"
                                href="<?= BASE_URL ?>src/index.php?action=notificaciones&sub_action=redirect&notification_id=<?= (int)$notif['id'] ?>"></a>
-                            <button class="notif-delete-btn position-relative" style="z-index:2;" title="Eliminar" type="button"><i class="far fa-trash-alt"></i></button>
+                            <button class="notif-delete-btn position-relative" style="z-index:2;" data-notification-id="<?= (int)$notif['id'] ?>" title="Eliminar" type="button"><i class="far fa-trash-alt"></i></button>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -328,6 +328,7 @@ if (isset($_SESSION["user_id"])) {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     if (typeof BASE_URL === 'undefined') {
         window.BASE_URL = '<?= BASE_URL ?>';

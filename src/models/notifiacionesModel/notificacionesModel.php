@@ -91,6 +91,18 @@ class NotificacionesModel {
         return $stmtUpdateAll->rowCount() > 0;
     }
 
+    public function deleteNotification($notificationId, $userId) {
+        $stmtDelete = $this->link->prepare("DELETE FROM notificaciones WHERE id = ? AND user_id = ?");
+        $stmtDelete->execute([$notificationId, $userId]);
+        return $stmtDelete->rowCount() > 0;
+    }
+
+    public function deleteAllNotifications($userId) {
+        $stmtDeleteAll = $this->link->prepare("DELETE FROM notificaciones WHERE user_id = ?");
+        $stmtDeleteAll->execute([$userId]);
+        return $stmtDeleteAll->rowCount() > 0;
+    }
+
     /**
      * Crea una nueva notificación.
      * Si es de tipo 'chat', maneja la agrupación y el silenciado inteligente.

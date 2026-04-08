@@ -276,7 +276,7 @@ class GestionUsuariosController {
                 "Se ha registrado una nueva evaluación de desempeño para ti.",
                 'info',
                 'fas fa-chart-line',
-                BASE_URL . "mi_empresa"
+                BASE_URL . "src/index.php?action=nominas#panel-desempeno"
             );
 
             $_SESSION['mensaje'] = 'Seguimiento de desempeño guardado correctamente.';
@@ -290,3 +290,4 @@ class GestionUsuariosController {
         exit();
     }
 }
+
