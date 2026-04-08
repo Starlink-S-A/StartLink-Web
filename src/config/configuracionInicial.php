@@ -80,11 +80,15 @@ if (file_exists(ROOT_PATH . '.env')) {
 // -------------------------------
 // 🔹 Configuración de reCAPTCHA
 // -------------------------------
+// Intentamos obtener de las variables de entorno de Render
+$envSiteKey = getenv('RECAPTCHA_SITE_KEY');
+$envSecretKey = getenv('RECAPTCHA_SECRET_KEY');
+
 if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', getenv('RECAPTCHA_SITE_KEY') ?: 'YOUR_RECAPTCHA_SITE_KEY'); 
+    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ'); 
 }
 if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', getenv('RECAPTCHA_SECRET_KEY') ?: 'YOUR_RECAPTCHA_SECRET_KEY'); 
+    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6LdobLYrAAAAAJAFYgyeN4QIyYK20cVLHDqjjsNH'); 
 }
 
 // -------------------------------

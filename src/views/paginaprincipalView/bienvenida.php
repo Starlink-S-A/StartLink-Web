@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/../../config/configuracionInicial.php';
 // Si $form_to_show no está definido, mostrar login por defecto
-if (!isset($form_to_show)) $form_to_show = 'login';
+if (!isset($form_to_show))
+    $form_to_show = 'login';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,15 +18,17 @@ if (!isset($form_to_show)) $form_to_show = 'login';
     <!-- Estilos base y el nuevo diseño -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/login_redesign.css">
-    
+
     <!-- Scripts de reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>" async defer></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
         const BASE_URL = '<?php echo BASE_URL; ?>';
         const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
+        const RECAPTCHA_SITE_KEY = '<?php echo RECAPTCHA_SITE_KEY; ?>';
     </script>
 </head>
+
 <body>
     <div class="login-wrapper">
         <!-- Parte Izquierda: Bienvenida -->
@@ -48,12 +52,13 @@ if (!isset($form_to_show)) $form_to_show = 'login';
         <!-- Parte Derecha: Formularios -->
         <div class="login-right">
             <!-- Contenedor para mensajes de alerta -->
-            <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3" 
-                 style="z-index: 1000; width: 90%; max-width: 400px;">
+            <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
+                style="z-index: 1000; width: 90%; max-width: 400px;">
             </div>
 
             <!-- Sección Bienvenida (Mantenida por compatibilidad con JS) -->
-            <div id="welcomeSection" class="form-section <?php echo $form_to_show === 'welcome' ? 'active' : ''; ?> welcome-professional">
+            <div id="welcomeSection"
+                class="form-section <?php echo $form_to_show === 'welcome' ? 'active' : ''; ?> welcome-professional">
                 <h1>¡Bienvenido a StartLink!</h1>
                 <p class="lead">Conecta con tu futuro laboral ideal.</p>
                 <button id="showLoginFormBtn" class="btn-action">Comenzar</button>
@@ -71,7 +76,7 @@ if (!isset($form_to_show)) $form_to_show = 'login';
                         <label for="loginPassword">Contraseña</label>
                         <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
                     </div>
-                    
+
                     <div class="checkbox-group">
                         <a href="#" id="showForgotPasswordLink" class="ms-auto">¿Olvidaste tu contraseña?</a>
                     </div>
@@ -80,7 +85,7 @@ if (!isset($form_to_show)) $form_to_show = 'login';
                     <input type="hidden" id="recaptchaToken" name="recaptcha_token">
 
                     <button type="submit" class="btn-action">Ingresar</button>
-                    
+
                     <div class="link-footer">
                         ¿No tienes una cuenta? <a href="#" id="showRegisterLink">Regístrate aquí</a>
                     </div>
@@ -88,7 +93,8 @@ if (!isset($form_to_show)) $form_to_show = 'login';
             </div>
 
             <!-- Registro -->
-            <div id="registerFormSection" class="form-section <?php echo $form_to_show === 'register' ? 'active' : ''; ?>">
+            <div id="registerFormSection"
+                class="form-section <?php echo $form_to_show === 'register' ? 'active' : ''; ?>">
                 <h2>Crea tu cuenta</h2>
                 <form id="registrationForm">
                     <div class="form-group-custom">
@@ -101,18 +107,21 @@ if (!isset($form_to_show)) $form_to_show = 'login';
                     </div>
                     <div class="form-group-custom">
                         <label for="registerPassword">Contraseña</label>
-                        <input type="password" id="registerPassword" name="password" placeholder="Mín. 8 caracteres" required>
+                        <input type="password" id="registerPassword" name="password" placeholder="Mín. 8 caracteres"
+                            required>
                     </div>
                     <div class="form-group-custom">
                         <label for="confirmPassword">Confirmar contraseña</label>
-                        <input type="password" id="confirmPassword" name="confirm_password" placeholder="Repite tu clave" required>
+                        <input type="password" id="confirmPassword" name="confirm_password"
+                            placeholder="Repite tu clave" required>
                     </div>
 
                     <!-- reCAPTCHA v2 para registro -->
-                    <div class="g-recaptcha" data-sitekey="6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2" data-theme="dark"></div>
+                    <div class="g-recaptcha" data-sitekey="6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2" data-theme="dark">
+                    </div>
 
                     <button type="submit" class="btn-action">Registrarme ahora</button>
-                    
+
                     <div class="link-footer">
                         ¿Ya eres miembro? <a href="#" id="showLoginLink">Inicia sesión aquí</a>
                     </div>
@@ -125,7 +134,8 @@ if (!isset($form_to_show)) $form_to_show = 'login';
                 <form id="forgotPasswordForm">
                     <div class="form-group-custom">
                         <label for="forgotEmail">Correo Electrónico</label>
-                        <input type="email" id="forgotEmail" name="forgotEmail" placeholder="Ingresa tu correo" required>
+                        <input type="email" id="forgotEmail" name="forgotEmail" placeholder="Ingresa tu correo"
+                            required>
                     </div>
                     <button type="submit" class="btn-action w-100">Enviar Enlace</button>
                     <div class="link-footer">
@@ -140,7 +150,8 @@ if (!isset($form_to_show)) $form_to_show = 'login';
                 <form id="resetPasswordForm">
                     <div class="form-group-custom">
                         <label for="resetToken">Código de Verificación</label>
-                        <input type="text" id="resetToken" name="resetToken" placeholder="Código enviado al correo" required>
+                        <input type="text" id="resetToken" name="resetToken" placeholder="Código enviado al correo"
+                            required>
                     </div>
                     <div class="form-group-custom">
                         <label for="resetNewPassword">Nueva Contraseña</label>
@@ -167,7 +178,7 @@ if (!isset($form_to_show)) $form_to_show = 'login';
         document.addEventListener("DOMContentLoaded", () => {
             const navLoginBtn = document.getElementById('navLoginBtn');
             const navSignUpBtn = document.getElementById('navSignUpBtn');
-            
+
             const setActiveNav = (btn) => {
                 navLoginBtn.classList.remove('active');
                 navSignUpBtn.classList.remove('active');
@@ -189,15 +200,16 @@ if (!isset($form_to_show)) $form_to_show = 'login';
             // Sincronizar botones superiores cuando se cambia de sección vía links internos
             const showRegisterLink = document.getElementById('showRegisterLink');
             const showLoginLink = document.getElementById('showLoginLink');
-            
-            if(showRegisterLink) showRegisterLink.addEventListener('click', () => setActiveNav(navSignUpBtn));
-            if(showLoginLink) showLoginLink.addEventListener('click', () => setActiveNav(navLoginBtn));
-            
+
+            if (showRegisterLink) showRegisterLink.addEventListener('click', () => setActiveNav(navSignUpBtn));
+            if (showLoginLink) showLoginLink.addEventListener('click', () => setActiveNav(navLoginBtn));
+
             const showLoginFormBtn = document.getElementById('showLoginFormBtn');
-            if(showLoginFormBtn) {
+            if (showLoginFormBtn) {
                 showLoginFormBtn.addEventListener('click', () => setActiveNav(navLoginBtn));
             }
         });
     </script>
 </body>
+
 </html>
