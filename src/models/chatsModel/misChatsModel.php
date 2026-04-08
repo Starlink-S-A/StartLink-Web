@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/configuracionInicial.php';
+require_once __DIR__ . '/../notifiacionesModel/notificacionesModel.php';
 
 class MisChatsModel {
     private $link;
@@ -152,25 +153,23 @@ class MisChatsModel {
                 $otherParticipants = $this->getOtherParticipantsIds($chatId, $userId);
                 $notificationMessage = "Nuevo mensaje de " . $currentUserName;
 
-                if (!empty($otherParticipants)) {
-                    if (file_exists(__DIR__ . '/../notifiacionesModel/notificacionesModel.php')) {
-                        require_once __DIR__ . '/../notifiacionesModel/notificacionesModel.php';
-                        $notifModel = new NotificacionesModel();
-                        
-                        foreach ($otherParticipants as $participantId) {
-                            $notifModel->crearNotificacion(
-                                $participantId, 
-                                $notificationMessage, 
-                                'chat', 
-                                'fas fa-comment-dots', 
-                                $notificationUrl,
-                                [
-                                    'chat_id' => $chatId,
-                                    'sender_id' => $userId,
-                                    'sender_name' => $currentUserName
-                                ]
-                            );
-                        }
+                if (empty($otherParticipants)) {
+                    error_log("No hay otros participantes para notificar en la conversación $chatId.");
+                } else {
+                    $notifModel = new NotificacionesModel();
+                    foreach ($otherParticipants as $participantId) {
+                        $notifModel->crearNotificacion(
+                            $participantId, 
+                            $notificationMessage, 
+                            'chat', 
+                            'fas fa-comment-dots text-info', 
+                            $notificationUrl,
+                            [
+                                'chat_id' => $chatId,
+                                'sender_id' => $userId,
+                                'sender_name' => $currentUserName
+                            ]
+                        );
                     }
                 }
             } catch (Throwable $notifEx) {

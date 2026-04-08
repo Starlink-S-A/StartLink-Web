@@ -32,6 +32,12 @@ class NotificacionesController {
             case 'mark_all_notifications_read':
                 $this->markAllAsRead();
                 break;
+            case 'delete_notification':
+                $this->deleteNotification();
+                break;
+            case 'delete_all_notifications':
+                $this->deleteAllNotifications();
+                break;
             case 'redirect':
                 $this->redirectToNotification();
                 break;
@@ -71,6 +77,37 @@ class NotificacionesController {
                 echo json_encode(['success' => true, 'message' => 'Todas las notificaciones han sido marcadas como leídas.']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'No hay notificaciones sin leer para marcar.']);
+            }
+        }
+        exit();
+    }
+
+    private function deleteNotification() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $notificationId = $_POST['notification_id'] ?? null;
+            if ($notificationId && is_numeric($notificationId)) {
+                $result = $this->model->deleteNotification((int)$notificationId, $this->userId);
+                if ($result) {
+                    echo json_encode(['success' => true, 'message' => 'Notificación eliminada.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se encontró la notificación o no tienes permiso.']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'ID de notificación inválido.']);
+            }
+        }
+        exit();
+    }
+
+    private function deleteAllNotifications() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $result = $this->model->deleteAllNotifications($this->userId);
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Todas las notificaciones han sido eliminadas.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'No hay notificaciones para eliminar.']);
             }
         }
         exit();
