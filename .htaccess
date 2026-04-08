@@ -1,6 +1,9 @@
 RewriteEngine On
 RewriteBase /StartLink-Web/
 
+# Si piden directamente la ruta base (raíz), mostrar el welcome
+RewriteRule ^$ src/index.php?action=welcome [L,QSA]
+
 # Si piden directamente index.php en la raíz, lo mandamos al src/index.php
 RewriteRule ^index\.php$ src/index.php [L]
 

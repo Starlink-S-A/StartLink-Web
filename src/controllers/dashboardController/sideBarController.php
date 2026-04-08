@@ -128,6 +128,7 @@ class DashboardController {
             elseif ($userRolEmpresa == 1) $rolDisplay = "Administrador de Empresa";
             elseif ($userRolEmpresa == 2) $rolDisplay = "Contratador";
             elseif ($userRolEmpresa == 3) $rolDisplay = "Empleado";
+            elseif ($userRoleGlobal == 3) $rolDisplay = "Contratador / Empleado";
             else $rolDisplay = "Usuario General";
 
         } catch (PDOException $e) {

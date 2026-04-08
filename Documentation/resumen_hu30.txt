@@ -1,0 +1,53 @@
+LISTA 1: ELEMENTOS CREADOS POR PRIMERA VEZ (HISTORIA DE USUARIO 30)
+- Archivo src/controllers/adminGlobalController/AdminGlobalController.php (Lógica principal del módulo de administración).
+- Archivo src/models/adminGlobalModel/AdminGlobalModel.php (Consultas a la base de datos para métricas globales, listado de usuarios y edición de parámetros).
+- Archivo src/views/adminGlobalView/admin_view.php (Interfaz del panel de administrador, con sus métricas y tabla de datos).
+- Archivo src/public/js/adminGlobal.js (Archivo para manejar el buscador en tiempo real, los filtros y procesar los cambios vía fetch).
+- Rutas maestras en src/index.php (Agregadas las rutas 'admin_usuarios', 'admin_update_role' y 'admin_toggle_suspension').
+- Inserción del privilegio de visualización en la barra lateral, habilitando la pestaña "Usuarios" exclusivamente para la super cuenta administrativa.
+
+LISTA 2: CORRECCIONES REALIZADAS TRAS LA IMPLEMENTACIÓN INICIAL
+- Se reparó la interrupción que dejaba al descubierto las carpetas raíz del proyecto: Tras expulsiones forzosas, la redirección apuntaba erróneamente exponiendo la ruta /src/, se blindó centralizando la directiva a través del archivo de reescrituras Apache (.htaccess).
+- Se corrigió la etiqueta visual de roles en la tabla matriz: Diferenciamos a un usuario que tuviera un rol 2 (Candidato) pero que perteneciera directamente a la tabla de relación de creación de su propia Empresa para que saliera listado visualmente como "Admin/Empresa" ante el super-administrador.
+- Vinculación del emisor de notificaciones: El cambio de rol no avisaba a la contraparte; construimos un puente con el modelo NotificacionesModel para generar un pulso de aviso al buzón del integrante rebajado o ascendido.
+- Re-estilización de pop-ups crudos en pantalla: Todas las ventanas pasivas y grises que confirmaban guardar, suspender o activar usuarios fueron reemplazadas y depuradas por un panel visual elegante inmerso dentro del DOM orgánico de tu interfaz (Bootstrap / SweetAlert).
+- Expansión imprevista del panel global de administración (Anexo tabulado): Se solicitó que se pudiera además ver a todas las empresas registradas; se crearon los contenedores de pestañas separadas y se renderizó junto a un modal descriptivo individual para cada entidad sin acceso a las credenciales de eliminación.
+- Discrepancia del aviso por inicio de sesión: El motor creía que los bloqueos causados por ti (año 2099) eran idénticos a los bloqueos de un usuario que escribía mal la contraseña. Separé los flujos y ahora el super-administrador impone restricciones absolutas de términos y servicios en la pantalla principal.
+- Aniquilación de la Desconexión Fantasma (Problema AJAX): Ocurría porque si estabas suspendido de fondo y hacías click en ir a un apartado sin recargar la pantalla completa (Ofertas), la memoria caché de PHP se borraba e impedía que la alerta de prohibición emergiera. Se programó e inyectó una Micro-Sesión especial ('was_suspended') que sobrevive y detona directamente tu letrero de baneo en el rostro al aterrizar en el menú.
+
+LISTA 3: ARCHIVOS CREADOS FUERA DE LA CIRCUNSCRIPCIÓN DEL PROYECTO (SCRIPTS/EXTRAS)
+- extract.py
+- extract2.py
+- fix_notifications_db.php
+- docx_output.txt
+- docx_content.md
+- check_schema.php
+- create_solicitud_table.php
+
+LISTA 4: ARCHIVOS CREADOS ESPECÍFICAMENTE PARA ESTA HISTORIA DE USUARIO (DENTRO DEL CORE DEL PROYECTO)
+- src/controllers/adminGlobalController/AdminGlobalController.php
+- src/models/adminGlobalModel/AdminGlobalModel.php
+- src/views/adminGlobalView/admin_view.php
+- src/public/js/adminGlobal.js
+
+LISTA 5: ARCHIVOS ANTIGUOS DEL PROYECTO QUE FUERON MODIFICADOS (Y QUÉ SE HIZO EN CADA UNO)
+- src/index.php
+  Se agregaron tres nuevos casos/rutas en el switch principal ('admin_usuarios', 'admin_update_role', 'admin_toggle_suspension') requeridas para operar la HU-30, y el llamado al controlador del admin en la cabecera.
+
+- src/controllers/dashboardController/sideBarController.php
+  Se modificó para sincronizar la variable de sesión ['id_rol'] en tiempo real con la BD. Además, se le ajustó la lógica de visualización para que entienda el "Rol 3" (Contratador/Empresa) al renderizar la identificación en la barra.
+
+- src/views/dashboardView/sideBar_view.php
+  Se le inyectó una condición PHP (if id_rol == 1) para renderizar el nuevo botón de anclaje "Usuarios" hacia el panel administrativo maestro, manteniéndolo oculto para el resto de mortales.
+
+- src/config/configuracionInicial.php
+  Se agregaron dos piezas de código crítico: 1) Dentro de la validación global se insertó un "if" que lee constantemente la fecha de la base de datos para ejecutar "session_destroy" al detectar suspensiones al vuelo; y 2) Se inyectaron variables híbridas volátiles ("was_suspended") para asegurar que si un script te expulsa ocultamente, te estalle el aviso al tocar cualquier otra tecla interactiva.
+
+- .htaccess (ubicado en la raíz)
+  Se actualizó/solucionó para que el enrutamiento enviase a la gente a "src/index.php?action=welcome" directamente usando directivas QSA integradas ante URLs en blanco, evitando que al hacer un re-direccionamiento ciego Apache dejara expuesto el índice del directorio /src/.
+
+- src/controllers/authController/AuthController.php
+  En la función de validación de Login, se intervino la estructura que juzgaba la "cuenta bloqueada". Ahora el código diferencia si el campo fecha está restringido permanentemente (año 2099 dictado por el sistema de Administrador), devolviendo un error crudo e infranqueable de términos y condiciones en vez del viejo aviso engañoso de "por contraseñas fallidas".
+
+- src/views/paginaprincipalView/bienvenida.php
+  Se inhabilitó o sustituyó el contenedor antiguo de texto de alerta roja básica en Bootstrap. En su lugar se incrustaron vía tag HTML las librerías formales de SweetAlert2, junto a un script especial en Javascript que (si la hiper-variable 'was_suspended' es atrapada por el servidor) lanza un cartel ineludible y pulido bloqueando toda la vista e informando sin censuras la suspensión inhabilitable.

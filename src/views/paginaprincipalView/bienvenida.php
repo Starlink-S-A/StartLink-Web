@@ -10,8 +10,10 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StartLink - ¡Encuentra tu próximo empleo!</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/estilos.css">
-    <!-- Scripts de reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js?render=6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ" async defer></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
@@ -37,6 +39,35 @@ if (!isset($form_to_show)) $form_to_show = 'welcome';
         <div id="alertMessageContainer" class="position-absolute top-0 start-50 translate-middle-x mt-3"
              style="z-index: 1000; width: 80%; max-width: 500px;">
         </div>
+
+        <?php 
+            $showSuspendedAlert = false;
+            if (isset($_GET['error']) && $_GET['error'] === 'suspended') {
+                $showSuspendedAlert = true;
+            }
+            if (!empty($_SESSION['was_suspended'])) {
+                $showSuspendedAlert = true;
+                unset($_SESSION['was_suspended']); // Quemamos la bandera tras usarla
+            }
+        ?>
+
+        <?php if ($showSuspendedAlert): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: '¡Acceso Restringido!',
+                    html: 'Tu sesión ha finalizado. Tu cuenta se encuentra temporalmente suspendida por decisión administrativa, impidiéndote iniciar sesión o permanecer adentro.<br><br><b>Para dudas al respecto, comunícate con el soporte técnico.</b>',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#e63946',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    background: '#ffffff',
+                    color: '#333333'
+                });
+            });
+        </script>
+        <?php endif; ?>
 
         <!-- Bienvenida -->
         <div id="welcomeSection" class="section-container" style="display: <?php echo $form_to_show === 'welcome' ? 'block' : 'none'; ?>;">

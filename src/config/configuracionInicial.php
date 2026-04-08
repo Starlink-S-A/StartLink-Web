@@ -138,31 +138,53 @@ if (!function_exists('getDbConnection')) {
     }
 }
 
-if (
-    isset($_SESSION['loggedin'], $_SESSION['user_id']) &&
-    $_SESSION['loggedin'] === true &&
-    !empty($_SESSION['id_empresa'])
-) {
+if (isset($_SESSION['loggedin'], $_SESSION['user_id']) && $_SESSION['loggedin'] === true) {
     try {
-        $pdo = getDbConnection();
-        $stmt = $pdo->prepare("
-            SELECT u.id_rol, ue.id_rol_empresa
+        $pdoGlobalCheck = getDbConnection();
+        // Obtener rol y estado del usuario en cada recarga
+        $stmtGlobal = $pdoGlobalCheck->prepare("
+            SELECT u.id_rol, u.bloqueado_hasta, ue.id_rol_empresa
             FROM usuario u
             LEFT JOIN usuario_empresa ue
-                ON ue.id_usuario = u.id AND ue.id_empresa = ?
-            WHERE u.id = ?
+                ON ue.id_usuario = u.id AND ue.id_empresa = :empresa
+            WHERE u.id = :id
             LIMIT 1
         ");
-        $stmt->execute([(int)$_SESSION['id_empresa'], (int)$_SESSION['user_id']]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row) {
-            if (isset($row['id_rol'])) {
-                $_SESSION['id_rol'] = (int)$row['id_rol'];
+        $stmtGlobal->execute([
+            ':empresa' => $_SESSION['id_empresa'] ?? null, 
+            ':id' => (int)$_SESSION['user_id']
+        ]);
+        $rowGlobal = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
+        
+        if ($rowGlobal) {
+            // Si el usuario acaba de ser suspendido, lo expulsamos de la sesión inmediatamente
+            if (!empty($rowGlobal['bloqueado_hasta']) && strtotime($rowGlobal['bloqueado_hasta']) > time()) {
+                session_unset();
+                session_destroy();
+                
+                // Reiniciamos una sesión limpia exclusivamente para guardar la marca de suspensión
+                session_start();
+                $_SESSION['was_suspended'] = true;
+
+                header("Location: " . BASE_URL . "?error=suspended");
+                exit();
             }
-            $_SESSION['id_rol_empresa'] = $row['id_rol_empresa'] !== null ? (int)$row['id_rol_empresa'] : null;
+            
+            // Actualizar su rol en caso de que un administrador lo cambiara dinámicamente
+            $_SESSION['id_rol'] = (int)$rowGlobal['id_rol'];
+            
+            // Mantener roles de empresa si aplica
+            if (!empty($_SESSION['id_empresa'])) {
+                $_SESSION['id_rol_empresa'] = $rowGlobal['id_rol_empresa'] !== null ? (int)$rowGlobal['id_rol_empresa'] : null;
+            }
+        } else {
+            // Usuario borrado de DB pero con sesión activa
+            session_unset();
+            session_destroy();
+            header("Location: " . BASE_URL . "src/index.php?action=welcome");
+            exit();
         }
-    } catch (Throwable $e) {
-    }
+    } catch (Throwable $e) {}
 }
 
 // -------------------------------
@@ -218,5 +240,5 @@ if (!defined('SMTP_PORT')) define('SMTP_PORT', 587);
 if (!defined('SMTP_USER')) define('SMTP_USER', 'tu_correo@gmail.com'); 
 if (!defined('SMTP_PASS')) define('SMTP_PASS', 'clave_app_google');   
 if (!defined('SMTP_FROM')) define('SMTP_FROM', 'tu_correo@gmail.com');
-if (!defined('SMTP_NAME')) define('SMTP_NAME', 'TalentLink');
+if (!defined('SMTP_NAME')) define('SMTP_NAME', 'StartLink');
 ?>

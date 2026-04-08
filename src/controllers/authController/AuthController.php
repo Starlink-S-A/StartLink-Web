@@ -66,7 +66,11 @@ class AuthController {
         if ($user) {
             // ⚠️ Verificar si está bloqueado
             if (!empty($user['bloqueado_hasta']) && strtotime($user['bloqueado_hasta']) > time()) {
-                $response['message'] = "Tu cuenta está bloqueada hasta " . $user['bloqueado_hasta'] . " por múltiples intentos fallidos.";
+                if ($user['bloqueado_hasta'] === '2099-12-31 23:59:59') {
+                    $response['message'] = "Tu cuenta ha sido inhabilitada por violar las políticas de StartLink. Contacta a soporte para más información.";
+                } else {
+                    $response['message'] = "Tu cuenta está bloqueada temporalmente por múltiples intentos fallidos. Intenta más tarde.";
+                }
                 echo json_encode($response);
                 exit;
             }

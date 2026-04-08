@@ -204,6 +204,25 @@ switch ($action) {
         $nominaController->descargarPDF();
         break;
 
+    // ─── Administración Global ────────────────────────────────
+    case 'admin_usuarios':
+        require_once __DIR__ . '/controllers/adminGlobalController/AdminGlobalController.php';
+        $adminController = new AdminGlobalController();
+        $adminController->index();
+        break;
+
+    case 'admin_update_role':
+        require_once __DIR__ . '/controllers/adminGlobalController/AdminGlobalController.php';
+        $adminController = new AdminGlobalController();
+        $adminController->updateRole();
+        break;
+
+    case 'admin_toggle_suspension':
+        require_once __DIR__ . '/controllers/adminGlobalController/AdminGlobalController.php';
+        $adminController = new AdminGlobalController();
+        $adminController->toggleSuspension();
+        break;
+
     default:
         $authController = new AuthController();
         $authController->showWelcomePage();

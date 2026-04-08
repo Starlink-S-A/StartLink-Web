@@ -107,6 +107,13 @@ if (!isset($profileImage) && !empty($_SESSION['foto_perfil'])) {
                     <i class="fas fa-history"></i> <span class="sidebar-link-text">Historial</span>
                 </a>
             </li>
+            <?php if (isset($esAdminGlobal) && $esAdminGlobal): ?>
+            <li>
+                <a class="sidebar-link <?= ($currentAction == 'admin_usuarios' || $currentPage == 'admin_view.php') ? 'active' : '' ?>" href="<?= BASE_URL ?>src/index.php?action=admin_usuarios">
+                    <i class="fas fa-shield-alt"></i> <span class="sidebar-link-text">Administración</span>
+                </a>
+            </li>
+            <?php endif; ?>
         </ul>
     </nav>
 
