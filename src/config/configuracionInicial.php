@@ -89,10 +89,10 @@ $envSiteKey = getenv('RECAPTCHA_SITE_KEY');
 $envSecretKey = getenv('RECAPTCHA_SECRET_KEY');
 
 if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ');
+    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2');
 }
 if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH');
+    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH');
 }
 
 // -------------------------------

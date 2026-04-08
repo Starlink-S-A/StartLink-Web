@@ -154,15 +154,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Validar reCAPTCHA
-            if (typeof grecaptcha === 'undefined') {
-                displayMessage("Error: reCAPTCHA no cargado.", "danger");
-                return;
-            }
+            // Mostrar mensaje de proceso
+            displayMessage("Validando seguridad, por favor espera...", "info");
 
-            const captchaResponse = grecaptcha.getResponse();
-            if (!captchaResponse) {
-                displayMessage("Por favor confirma el reCAPTCHA.", "danger");
+            // Obtener token de reCAPTCHA v3
+            let captchaResponse;
+            try {
+                captchaResponse = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' });
+                console.log('Token reCAPTCHA (registro) generado:', captchaResponse);
+            } catch (error) {
+                console.error('Error al obtener token de reCAPTCHA (registro):', error);
+                displayMessage('Error de seguridad. Por favor, recarga la página e intenta nuevamente.', 'danger');
                 return;
             }
 
@@ -193,18 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
                     registrationForm.reset();
-                    grecaptcha.reset();
                     setTimeout(() => {
                         changeSection(loginFormSection);
                     }, 1500);
                 } else {
                     displayMessage(result.message, 'danger');
-                    grecaptcha.reset();
                 }
             } catch (err) {
                 console.error("Error en registro:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
-                grecaptcha.reset();
             }
         });
     }

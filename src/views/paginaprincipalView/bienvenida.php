@@ -20,8 +20,7 @@ if (!isset($form_to_show))
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>src/public/styles/login_redesign.css">
 
     <!-- Scripts de reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>" async defer></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>"></script>
     <script>
         const BASE_URL = '<?php echo BASE_URL; ?>';
         const FORM_TO_SHOW = '<?php echo $form_to_show; ?>';
@@ -116,9 +115,7 @@ if (!isset($form_to_show))
                             placeholder="Repite tu clave" required>
                     </div>
 
-                    <!-- reCAPTCHA v2 para registro -->
-                    <div class="g-recaptcha" data-sitekey="6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2" data-theme="dark">
-                    </div>
+                    <!-- reCAPTCHA v3 se maneja automáticamente en JS -->
 
                     <button type="submit" class="btn-action">Registrarme ahora</button>
 
@@ -180,22 +177,29 @@ if (!isset($form_to_show))
             const navSignUpBtn = document.getElementById('navSignUpBtn');
 
             const setActiveNav = (btn) => {
-                navLoginBtn.classList.remove('active');
-                navSignUpBtn.classList.remove('active');
+                if (!btn) return;
+                if (navLoginBtn) navLoginBtn.classList.remove('active');
+                if (navSignUpBtn) navSignUpBtn.classList.remove('active');
                 btn.classList.add('active');
             };
 
-            navLoginBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                setActiveNav(navLoginBtn);
-                document.getElementById('showLoginLink').click();
-            });
+            if (navLoginBtn) {
+                navLoginBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setActiveNav(navLoginBtn);
+                    const link = document.getElementById('showLoginLink');
+                    if (link) link.click();
+                });
+            }
 
-            navSignUpBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                setActiveNav(navSignUpBtn);
-                document.getElementById('showRegisterLink').click();
-            });
+            if (navSignUpBtn) {
+                navSignUpBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setActiveNav(navSignUpBtn);
+                    const link = document.getElementById('showRegisterLink');
+                    if (link) link.click();
+                });
+            }
 
             // Sincronizar botones superiores cuando se cambia de sección vía links internos
             const showRegisterLink = document.getElementById('showRegisterLink');
