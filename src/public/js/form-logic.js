@@ -416,4 +416,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (messageContainer) messageContainer.innerHTML = '';
         });
     }
+
+    const backToLoginLink = document.getElementById('backToLoginLink');
+    if (backToLoginLink) {
+        backToLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            changeSection(loginFormSection);
+            if (messageContainer) messageContainer.innerHTML = '';
+        });
+    }
 });
