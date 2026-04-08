@@ -83,6 +83,6 @@ $empresas = $empresas ?? [];
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?= BASE_URL ?>src/public/js/Mi_equipo.js"></script>
+    <script src="<?= BASE_URL ?>src/public/js/mi_equipo.js"></script>
 </body>
 </html>
