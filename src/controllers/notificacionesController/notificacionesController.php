@@ -133,13 +133,13 @@ class NotificacionesController {
     private function redirectToNotification(): void {
         $notificationId = $_GET['notification_id'] ?? null;
         if (!$notificationId || !is_numeric($notificationId)) {
-            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            header("Location: " . BASE_URL . "index.php?action=notificaciones");
             exit();
         }
 
         $notif = $this->model->getNotificationById((int)$notificationId, $this->userId);
         if (!$notif) {
-            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            header("Location: " . BASE_URL . "index.php?action=notificaciones");
             exit();
         }
 
@@ -147,18 +147,28 @@ class NotificacionesController {
             $this->model->markAsRead((int)$notificationId, $this->userId);
         }
 
-        $target = $notif['url_redireccion'] ?? '';
+        $target = trim($notif['url_redireccion'] ?? '');
+        
+        // Si no hay URL, enviamos a la lista de notificaciones
         if ($target === '' || $target === '#') {
-            header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
+            header("Location: " . BASE_URL . "index.php?action=notificaciones");
             exit();
         }
 
-        if (preg_match('~^https?://~i', $target) !== 1) {
-            $target = ltrim($target, '/');
-            $target = rtrim(BASE_URL, '/') . '/' . $target;
+        // Si ya es una URL absoluta, redirigir directamente
+        if (preg_match('~^https?://~i', $target) === 1) {
+            header("Location: " . $target);
+            exit();
         }
 
-        header("Location: " . $target);
+        // Limpiar el target de prefijos redundantes como '/' o 'src/' si BASE_URL ya apunta al lugar correcto
+        // En este proyecto, BASE_URL suele apuntar a la raíz, e index.php está dentro de src/ (o mapeado vía htaccess)
+        $target = ltrim($target, '/');
+        
+        // Construir la URL final asegurando que no haya slash doble
+        $finalUrl = rtrim(BASE_URL, '/') . '/' . $target;
+
+        header("Location: " . $finalUrl);
         exit();
     }
 
