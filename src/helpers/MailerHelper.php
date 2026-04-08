@@ -62,8 +62,14 @@ class MailerHelper
         if ($httpCode >= 200 && $httpCode < 300) {
             return ['status' => true, 'message' => 'Enviado via Brevo API'];
         } else {
-            error_log("❌ Error respuesta Brevo API (Code $httpCode): " . $response);
-            return ['status' => false, 'message' => "Error en la API de correo ($httpCode)."];
+            // Logueamos los primeros caracteres para verificar en Render logs
+            $partialKey = substr(BREVO_API_KEY, 0, 8) . "...";
+            error_log("❌ Error respuesta Brevo API (Code $httpCode) con llave $partialKey: " . $response);
+            
+            // Decodificar el error de Brevo si es posible
+            $errorInfo = json_decode($response, true);
+            $msg = $errorInfo['message'] ?? $response;
+            return ['status' => false, 'message' => "Error de Brevo ($httpCode): " . $msg];
         }
     }
 
