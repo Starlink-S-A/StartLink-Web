@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /StartLink-Web/
+# RewriteBase eliminado para compatibilidad con el root de Render
 
 # Si piden directamente index.php en la raíz, lo mandamos al src/index.php
 RewriteRule ^index\.php$ src/index.php [L]

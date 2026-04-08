@@ -45,7 +45,13 @@ error_reporting(E_ALL);
 // 🔹 Rutas y constantes globales
 // -------------------------------
 if (!defined('BASE_URL')) {
-    define('BASE_URL', 'http://localhost/StartLink-Web/');
+    // Detectamos si estamos en Render usando la variable RENDER_EXTERNAL_URL
+    $externalUrl = getenv('RENDER_EXTERNAL_URL'); 
+    if ($externalUrl) {
+        define('BASE_URL', rtrim($externalUrl, '/') . '/');
+    } else {
+        define('BASE_URL', 'http://localhost/StartLink-Web/');
+    }
 }
 
 if (!defined('ROOT_PATH')) {

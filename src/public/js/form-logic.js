@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const response = await fetch("http://localhost/StartLink-Web/src/index.php?action=login", {
+                const response = await fetch("src/index.php?action=login", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
