@@ -39,7 +39,7 @@ class NotificacionesController {
                 $this->deleteAllNotifications();
                 break;
             case 'redirect':
-                $this->redirectToNotification();
+                $this->redirect();
                 break;
             case 'fetch_latest_ajax':
                 $this->fetchLatestAjax();
@@ -130,45 +130,32 @@ class NotificacionesController {
         exit();
     }
 
-    private function redirectToNotification(): void {
+    public function redirect() {
         $notificationId = $_GET['notification_id'] ?? null;
-        if (!$notificationId || !is_numeric($notificationId)) {
-            header("Location: " . BASE_URL . "index.php?action=notificaciones");
-            exit();
+        if ($notificationId) {
+            $notification = $this->model->getNotificationById((int)$notificationId, $this->userId);
+            if ($notification) {
+                // Marcar como leída
+                $this->model->markAsRead((int)$notificationId, $this->userId);
+                
+                // Redirigir si hay una URL válida, sino ir a la vista de notificaciones
+                if (!empty($notification['url_redireccion']) && $notification['url_redireccion'] !== '#') {
+                    $targetUrl = $notification['url_redireccion'];
+                    
+                    // Si es una URL interna (no empieza con http/https), anteponer BASE_URL
+                    if (!preg_match('/^https?:\/\//i', $targetUrl)) {
+                        // Limpiar posibles slashes duplicados
+                        $targetUrl = BASE_URL . ltrim($targetUrl, '/');
+                    }
+                    
+                    header("Location: " . $targetUrl);
+                    exit();
+                }
+            }
         }
-
-        $notif = $this->model->getNotificationById((int)$notificationId, $this->userId);
-        if (!$notif) {
-            header("Location: " . BASE_URL . "index.php?action=notificaciones");
-            exit();
-        }
-
-        if (empty($notif['leida'])) {
-            $this->model->markAsRead((int)$notificationId, $this->userId);
-        }
-
-        $target = trim($notif['url_redireccion'] ?? '');
         
-        // Si no hay URL, enviamos a la lista de notificaciones
-        if ($target === '' || $target === '#') {
-            header("Location: " . BASE_URL . "index.php?action=notificaciones");
-            exit();
-        }
-
-        // Si ya es una URL absoluta, redirigir directamente
-        if (preg_match('~^https?://~i', $target) === 1) {
-            header("Location: " . $target);
-            exit();
-        }
-
-        // Limpiar el target de prefijos redundantes como '/' o 'src/' si BASE_URL ya apunta al lugar correcto
-        // En este proyecto, BASE_URL suele apuntar a la raíz, e index.php está dentro de src/ (o mapeado vía htaccess)
-        $target = ltrim($target, '/');
-        
-        // Construir la URL final asegurando que no haya slash doble
-        $finalUrl = rtrim(BASE_URL, '/') . '/' . $target;
-
-        header("Location: " . $finalUrl);
+        // Redirección por defecto: SIEMPRE a la vista de notificaciones, NUNCA al dashboard
+        header("Location: " . BASE_URL . "src/index.php?action=notificaciones");
         exit();
     }
 
