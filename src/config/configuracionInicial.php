@@ -260,5 +260,5 @@ if (!defined('SMTP_NAME'))
 
 // API Key de Brevo (para envíos via HTTPS en Render)
 if (!defined('BREVO_API_KEY'))
-    define('BREVO_API_KEY', getenv('BREVO_API_KEY') ?: ''); 
+    define('BREVO_API_KEY', trim(getenv('BREVO_API_KEY') ?: '')); 
 ?>
