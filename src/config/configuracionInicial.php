@@ -7,13 +7,15 @@
 // 🔹 Funciones auxiliares de sesión
 // -------------------------------
 if (!function_exists('setTempSessionData')) {
-    function setTempSessionData($key, $data) {
+    function setTempSessionData($key, $data)
+    {
         $_SESSION['temp_data'][$key] = $data;
     }
 }
 
 if (!function_exists('getTempSessionData')) {
-    function getTempSessionData($key, $clear = true) {
+    function getTempSessionData($key, $clear = true)
+    {
         $data = $_SESSION['temp_data'][$key] ?? null;
         if ($clear) {
             unset($_SESSION['temp_data'][$key]);
@@ -46,7 +48,7 @@ error_reporting(E_ALL);
 // -------------------------------
 if (!defined('BASE_URL')) {
     // Detectamos si estamos en Render usando la variable RENDER_EXTERNAL_URL
-    $externalUrl = getenv('RENDER_EXTERNAL_URL'); 
+    $externalUrl = getenv('RENDER_EXTERNAL_URL');
     if ($externalUrl) {
         define('BASE_URL', rtrim($externalUrl, '/') . '/');
     } else {
@@ -64,8 +66,10 @@ if (!defined('ROOT_PATH')) {
 if (file_exists(ROOT_PATH . '.env')) {
     $lines = file(ROOT_PATH . '.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
+        if (strpos(trim($line), '#') === 0)
+            continue;
+        if (strpos($line, '=') === false)
+            continue;
         list($name, $value) = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value);
@@ -85,10 +89,10 @@ $envSiteKey = getenv('RECAPTCHA_SITE_KEY');
 $envSecretKey = getenv('RECAPTCHA_SECRET_KEY');
 
 if (!defined('RECAPTCHA_SITE_KEY')) {
-    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6Ldq87srAAAAAGGOrfyjsXqp7rfPFvaIjhr3KHA2'); 
+    define('RECAPTCHA_SITE_KEY', $envSiteKey ?: '6LdobLYrAAAAABPXnbLFCmYrU1Mz7A_0hJCkltyQ');
 }
 if (!defined('RECAPTCHA_SECRET_KEY')) {
-    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6Ldq87srAAAAAOdTe2F8-lbhqYfYRp586foWy_MH'); 
+    define('RECAPTCHA_SECRET_KEY', $envSecretKey ?: '6LdobLYrAAAAAJAFYgyEN4QIyYK20cVLHDqjjsNH');
 }
 
 // -------------------------------
@@ -101,31 +105,37 @@ if (!defined('JWT_SECRET_KEY')) {
 // -------------------------------
 // 🔹 Configuración de Base de Datos (Aiven Cloud)
 // -------------------------------
-if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
-if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: 'root');
-if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
-if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: '3306');
+if (!defined('DB_HOST'))
+    define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+if (!defined('DB_NAME'))
+    define('DB_NAME', getenv('DB_NAME') ?: 'defaultdb');
+if (!defined('DB_USER'))
+    define('DB_USER', getenv('DB_USER') ?: 'root');
+if (!defined('DB_PASS'))
+    define('DB_PASS', getenv('DB_PASS') ?: '');
+if (!defined('DB_PORT'))
+    define('DB_PORT', getenv('DB_PORT') ?: '3306');
 
 /**
  * 📌 Conexión PDO Singleton con Soporte SSL
  */
 if (!function_exists('getDbConnection')) {
-    function getDbConnection() {
+    function getDbConnection()
+    {
         static $pdo = null;
         if ($pdo === null) {
             $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4;connect_timeout=5';
-            
+
             $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::ATTR_TIMEOUT            => 5,
-    
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_TIMEOUT => 5,
+
                 // 🔹 CAMBIO AQUÍ: Configuración específica para TiDB Cloud
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
                 // Forzamos el uso de SSL/TLS (esto resuelve el error 1105)
-                PDO::MYSQL_ATTR_SSL_CA => '', 
+                PDO::MYSQL_ATTR_SSL_CA => '',
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4; SET time_zone='-05:00'"
             ];
 
@@ -134,7 +144,7 @@ if (!function_exists('getDbConnection')) {
             } catch (PDOException $e) {
                 // Logueamos el error internamente
                 error_log('❌ Error de conexión: ' . $e->getMessage());
-                
+
                 // Enviamos JSON limpio para que el Frontend lo entienda
                 header('Content-Type: application/json');
                 die(json_encode([
@@ -163,13 +173,13 @@ if (
             WHERE u.id = ?
             LIMIT 1
         ");
-        $stmt->execute([(int)$_SESSION['id_empresa'], (int)$_SESSION['user_id']]);
+        $stmt->execute([(int) $_SESSION['id_empresa'], (int) $_SESSION['user_id']]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
             if (isset($row['id_rol'])) {
-                $_SESSION['id_rol'] = (int)$row['id_rol'];
+                $_SESSION['id_rol'] = (int) $row['id_rol'];
             }
-            $_SESSION['id_rol_empresa'] = $row['id_rol_empresa'] !== null ? (int)$row['id_rol_empresa'] : null;
+            $_SESSION['id_rol_empresa'] = $row['id_rol_empresa'] !== null ? (int) $row['id_rol_empresa'] : null;
         }
     } catch (Throwable $e) {
     }
@@ -179,7 +189,8 @@ if (
 // 🔹 Verificar si perfil de usuario está completo
 // -------------------------------
 if (!function_exists('isProfileComplete')) {
-    function isProfileComplete($userId) {
+    function isProfileComplete($userId)
+    {
         $pdo = getDbConnection();
         try {
             // Nota: Verifica que los nombres de las tablas coincidan (minúsculas/mayúsculas)
@@ -197,15 +208,18 @@ if (!function_exists('isProfileComplete')) {
             $stmt->execute();
             $perfilCompleto = $stmt->fetchColumn() > 0;
 
-            if (!$perfilCompleto) return false;
+            if (!$perfilCompleto)
+                return false;
 
             $stmtEstudios = $pdo->prepare("SELECT COUNT(*) FROM estudio WHERE id_usuario = :id_usuario");
             $stmtEstudios->execute([':id_usuario' => $userId]);
-            if ($stmtEstudios->fetchColumn() == 0) return false;
+            if ($stmtEstudios->fetchColumn() == 0)
+                return false;
 
             $stmtExperiencia = $pdo->prepare("SELECT COUNT(*) FROM experiencia_laboral WHERE id_usuario = :id_usuario");
             $stmtExperiencia->execute([':id_usuario' => $userId]);
-            if ($stmtExperiencia->fetchColumn() == 0) return false;
+            if ($stmtExperiencia->fetchColumn() == 0)
+                return false;
 
             return true;
         } catch (PDOException $e) {
@@ -223,10 +237,16 @@ if (file_exists(ROOT_PATH . "vendor/autoload.php")) {
     require_once ROOT_PATH . "vendor/autoload.php";
 }
 
-if (!defined('SMTP_HOST')) define('SMTP_HOST', 'smtp.gmail.com');
-if (!defined('SMTP_PORT')) define('SMTP_PORT', 587);
-if (!defined('SMTP_USER')) define('SMTP_USER', 'tu_correo@gmail.com'); 
-if (!defined('SMTP_PASS')) define('SMTP_PASS', 'clave_app_google');   
-if (!defined('SMTP_FROM')) define('SMTP_FROM', 'tu_correo@gmail.com');
-if (!defined('SMTP_NAME')) define('SMTP_NAME', 'TalentLink');
+if (!defined('SMTP_HOST'))
+    define('SMTP_HOST', 'smtp.gmail.com');
+if (!defined('SMTP_PORT'))
+    define('SMTP_PORT', 587);
+if (!defined('SMTP_USER'))
+    define('SMTP_USER', 'tu_correo@gmail.com');
+if (!defined('SMTP_PASS'))
+    define('SMTP_PASS', 'clave_app_google');
+if (!defined('SMTP_FROM'))
+    define('SMTP_FROM', 'tu_correo@gmail.com');
+if (!defined('SMTP_NAME'))
+    define('SMTP_NAME', 'TalentLink');
 ?>
