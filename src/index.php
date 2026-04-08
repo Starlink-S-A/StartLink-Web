@@ -4,6 +4,7 @@
 require_once __DIR__ . '/controllers/authController/AuthController.php';
 require_once __DIR__ . '/controllers/dashboardController/sideBarController.php';
 require_once __DIR__ . '/controllers/configuracionUsuarioController/UserController.php';
+require_once __DIR__ . '/helpers/MailerHelper.php';
 
 
 $action = $_GET['action'] ?? '';

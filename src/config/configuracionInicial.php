@@ -257,4 +257,8 @@ if (!defined('SMTP_FROM'))
     define('SMTP_FROM', getenv('SMTP_FROM') ?: 'startlink456@gmail.com');
 if (!defined('SMTP_NAME'))
     define('SMTP_NAME', getenv('SMTP_NAME') ?: 'TalentLink');
+
+// API Key de Brevo (para envíos via HTTPS en Render)
+if (!defined('BREVO_API_KEY'))
+    define('BREVO_API_KEY', getenv('BREVO_API_KEY') ?: ''); 
 ?>

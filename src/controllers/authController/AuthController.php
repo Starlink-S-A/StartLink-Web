@@ -374,55 +374,21 @@ class AuthController
                 ':id' => $user['id']
             ]);
 
-            // 📧 Enviar correo con PHPMailer
-            $mail = new PHPMailer\PHPMailer\PHPMailer();
-            $GLOBALS['smtp_debug'] = ""; 
-            $mail->SMTPDebug = 2;
-            $mail->Debugoutput = function($str, $level) {
-                $GLOBALS['smtp_debug'] .= $str . "\n";
-            };
-
-            $mail->isSMTP();
-            // Intentamos con smtp.gmail.com y como respaldo smtp.googlemail.com
-            $mail->Host = 'smtp.gmail.com;smtp.googlemail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = SMTP_USER;
-            $mail->Password = SMTP_PASS;
-            
-            // Volvemos a 587 con STARTTLS (a veces el puerto 465 está más vigilado)
-            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
-            $mail->Timeout = 30; // 30 segundos de espera
-
-            $mail->SMTPOptions = array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                )
-            );
-
-            $mail->setFrom(SMTP_FROM, SMTP_NAME);
-            $mail->addAddress($email, $user['nombre']);
-
-            $mail->isHTML(true);
-            $mail->Subject = 'Recuperar contraseña - StartLink';
-            $mail->Body = "
+            // 📧 Enviar correo usando el Helper (API o SMTP)
+            $subject = 'Recuperar contraseña - StartLink';
+            $body = "
                 <p>Hola <b>" . htmlspecialchars($user['nombre']) . "</b>,</p>
                 <p>Tu código de recuperación es: <b>$resetCode</b></p>
                 <p>Este código expira en 15 minutos.</p>
             ";
 
+            $emailStatus = MailerHelper::send($email, $user['nombre'], $subject, $body);
+
             ob_clean();
-            if ($mail->send()) {
+            if ($emailStatus['status']) {
                 echo json_encode(['status' => 'success', 'message' => 'Se envió un código de recuperación a tu correo.']);
             } else {
-                error_log("❌ PHPMailer Final Attempt Error: " . $mail->ErrorInfo . "\nDebug: " . $GLOBALS['smtp_debug']);
-                echo json_encode([
-                    'status' => 'error', 
-                    'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo,
-                    'debug' => $GLOBALS['smtp_debug']
-                ]);
+                echo json_encode(['status' => 'error', 'message' => 'No se pudo enviar el correo: ' . $emailStatus['message']]);
             }
 
         } catch (Throwable $e) {
