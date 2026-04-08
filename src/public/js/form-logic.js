@@ -288,14 +288,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ email })
                 });
-                const result = await response.json();
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no es JSON:", text);
+                    displayMessage("Error del servidor: la respuesta no es válida.", "danger");
+                    return;
+                }
+
                 displayMessage(result.message, result.status === 'success' ? 'success' : 'danger');
                 if (result.status === 'success') {
                     forgotPasswordForm.reset();
-                    changeSection(resetPasswordSection);
+                    setTimeout(() => changeSection(resetPasswordSection), 1500);
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error en recuperación:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
             }
         });
@@ -343,7 +352,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ token: token, new_password: newPassword })
                 });
-                const result = await response.json();
+                const text = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no es JSON:", text);
+                    displayMessage("Error del servidor: la respuesta no es válida.", "danger");
+                    return;
+                }
 
                 if (result.status === 'success') {
                     displayMessage(result.message, 'success');
@@ -353,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     displayMessage(result.message, 'danger');
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Error en reseteo:", err);
                 displayMessage("Error al conectar con el servidor.", "danger");
             }
         });

@@ -414,8 +414,9 @@ class AuthController
                 echo json_encode(['status' => 'error', 'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo]);
             }
 
-        } catch (Exception $e) {
-            echo json_encode(['status' => 'error', 'message' => 'Error interno: ' . $e->getMessage()]);
+        } catch (Throwable $e) {
+            error_log("❌ Error fatal en forgotPassword: " . $e->getMessage());
+            echo json_encode(['status' => 'error', 'message' => 'Error interno en el servidor: ' . $e->getMessage()]);
             exit;
         }
     }
@@ -492,10 +493,10 @@ class AuthController
                 'status' => 'success',
                 'message' => "Contraseña actualizada."
             ];
-        } catch (Exception $e) {
-            error_log("Error resetPassword: " . $e->getMessage());
+        } catch (Throwable $e) {
+            error_log("❌ Error fatal en resetPassword: " . $e->getMessage());
+            $response = ['status' => 'error', 'message' => 'Error interno en el servidor: ' . $e->getMessage()];
         }
-
         echo json_encode($response);
         exit;
     }
