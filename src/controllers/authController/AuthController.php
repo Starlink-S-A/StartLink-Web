@@ -383,27 +383,22 @@ class AuthController
             };
 
             $mail->isSMTP();
-            $mail->Host = SMTP_HOST;
+            // Intentamos con smtp.gmail.com y como respaldo smtp.googlemail.com
+            $mail->Host = 'smtp.gmail.com;smtp.googlemail.com';
             $mail->SMTPAuth = true;
             $mail->Username = SMTP_USER;
             $mail->Password = SMTP_PASS;
             
-            if (SMTP_PORT == 465) {
-                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-            } else {
-                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            }
-            $mail->Port = SMTP_PORT;
-            $mail->Timeout = 20; // Aumentar timeout a 20s
+            // Volvemos a 587 con STARTTLS (a veces el puerto 465 está más vigilado)
+            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+            $mail->Timeout = 30; // 30 segundos de espera
 
             $mail->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,
                     'verify_peer_name' => false,
                     'allow_self_signed' => true
-                ),
-                'socket' => array(
-                    'bindto' => '0.0.0.0:0' // Forzado estricto de IPv4 para evitar 'Network is unreachable'
                 )
             );
 
@@ -422,8 +417,7 @@ class AuthController
             if ($mail->send()) {
                 echo json_encode(['status' => 'success', 'message' => 'Se envió un código de recuperación a tu correo.']);
             } else {
-                // Si falla, incluimos el log de debug para saber EXACTAMENTE por qué
-                error_log("❌ PHPMailer Error: " . $mail->ErrorInfo . "\nDebug: " . $GLOBALS['smtp_debug']);
+                error_log("❌ PHPMailer Final Attempt Error: " . $mail->ErrorInfo . "\nDebug: " . $GLOBALS['smtp_debug']);
                 echo json_encode([
                     'status' => 'error', 
                     'message' => 'No se pudo enviar el correo: ' . $mail->ErrorInfo,
